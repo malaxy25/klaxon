@@ -1,0 +1,208 @@
+import { Control, Phase, Difficulty, GameEvent } from "./types";
+import { Rng, pick } from "./rng";
+import { generatePanel } from "./panel";
+import { makeInstruction, satisfies, canTarget } from "./instructions";
+import {
+  difficultyForLevel, panelSizeForLevel,
+  STARTING_HEALTH, MAX_HEALTH, MAX_DEATH_LIMIT,
+} from "./difficulty";
+import { Instruction } from "./types";
+
+export interface EnginePlayer {
+  id: string;
+  name: string;
+  connected: boolean;
+  host: boolean;
+  ready: boolean;
+  panel: Control[];
+  instruction: Instruction | null;
+}
+
+export interface EngineOptions {
+  rng?: Rng;
+  now?: () => number;
+  singlePlayer?: boolean;
+}
+
+export interface ChangeResult {
+  completed: boolean;
+  events: GameEvent[];
+}
+
+export class SpaceteamGame {
+  phase: Phase = "lobby";
+  level = 0;
+  health = STARTING_HEALTH;
+  deathLimit = 0;
+  difficulty: Difficulty = difficultyForLevel(1);
+  players = new Map<string, EnginePlayer>();
+
+  private rng: Rng;
+  private now: () => number;
+  private singlePlayer: boolean;
+  private lastTick: number;
+
+  constructor(opts: EngineOptions = {}) {
+    this.rng = opts.rng ?? Math.random;
+    this.now = opts.now ?? (() => Date.now());
+    this.singlePlayer = opts.singlePlayer ?? false;
+    this.lastTick = this.now();
+  }
+
+  addPlayer(id: string, name: string): void {
+    if (this.players.has(id)) return;
+    this.players.set(id, {
+      id, name, connected: true,
+      host: this.players.size === 0,
+      ready: false, panel: [], instruction: null,
+    });
+  }
+
+  removePlayer(id: string): GameEvent[] {
+    const wasHost = this.players.get(id)?.host ?? false;
+    this.players.delete(id);
+    if (this.phase === "playing") {
+      this.phase = "over";
+      return [{ type: "gameOver" }];
+    }
+    if (wasHost && this.players.size > 0) {
+      const next = pick([...this.players.values()], this.rng);
+      next.host = true;
+    }
+    return [];
+  }
+
+  setReady(id: string, ready: boolean): void {
+    const p = this.players.get(id);
+    if (p) p.ready = ready;
+  }
+
+  canStart(): boolean {
+    const n = this.players.size;
+    if (this.singlePlayer) return n >= 1;
+    return n >= 2 && [...this.players.values()].every((p) => p.ready);
+  }
+
+  start(): boolean {
+    if (this.phase !== "lobby" || !this.canStart()) return false;
+    this.phase = "playing";
+    this.level = 1;
+    this.difficulty = difficultyForLevel(this.level);
+    this.health = STARTING_HEALTH;
+    this.deathLimit = 0;
+    this.assignPanels();
+    this.assignInstructions();
+    this.lastTick = this.now();
+    return true;
+  }
+
+  private assignPanels(): void {
+    const size = panelSizeForLevel(this.level);
+    for (const p of this.players.values()) {
+      p.panel = generatePanel(p.id, size, this.rng);
+      p.instruction = null;
+    }
+  }
+
+  private assignInstructions(): void {
+    for (const p of this.players.values()) this.generateInstructionFor(p);
+  }
+
+  private nextLevel(): GameEvent {
+    this.level += 1;
+    this.difficulty = difficultyForLevel(this.level);
+    this.health = STARTING_HEALTH;
+    this.deathLimit = 0;
+    this.assignPanels();
+    this.assignInstructions();
+    this.lastTick = this.now();
+    return { type: "nextLevel" };
+  }
+
+  private takenControlIds(): Set<string> {
+    const s = new Set<string>();
+    for (const p of this.players.values()) {
+      if (p.instruction) s.add(p.instruction.targetControlId);
+    }
+    return s;
+  }
+
+  private allControls(): Control[] {
+    const all: Control[] = [];
+    for (const p of this.players.values()) all.push(...p.panel);
+    return all;
+  }
+
+  private pickTargetPlayer(source: EnginePlayer): EnginePlayer {
+    const others = [...this.players.values()].filter((p) => p.id !== source.id);
+    if (others.length === 0 || this.rng() < 1 / 6) return source;
+    return pick(others, this.rng);
+  }
+
+  private generateInstructionFor(player: EnginePlayer): void {
+    player.instruction = null;
+    const taken = this.takenControlIds();
+    const target = this.pickTargetPlayer(player);
+
+    const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id));
+    let pool = untakenPreferred;
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id));
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c));
+
+    const control = pick(pool, this.rng);
+    const deadline = this.now() + this.difficulty.instructionTimeMs;
+    player.instruction = makeInstruction(player.id, control, this.rng, deadline);
+  }
+
+  handleControlChange(playerId: string, controlId: string, value: string): ChangeResult {
+    const events: GameEvent[] = [];
+    if (this.phase !== "playing") return { completed: false, events };
+    const player = this.players.get(playerId);
+    if (!player) return { completed: false, events };
+    const control = player.panel.find((c) => c.id === controlId);
+    if (!control) return { completed: false, events };
+
+    if (control.type !== "button") control.value = value;
+
+    for (const p of this.players.values()) {
+      const ins = p.instruction;
+      if (ins && satisfies(ins, control, value)) {
+        this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
+        events.push({ type: "completed", playerId: p.id });
+        if (this.health >= MAX_HEALTH) {
+          events.push(this.nextLevel());
+        } else {
+          this.generateInstructionFor(p);
+        }
+        return { completed: true, events };
+      }
+    }
+    return { completed: false, events };
+  }
+
+  tick(nowMs?: number): GameEvent[] {
+    const events: GameEvent[] = [];
+    if (this.phase !== "playing") return events;
+    const now = nowMs ?? this.now();
+    const dt = Math.max(0, (now - this.lastTick) / 1000);
+    this.lastTick = now;
+
+    this.health -= this.difficulty.healthDrainPerSec * dt;
+    this.deathLimit = Math.min(MAX_DEATH_LIMIT, this.deathLimit + this.difficulty.deathLimitRisePerSec * dt);
+
+    for (const p of this.players.values()) {
+      const ins = p.instruction;
+      if (ins && now >= ins.deadline) {
+        this.health -= this.difficulty.expiredHealthLoss;
+        events.push({ type: "expired", playerId: p.id });
+        this.generateInstructionFor(p);
+      }
+    }
+
+    if (this.health <= this.deathLimit) {
+      this.phase = "over";
+      events.push({ type: "gameOver" });
+    }
+    return events;
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "spaceteam",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:shared": "npm run dev -w @spaceteam/shared",
+    "dev:server": "npm run dev -w @spaceteam/server",
+    "dev:client": "npm run dev -w @spaceteam/client",
+    "build:shared": "npm run build -w @spaceteam/shared",
+    "build:server": "npm run build -w @spaceteam/server",
+    "start:debug": "npm run start:debug -w @spaceteam/server"
+  }
+}
