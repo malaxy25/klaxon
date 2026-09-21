@@ -8,6 +8,8 @@ export interface Control {
   min?: number;         // slider
   max?: number;         // slider
   options?: string[];   // selector
+  w?: number;           // Grid-Breite in Zellen (Panel-Layout)
+  h?: number;           // Grid-Hoehe in Zellen (Panel-Layout)
   ownerId: string;      // Spieler, dem das Control gehört
 }
 

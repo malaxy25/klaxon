@@ -2,7 +2,7 @@ import { Client } from "@colyseus/sdk";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
-  min: number; max: number; options: string[];
+  min: number; max: number; options: string[]; w: number; h: number;
 };
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
@@ -120,7 +120,7 @@ function snapshot() {
     p.panel.forEach((c: any) =>
       panel.push({
         id: c.id, kind: c.kind, label: c.label, value: c.value,
-        min: c.min, max: c.max, options: [...c.options],
+        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1,
       })
     );
     players.push({

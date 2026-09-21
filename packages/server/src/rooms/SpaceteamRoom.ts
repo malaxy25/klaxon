@@ -10,6 +10,8 @@ class ControlSchema extends Schema {
   @type("number") min = 0;
   @type("number") max = 0;
   @type(["string"]) options = new ArraySchema<string>();
+  @type("number") w = 1;
+  @type("number") h = 1;
   @type("string") ownerId = "";
 }
 
@@ -126,6 +128,7 @@ export class SpaceteamRoom extends Room {
           const cs = new ControlSchema();
           cs.id = c.id; cs.kind = c.type; cs.label = c.label; cs.value = c.value;
           cs.min = c.min ?? 0; cs.max = c.max ?? 0; cs.ownerId = c.ownerId;
+          cs.w = c.w ?? 1; cs.h = c.h ?? 1;
           cs.options = new ArraySchema<string>(...(c.options ?? []));
           sp.panel.push(cs);
         }
