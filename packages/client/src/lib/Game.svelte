@@ -60,9 +60,10 @@
   .timer { height: 4px; margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
   .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); }
 
-  .panel { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); grid-auto-rows: 90px; grid-auto-flow: row dense; gap: 8px; }
-  @media (min-width: 520px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
-  @media (min-width: 820px) { .panel { grid-template-columns: repeat(6, minmax(0,1fr)); } }
+  .panel { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: 96px; grid-auto-flow: row dense; gap: 8px; }
+  @media (min-width: 420px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (min-width: 620px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  @media (min-width: 920px) { .panel { grid-template-columns: repeat(6, minmax(0,1fr)); } }
 
   .banner { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
   .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.88); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; }

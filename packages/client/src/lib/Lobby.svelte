@@ -1,10 +1,18 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, joinUrl, updateName, commitName } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, VERSION, REPO_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
   let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
+
+  const DIFFS = [
+    { label: "Casual", level: 1 },
+    { label: "Normal", level: 3 },
+    { label: "Hard", level: 5 },
+    { label: "Insane", level: 8 },
+  ];
+  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
 
   $effect(() => {
     if (S.roomId) {
@@ -18,6 +26,7 @@
 <div class="lobby">
   <h1>Ready room</h1>
   <p class="hint">Others join by scanning the code - same room, no download.</p>
+  <button class="helplink" onclick={openHelp}>How to play</button>
 
   <div class="join-card">
     <div class="code">{S.roomId}</div>
@@ -42,6 +51,17 @@
     {/each}
   </ul>
 
+  <div class="difficulty">
+    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
+    {#if mine?.host}
+      <div class="diff-opts">
+        {#each DIFFS as d}
+          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
   <button class="btn wide" onclick={() => ready(!mine?.ready)}>
     {mine?.ready ? "Not ready" : "I am ready"}
   </button>
@@ -50,4 +70,5 @@
     <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
     {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
   {/if}
+  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
 </div>

@@ -87,3 +87,19 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
 .field { display: flex; flex-direction: column; gap: 4px; text-align: left; }
 .field > span { color: var(--muted); font-size: 0.8rem; }
 .input.name { letter-spacing: 0; font-size: 1rem; }
+
+/* Version / GitHub footer */
+.version { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 6px; }
+.version a { color: var(--muted); }
+.version a:hover { color: var(--amber); }
+
+/* Help link */
+.helplink { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 0; align-self: center; }
+.helplink:hover { color: var(--amber); }
+
+/* Difficulty presets (lobby) */
+.difficulty { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.diff-label { color: var(--muted); font-size: 0.9rem; }
+.diff-label b { color: var(--ink); }
+.diff-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.btn.diff { padding: 0.5em 0.8em; font-size: 0.85rem; }

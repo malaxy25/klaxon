@@ -15,6 +15,8 @@ export interface EnginePlayer {
   ready: boolean;
   panel: Control[];
   instruction: Instruction | null;
+  statCompleted: number; // vom Spieler ausgefuehrte Befehle
+  statExpired: number;   // eigene Befehle, die abliefen
 }
 
 export interface EngineOptions {
@@ -31,6 +33,7 @@ export interface ChangeResult {
 export class SpaceteamGame {
   phase: Phase = "lobby";
   level = 0;
+  startLevel = 3; // gewaehlte Schwierigkeit = Start-Sektor
   health = STARTING_HEALTH;
   deathLimit = 0;
   difficulty: Difficulty = difficultyForLevel(1);
@@ -55,6 +58,7 @@ export class SpaceteamGame {
       id, name, connected: true,
       host: this.players.size === 0,
       ready: false, panel: [], instruction: null,
+      statCompleted: 0, statExpired: 0,
     });
   }
 
@@ -78,6 +82,10 @@ export class SpaceteamGame {
     if (p) p.ready = ready;
   }
 
+  setStartLevel(n: number): void {
+    this.startLevel = Math.max(1, Math.min(20, Math.floor(n || 1)));
+  }
+
   canStart(): boolean {
     const n = this.players.size;
     if (this.singlePlayer) return n >= 1;
@@ -88,10 +96,11 @@ export class SpaceteamGame {
   start(): boolean {
     if (this.phase !== "lobby" || !this.canStart()) return false;
     this.phase = "playing";
-    this.level = 1;
+    this.level = this.startLevel;
     this.difficulty = difficultyForLevel(this.level);
     this.health = STARTING_HEALTH;
     this.deathLimit = 0;
+    for (const p of this.players.values()) { p.statCompleted = 0; p.statExpired = 0; }
     this.assignPanels();
     this.assignInstructions();
     this.lastTick = this.now();
@@ -196,6 +205,7 @@ export class SpaceteamGame {
     for (const p of this.players.values()) {
       const ins = p.instruction;
       if (ins && satisfies(ins, control, value)) {
+        player.statCompleted++;
         this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
         events.push({ type: "completed", playerId: p.id });
         if (this.health >= MAX_HEALTH) {
@@ -224,6 +234,7 @@ export class SpaceteamGame {
     for (const p of this.players.values()) {
       const ins = p.instruction;
       if (ins && now >= ins.deadline) {
+        p.statExpired++;
         this.health -= this.difficulty.expiredHealthLoss;
         events.push({ type: "expired", playerId: p.id });
         this.generateInstructionFor(p);

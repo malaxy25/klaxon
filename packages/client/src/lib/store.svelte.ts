@@ -1,5 +1,8 @@
 import { Client } from "@colyseus/sdk";
 
+export const VERSION = "0.5.0";
+export const REPO_URL = "https://github.com/malaxy25/klaxon";
+
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
   min: number; max: number; options: string[]; w: number; h: number;
@@ -7,6 +10,7 @@ export type ControlView = {
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
+  statCompleted: number; statExpired: number;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -32,9 +36,26 @@ export const S = $state({
   flash: "" as "" | "good" | "bad",
   shake: false,
   banner: "",
+  showHelp: false,
+  startLevel: 3,
+  feedbackSent: false,
 });
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? "ws://localhost:2567";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Cold-Start-sicher: der erste Versuch kann ins Timeout laufen, waehrend der
+// Render-Free-Server aufwacht -> ein paar Sekunden warten und erneut versuchen.
+async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + 70000;
+  for (;;) {
+    try { return await fn(); }
+    catch (e) {
+      if (Date.now() > deadline) throw e;
+      await sleep(2500);
+    }
+  }
+}
 
 let client: Client | null = null;
 let room: any = null;
@@ -69,6 +90,9 @@ function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver") {
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
   else if (kind === "gameOver") { beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
 }
+
+export function openHelp() { S.showHelp = true; }
+export function closeHelp() { S.showHelp = false; }
 
 export function toggleMute() {
   S.muted = !S.muted;
@@ -113,6 +137,7 @@ function snapshot() {
   S.level = st.level;
   S.health = st.health;
   S.deathLimit = st.deathLimit;
+  S.startLevel = st.startLevel ?? 3;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -126,6 +151,7 @@ function snapshot() {
     players.push({
       id: p.id, name: p.name, host: p.host, ready: p.ready,
       connected: p.connected, instructionText: p.instructionText, panel,
+      statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0,
     });
   });
   S.players = players;
@@ -141,6 +167,9 @@ function snapshot() {
   if (st.phase === "over" && prevPhase !== "over") {
     playSound("gameOver");
   }
+  if (st.phase === "playing" && prevPhase !== "playing") {
+    S.feedbackSent = false;
+  }
 }
 
 async function bind(r: any) {
@@ -148,6 +177,7 @@ async function bind(r: any) {
   S.roomId = r.roomId;
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
+  r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
   r.onMessage("evt", (e: any) => {
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
@@ -175,7 +205,7 @@ export async function createGame() {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    await bind(await client.create("spaceteam"));
+    await bind(await connectWithRetry(() => client!.create("spaceteam")));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -188,7 +218,7 @@ export async function joinGame(id: string) {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    await bind(await client.joinById(id));
+    await bind(await connectWithRetry(() => client!.joinById(id)));
   } catch (e: any) {
     S.error = "Join failed: " + (e?.message ?? "room not found.");
   } finally {
@@ -196,6 +226,8 @@ export async function joinGame(id: string) {
   }
 }
 
+export function setDifficulty(level: number) { room?.send("setDifficulty", level); }
+export function sendFeedback(text: string) { room?.send("feedback", text); }
 export function ready(v: boolean) { room?.send("ready", v); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }

@@ -23,6 +23,8 @@ class PlayerSchema extends Schema {
   @type("boolean") ready = false;
   @type([ControlSchema]) panel = new ArraySchema<ControlSchema>();
   @type("string") instructionText = "";
+  @type("number") statCompleted = 0;
+  @type("number") statExpired = 0;
   // nur mit DEBUG_TARGETS=1 befüllt (für automatisierte Tests):
   @type("string") dbgTargetControlId = "";
   @type("string") dbgTargetValue = "";
@@ -33,6 +35,7 @@ class GameState extends Schema {
   @type("number") level = 0;
   @type("number") health = 50;
   @type("number") deathLimit = 0;
+  @type("number") startLevel = 3;
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -61,6 +64,23 @@ export class SpaceteamRoom extends Room {
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
       if (p?.host && this.game.backToLobby()) this.syncFull();
+    });
+    this.onMessage("setDifficulty", (client, level: number) => {
+      const p = this.game.players.get(client.sessionId);
+      if (p?.host && this.game.phase === "lobby") { this.game.setStartLevel(Number(level)); this.syncFull(); }
+    });
+    this.onMessage("feedback", (client, text: string) => {
+      const p = this.game.players.get(client.sessionId);
+      const clean = String(text ?? "").slice(0, 500).trim();
+      if (!clean) return;
+      const line = `[Klaxon] ${p?.name || "?"} (sector ${this.game.level}, diff ${this.game.startLevel}): ${clean}`;
+      console.log("FEEDBACK", line);
+      const hook = process.env.FEEDBACK_WEBHOOK;
+      if (hook) {
+        fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line }) })
+          .catch((e) => console.error("feedback webhook failed:", e));
+      }
+      client.send("feedbackAck", true);
     });
     this.onMessage("setControl", (client, m: { controlId: string; value: string }) => {
       const res = this.game.handleControlChange(client.sessionId, m?.controlId, String(m?.value ?? ""));
@@ -100,6 +120,7 @@ export class SpaceteamRoom extends Room {
     this.state.level = this.game.level;
     this.state.health = Math.round(this.game.health);
     this.state.deathLimit = Math.round(this.game.deathLimit);
+    this.state.startLevel = this.game.startLevel;
   }
 
   private syncFull() {
@@ -116,6 +137,8 @@ export class SpaceteamRoom extends Room {
       sp.host = ep.host;
       sp.ready = ep.ready;
       sp.instructionText = ep.instruction?.text ?? "";
+      sp.statCompleted = ep.statCompleted;
+      sp.statExpired = ep.statExpired;
       sp.dbgTargetControlId = this.debug ? (ep.instruction?.targetControlId ?? "") : "";
       sp.dbgTargetValue = this.debug ? (ep.instruction?.targetValue ?? "") : "";
 

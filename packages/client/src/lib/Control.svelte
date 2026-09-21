@@ -37,7 +37,7 @@
     background: var(--panel); border: 1px solid var(--line);
     border-top-width: 3px;
     border-radius: var(--radius); padding: 8px;
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; justify-content: center; gap: 6px;
     height: 100%; min-height: 0; overflow: hidden;
   }
   .kind-button   { border-top-color: var(--danger); }
@@ -45,9 +45,9 @@
   .kind-slider   { border-top-color: var(--amber); }
   .kind-selector { border-top-color: #7cc4e8; }
 
-  .face { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 0; }
+  .face { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 0; }
   .name {
-    font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.1;
+    font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.15;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .hw {

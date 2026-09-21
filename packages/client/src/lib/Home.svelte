@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { S, createGame, joinGame, updateName } from "./store.svelte";
+  import { S, createGame, joinGame, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
   let code = $state("");
 </script>
 
@@ -24,4 +24,8 @@
   </div>
 
   {#if S.error}<p class="error">{S.error}</p>{/if}
+
+  <button class="btn wide" onclick={openHelp}>How to play</button>
+
+  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
 </div>
