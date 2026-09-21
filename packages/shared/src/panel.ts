@@ -7,7 +7,7 @@ const TYPES: ControlType[] = ["button", "toggle", "slider", "selector"];
 let counter = 0;
 function nextId(prefix: string): string {
   counter += 1;
-  return prefix + "_" + counter;
+  return `${prefix}_${counter}`;
 }
 
 export function makeControl(ownerId: string, rng: Rng): Control {
@@ -37,7 +37,7 @@ export function generatePanel(ownerId: string, size: number, rng: Rng): Control[
   const usedLabels = new Set<string>();
   while (controls.length < size) {
     const c = makeControl(ownerId, rng);
-    if (usedLabels.has(c.label)) continue;
+    if (usedLabels.has(c.label)) continue; // eindeutige Labels pro Panel
     usedLabels.add(c.label);
     controls.push(c);
   }

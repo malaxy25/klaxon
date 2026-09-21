@@ -4,6 +4,7 @@
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
+  import GameOver from "./lib/GameOver.svelte";
 
   onMount(() => {
     const r = new URLSearchParams(location.search).get("r");
@@ -18,9 +19,5 @@
 {:else if S.screen === "game"}
   <Game />
 {:else}
-  <div class="over">
-    <h1>Game over</h1>
-    <p class="tagline">You reached sector {S.level}. The ship is space dust.</p>
-    <button class="btn wide primary" onclick={() => (location.href = location.pathname)}>Back to start</button>
-  </div>
+  <GameOver />
 {/if}

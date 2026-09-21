@@ -1,3 +1,5 @@
+// Seedbarer PRNG (mulberry32) — erlaubt deterministische Tests.
+// In Produktion wird einfach Math.random genutzt.
 export type Rng = () => number;
 
 export function mulberry32(seed: number): Rng {
@@ -16,5 +18,6 @@ export function pick<T>(arr: readonly T[], rng: Rng): T {
 }
 
 export function randInt(min: number, max: number, rng: Rng): number {
+  // inklusive min..max
   return min + Math.floor(rng() * (max - min + 1));
 }

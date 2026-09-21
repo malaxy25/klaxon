@@ -1,4 +1,4 @@
-/* Spaceteam - cockpit instrument theme */
+/* Spaceteam - analoges Instrumenten-Cockpit-Theme */
 :root {
   --bg: #0e1c1b;
   --panel: #14302c;
@@ -82,3 +82,8 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
   .command-inner.pulse { animation: pop 0.25s ease; }
 }
 @keyframes pop { from { transform: scale(1.06); } to { transform: scale(1); } }
+
+/* Name field */
+.field { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.field > span { color: var(--muted); font-size: 0.8rem; }
+.input.name { letter-spacing: 0; font-size: 1rem; }

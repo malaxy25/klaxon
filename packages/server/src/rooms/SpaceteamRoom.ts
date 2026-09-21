@@ -21,6 +21,7 @@ class PlayerSchema extends Schema {
   @type("boolean") ready = false;
   @type([ControlSchema]) panel = new ArraySchema<ControlSchema>();
   @type("string") instructionText = "";
+  // nur mit DEBUG_TARGETS=1 befüllt (für automatisierte Tests):
   @type("string") dbgTargetControlId = "";
   @type("string") dbgTargetValue = "";
 }
@@ -55,12 +56,17 @@ export class SpaceteamRoom extends Room {
       const p = this.game.players.get(client.sessionId);
       if (p?.host && this.game.start()) this.syncFull();
     });
+    this.onMessage("playAgain", (client) => {
+      const p = this.game.players.get(client.sessionId);
+      if (p?.host && this.game.backToLobby()) this.syncFull();
+    });
     this.onMessage("setControl", (client, m: { controlId: string; value: string }) => {
       const res = this.game.handleControlChange(client.sessionId, m?.controlId, String(m?.value ?? ""));
       res.events.forEach((e) => this.emitEvent(e));
       this.syncFull();
     });
 
+    // Zeitschritt: Drain/Ablauf
     this.clock.setInterval(() => {
       const events = this.game.tick();
       if (events.length) {
@@ -96,6 +102,7 @@ export class SpaceteamRoom extends Room {
 
   private syncFull() {
     this.syncDynamic();
+    // Spieler entfernen, die nicht mehr existieren
     for (const id of [...this.state.players.keys()]) {
       if (!this.game.players.has(id)) this.state.players.delete(id);
     }
@@ -110,6 +117,7 @@ export class SpaceteamRoom extends Room {
       sp.dbgTargetControlId = this.debug ? (ep.instruction?.targetControlId ?? "") : "";
       sp.dbgTargetValue = this.debug ? (ep.instruction?.targetValue ?? "") : "";
 
+      // Panel nur neu aufbauen, wenn es sich geändert hat (Start/Level-Up)
       const changed = sp.panel.length !== ep.panel.length ||
         (ep.panel[0] && sp.panel[0] && sp.panel[0].id !== ep.panel[0].id);
       if (changed) {
@@ -122,6 +130,7 @@ export class SpaceteamRoom extends Room {
           sp.panel.push(cs);
         }
       } else {
+        // nur Werte aktualisieren
         for (let i = 0; i < ep.panel.length; i++) sp.panel[i].value = ep.panel[i].value;
       }
     }

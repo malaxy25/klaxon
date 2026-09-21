@@ -4,9 +4,10 @@ import { Rng, pick, randInt } from "./rng";
 let counter = 0;
 function nextId(): string {
   counter += 1;
-  return "ins_" + counter;
+  return `ins_${counter}`;
 }
 
+// Kann für dieses Control überhaupt ein Zielwert != aktuell erzeugt werden?
 export function canTarget(c: Control): boolean {
   switch (c.type) {
     case "button": return true;
@@ -16,6 +17,7 @@ export function canTarget(c: Control): boolean {
   }
 }
 
+// Zielwert bestimmen — immer != aktueller Wert (sonst wäre der Befehl schon erfüllt).
 export function pickTargetValue(c: Control, rng: Rng): string {
   switch (c.type) {
     case "button":
@@ -39,28 +41,32 @@ export function pickTargetValue(c: Control, rng: Rng): string {
   }
 }
 
-export function instructionText(c: Control, targetValue: string, rng: Rng): string {
+export function instructionText(c: Control, targetValue: string): string {
   switch (c.type) {
     case "button":
-      return pick(["Press " + c.label, "Engage " + c.label, "Trigger " + c.label], rng);
+      return pick([`Press ${c.label}`, `Engage ${c.label}`, `Trigger ${c.label}`], rng0);
     case "toggle":
       return targetValue === "true"
-        ? pick(["Engage " + c.label, "Activate " + c.label, "Switch on " + c.label], rng)
-        : pick(["Disengage " + c.label, "Deactivate " + c.label, "Switch off " + c.label], rng);
+        ? pick([`Engage ${c.label}`, `Activate ${c.label}`, `Switch on ${c.label}`], rng0)
+        : pick([`Disengage ${c.label}`, `Deactivate ${c.label}`, `Switch off ${c.label}`], rng0);
     case "slider": {
       const cur = Number(c.value);
       const v = Number(targetValue);
-      const opts: string[] = ["Set " + c.label + " to " + v, "Dial " + c.label + " to " + v];
-      if (v === (c.max ?? v)) opts.push("Set " + c.label + " to max", "Max out " + c.label);
-      else if (v === (c.min ?? v)) opts.push("Set " + c.label + " to min", "Zero out " + c.label);
-      else if (v > cur) opts.push("Increase " + c.label + " to " + v);
-      else opts.push("Decrease " + c.label + " to " + v, "Reduce " + c.label + " to " + v);
-      return pick(opts, rng);
+      const opts: string[] = [`Set ${c.label} to ${v}`, `Dial ${c.label} to ${v}`];
+      if (v === (c.max ?? v)) opts.push(`Set ${c.label} to max`, `Max out ${c.label}`);
+      else if (v === (c.min ?? v)) opts.push(`Set ${c.label} to min`, `Zero out ${c.label}`);
+      else if (v > cur) opts.push(`Increase ${c.label} to ${v}`);
+      else opts.push(`Decrease ${c.label} to ${v}`, `Reduce ${c.label} to ${v}`);
+      return pick(opts, rng0);
     }
     case "selector":
-      return pick(["Set " + c.label + " to " + targetValue, "Switch " + c.label + " to " + targetValue], rng);
+      return pick([`Set ${c.label} to ${targetValue}`, `Switch ${c.label} to ${targetValue}`], rng0);
   }
 }
+
+// Textvarianten nutzen etwas Zufall; wird beim Erzeugen mit echtem rng gesetzt.
+let rng0: Rng = Math.random;
+export function setTextRng(rng: Rng): void { rng0 = rng; }
 
 export function makeInstruction(
   sourceId: string,
@@ -68,19 +74,21 @@ export function makeInstruction(
   rng: Rng,
   deadline: number
 ): Instruction {
+  setTextRng(rng);
   const targetValue = pickTargetValue(target, rng);
   return {
     id: nextId(),
     sourceId,
     targetControlId: target.id,
     targetValue,
-    text: instructionText(target, targetValue, rng),
+    text: instructionText(target, targetValue),
     deadline,
   };
 }
 
+// Erfüllt eine Control-Änderung diesen Befehl?
 export function satisfies(ins: Instruction, control: Control, newValue: string): boolean {
   if (ins.targetControlId !== control.id) return false;
-  if (control.type === "button") return true;
+  if (control.type === "button") return true; // jeder Druck erfüllt
   return ins.targetValue === newValue;
 }

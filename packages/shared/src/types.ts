@@ -3,31 +3,31 @@ export type ControlType = "button" | "toggle" | "slider" | "selector";
 export interface Control {
   id: string;
   type: ControlType;
-  label: string;
-  value: string;
-  min?: number;
-  max?: number;
-  options?: string[];
-  ownerId: string;
+  label: string;        // Technobabble, z. B. "Fluxcapacitor"
+  value: string;        // vereinheitlicht als String: "" | "true"/"false" | "0".."max" | Option
+  min?: number;         // slider
+  max?: number;         // slider
+  options?: string[];   // selector
+  ownerId: string;      // Spieler, dem das Control gehört
 }
 
 export interface Instruction {
   id: string;
-  sourceId: string;
-  targetControlId: string;
-  targetValue: string;
-  text: string;
-  deadline: number;
+  sourceId: string;         // Spieler, der den Befehl SIEHT
+  targetControlId: string;  // Control, das verändert werden muss (irgendwo)
+  targetValue: string;      // Zielwert ("" bei button)
+  text: string;             // angezeigter Befehlstext
+  deadline: number;         // ms-Zeitstempel, bis wann
 }
 
 export type Phase = "lobby" | "playing" | "over";
 
 export interface Difficulty {
-  instructionTimeMs: number;
-  healthDrainPerSec: number;
-  deathLimitRisePerSec: number;
-  completedHealthGain: number;
-  expiredHealthLoss: number;
+  instructionTimeMs: number;      // Zeit pro Befehl
+  healthDrainPerSec: number;      // passiver Aderlass
+  deathLimitRisePerSec: number;   // Anstieg der Todesgrenze
+  completedHealthGain: number;    // Heilung pro erfülltem Befehl
+  expiredHealthLoss: number;      // Schaden pro abgelaufenem Befehl
 }
 
 export interface GameEvent {

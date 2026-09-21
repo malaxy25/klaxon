@@ -1,11 +1,17 @@
 <script lang="ts">
-  import { S, createGame, joinGame } from "./store.svelte";
+  import { S, createGame, joinGame, updateName } from "./store.svelte";
   let code = $state("");
 </script>
 
 <div class="home">
-  <h1>Spaceteam</h1>
+  <h1>Klaxon</h1>
   <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name} oninput={(e) => updateName((e.target as HTMLInputElement).value)} />
+  </label>
 
   <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
     {S.connecting ? "Starting..." : "Start a new game"}

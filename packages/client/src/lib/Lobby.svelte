@@ -1,6 +1,6 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, joinUrl } from "./store.svelte";
+  import { S, me, ready, start, joinUrl, updateName, commitName } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -24,6 +24,14 @@
     {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
     <div class="url">{joinUrl()}</div>
   </div>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name}
+           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
+           onchange={commitName} onblur={commitName} />
+  </label>
 
   <ul class="players">
     {#each S.players as p (p.id)}

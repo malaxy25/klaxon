@@ -1,4 +1,4 @@
-import { Control, Phase, Difficulty, GameEvent } from "./types";
+import { Control, Instruction, Phase, Difficulty, GameEvent } from "./types";
 import { Rng, pick } from "./rng";
 import { generatePanel } from "./panel";
 import { makeInstruction, satisfies, canTarget } from "./instructions";
@@ -6,7 +6,6 @@ import {
   difficultyForLevel, panelSizeForLevel,
   STARTING_HEALTH, MAX_HEALTH, MAX_DEATH_LIMIT,
 } from "./difficulty";
-import { Instruction } from "./types";
 
 export interface EnginePlayer {
   id: string;
@@ -21,7 +20,7 @@ export interface EnginePlayer {
 export interface EngineOptions {
   rng?: Rng;
   now?: () => number;
-  singlePlayer?: boolean;
+  singlePlayer?: boolean; // Start mit nur 1 Spieler erlauben (Debug/Test)
 }
 
 export interface ChangeResult {
@@ -49,6 +48,7 @@ export class SpaceteamGame {
     this.lastTick = this.now();
   }
 
+  // ---------- Lobby ----------
   addPlayer(id: string, name: string): void {
     if (this.players.has(id)) return;
     this.players.set(id, {
@@ -62,6 +62,7 @@ export class SpaceteamGame {
     const wasHost = this.players.get(id)?.host ?? false;
     this.players.delete(id);
     if (this.phase === "playing") {
+      // Wie OpenSpaceTeam: Disconnect im Spiel beendet die Runde.
       this.phase = "over";
       return [{ type: "gameOver" }];
     }
@@ -83,6 +84,7 @@ export class SpaceteamGame {
     return n >= 2 && [...this.players.values()].every((p) => p.ready);
   }
 
+  // ---------- Spielstart / Level ----------
   start(): boolean {
     if (this.phase !== "lobby" || !this.canStart()) return false;
     this.phase = "playing";
@@ -93,6 +95,20 @@ export class SpaceteamGame {
     this.assignPanels();
     this.assignInstructions();
     this.lastTick = this.now();
+    return true;
+  }
+
+  // Nach Game Over zurueck in die Lobby (Spieler + Ready-Flags bleiben erhalten).
+  backToLobby(): boolean {
+    if (this.phase !== "over") return false;
+    this.phase = "lobby";
+    this.level = 0;
+    this.health = STARTING_HEALTH;
+    this.deathLimit = 0;
+    for (const p of this.players.values()) {
+      p.panel = [];
+      p.instruction = null;
+    }
     return true;
   }
 
@@ -119,6 +135,7 @@ export class SpaceteamGame {
     return { type: "nextLevel" };
   }
 
+  // ---------- Instruktionsgenerierung ----------
   private takenControlIds(): Set<string> {
     const s = new Set<string>();
     for (const p of this.players.values()) {
@@ -135,25 +152,35 @@ export class SpaceteamGame {
 
   private pickTargetPlayer(source: EnginePlayer): EnginePlayer {
     const others = [...this.players.values()].filter((p) => p.id !== source.id);
+    // 1/6 Eigenanteil (wie OpenSpaceTeam); ohne Mitspieler zwangsläufig selbst.
     if (others.length === 0 || this.rng() < 1 / 6) return source;
     return pick(others, this.rng);
   }
 
   private generateInstructionFor(player: EnginePlayer): void {
-    player.instruction = null;
+    player.instruction = null; // erst freigeben, dann Kollisionen berechnen
     const taken = this.takenControlIds();
     const target = this.pickTargetPlayer(player);
 
     const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id));
     let pool = untakenPreferred;
     if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id));
-    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c));
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c)); // Notnagel
 
     const control = pick(pool, this.rng);
     const deadline = this.now() + this.difficulty.instructionTimeMs;
     player.instruction = makeInstruction(player.id, control, this.rng, deadline);
   }
 
+  private findControl(id: string): Control | undefined {
+    for (const p of this.players.values()) {
+      const c = p.panel.find((x) => x.id === id);
+      if (c) return c;
+    }
+    return undefined;
+  }
+
+  // ---------- Eingabe eines Spielers ----------
   handleControlChange(playerId: string, controlId: string, value: string): ChangeResult {
     const events: GameEvent[] = [];
     if (this.phase !== "playing") return { completed: false, events };
@@ -162,8 +189,10 @@ export class SpaceteamGame {
     const control = player.panel.find((c) => c.id === controlId);
     if (!control) return { completed: false, events };
 
+    // Wert übernehmen (Button hält keinen Wert)
     if (control.type !== "button") control.value = value;
 
+    // Erfüllt die Änderung irgendeinen aktiven Befehl?
     for (const p of this.players.values()) {
       const ins = p.instruction;
       if (ins && satisfies(ins, control, value)) {
@@ -180,6 +209,7 @@ export class SpaceteamGame {
     return { completed: false, events };
   }
 
+  // ---------- Zeitschritt: Aderlass + Ablauf ----------
   tick(nowMs?: number): GameEvent[] {
     const events: GameEvent[] = [];
     if (this.phase !== "playing") return events;
@@ -190,6 +220,7 @@ export class SpaceteamGame {
     this.health -= this.difficulty.healthDrainPerSec * dt;
     this.deathLimit = Math.min(MAX_DEATH_LIMIT, this.deathLimit + this.difficulty.deathLimitRisePerSec * dt);
 
+    // Abgelaufene Befehle
     for (const p of this.players.values()) {
       const ins = p.instruction;
       if (ins && now >= ins.deadline) {

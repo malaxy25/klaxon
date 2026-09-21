@@ -6,8 +6,8 @@ const ADJECTIVES = ["auxiliary", "primary", "reverse", "lateral", "inverted", "c
 const ACTIONS = ["reboot", "purge", "align", "vent", "prime", "sync", "calibrate", "reroute"];
 
 export function makeControlLabel(rng: Rng): string {
-  if (rng() < 0.34) return pick(ADJECTIVES, rng) + " " + pick(NOUNS, rng);
-  return pick(PREFIXES, rng) + pick(NOUNS, rng);
+  if (rng() < 0.34) return `${pick(ADJECTIVES, rng)} ${pick(NOUNS, rng)}`;
+  return `${pick(PREFIXES, rng)}${pick(NOUNS, rng)}`;
 }
 
 export function makeSelectorOptions(rng: Rng, n: number): string[] {
@@ -15,6 +15,7 @@ export function makeSelectorOptions(rng: Rng, n: number): string[] {
   return shuffled.slice(0, n);
 }
 
+// nur für den freistehenden Demo-Export
 export function randomTechnobabble(rng: Rng = Math.random): string {
   return makeControlLabel(rng);
 }
