@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinGame, openHelp } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -11,7 +11,7 @@
   onMount(() => {
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
-      joinGame(r);
+      joinByCode(r);
     } else {
       try {
         if (!localStorage.getItem("klaxon_seen_help")) {

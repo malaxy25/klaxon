@@ -1,11 +1,11 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.5.0";
+export const VERSION = "0.7.0";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
-  min: number; max: number; options: string[]; w: number; h: number;
+  min: number; max: number; options: string[]; w: number; h: number; broken: boolean;
 };
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
@@ -25,6 +25,7 @@ export const S = $state({
   connecting: false,
   error: "",
   roomId: "",
+  code: "",
   sessionId: "",
   name: lsGet("klaxon_name", "Player"),
   muted: lsGet("klaxon_muted", "0") === "1",
@@ -46,6 +47,13 @@ const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? "ws://localhos
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Cold-Start-sicher: der erste Versuch kann ins Timeout laufen, waehrend der
 // Render-Free-Server aufwacht -> ein paar Sekunden warten und erneut versuchen.
+function genCode(): string {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 4; i++) c += abc[Math.floor(Math.random() * abc.length)];
+  return c;
+}
+
 async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   const deadline = Date.now() + 70000;
   for (;;) {
@@ -84,11 +92,27 @@ function beep(freq: number, durMs: number, type: OscillatorType = "square", gain
   osc.start(t);
   osc.stop(t + durMs / 1000);
 }
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver") {
+function noiseBurst(durMs: number, gain = 0.08) {
+  if (S.muted || !audioCtx) return;
+  const sr = audioCtx.sampleRate, len = Math.floor((sr * durMs) / 1000);
+  const buf = audioCtx.createBuffer(1, len, sr); const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const g = audioCtx.createGain(); g.gain.setValueAtTime(gain, audioCtx.currentTime);
+  src.connect(g).connect(audioCtx.destination); src.start();
+}
+
+let alarmTimer: ReturnType<typeof setInterval> | undefined;
+function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 150, "square", 0.045), 170); }
+function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
+function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
+
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
-  else if (kind === "gameOver") { beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
+  else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "gameOver") { stopAlarm(); noiseBurst(500, 0.1); beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
 }
 
 export function openHelp() { S.showHelp = true; }
@@ -106,7 +130,7 @@ export function me(): PlayerView | undefined {
 }
 
 export function joinUrl(): string {
-  return location.origin + location.pathname + "?r=" + S.roomId;
+  return location.origin + location.pathname + "?r=" + S.code;
 }
 
 function pulse(kind: "good" | "bad") {
@@ -138,6 +162,7 @@ function snapshot() {
   S.health = st.health;
   S.deathLimit = st.deathLimit;
   S.startLevel = st.startLevel ?? 3;
+  S.code = st.code ?? "";
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -145,7 +170,7 @@ function snapshot() {
     p.panel.forEach((c: any) =>
       panel.push({
         id: c.id, kind: c.kind, label: c.label, value: c.value,
-        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1,
+        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, broken: c.broken ?? false,
       })
     );
     players.push({
@@ -170,6 +195,7 @@ function snapshot() {
   if (st.phase === "playing" && prevPhase !== "playing") {
     S.feedbackSent = false;
   }
+  if (st.phase === "playing" && (st.health - st.deathLimit) < 15) startAlarm(); else stopAlarm();
 }
 
 async function bind(r: any) {
@@ -181,6 +207,7 @@ async function bind(r: any) {
   r.onMessage("evt", (e: any) => {
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
+    else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
   });
   r.onLeave(() => {
     S.error = "Connection lost.";
@@ -205,7 +232,8 @@ export async function createGame() {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    await bind(await connectWithRetry(() => client!.create("spaceteam")));
+    const newCode = genCode();
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -228,9 +256,27 @@ export async function joinGame(id: string) {
 
 export function setDifficulty(level: number) { room?.send("setDifficulty", level); }
 export function sendFeedback(text: string) { room?.send("feedback", text); }
+export async function joinByCode(code: string) {
+  ensureAudio();
+  const cc = code.trim().toUpperCase();
+  S.connecting = true; S.error = "";
+  try {
+    client ??= new Client(SERVER_URL);
+    try {
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc })));
+    } catch {
+      S.error = "No game found for code " + cc + ".";
+    }
+  } catch (e: any) {
+    S.error = "Join failed: " + (e?.message ?? "");
+  } finally {
+    S.connecting = false;
+  }
+}
 export function ready(v: boolean) { room?.send("ready", v); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
+export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
 }

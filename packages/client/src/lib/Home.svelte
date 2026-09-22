@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { S, createGame, joinGame, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
   let code = $state("");
 </script>
 
@@ -19,8 +19,8 @@
 
   <div class="or">or join with a code</div>
   <div class="join-row">
-    <input class="input" placeholder="Room code" bind:value={code} />
-    <button class="btn" disabled={!code || S.connecting} onclick={() => joinGame(code.trim())}>Join</button>
+    <input class="input" placeholder="Room code" maxlength="6" bind:value={code} style="text-transform:uppercase" />
+    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
   </div>
 
   {#if S.error}<p class="error">{S.error}</p>{/if}

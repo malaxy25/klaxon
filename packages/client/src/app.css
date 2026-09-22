@@ -103,3 +103,16 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
 .diff-label b { color: var(--ink); }
 .diff-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .btn.diff { padding: 0.5em 0.8em; font-size: 0.85rem; }
+
+/* Subtle starfield background (cockpit flavor) */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1px 1px at 18% 28%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 72% 62%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 42% 82%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 60% 12%, rgba(255,255,255,0.28), transparent),
+    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
+  background-attachment: fixed;
+}

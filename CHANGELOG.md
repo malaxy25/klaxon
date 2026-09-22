@@ -3,6 +3,37 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.7.0] - 2026-09-22
+### Added
+- **Breaking panels (G1):** under time pressure a random control jams (rate rises with
+  sector, never the current target, max = player count). A jammed control can't be used
+  and isn't targeted until repaired by **holding it ~1.5 s** (progress bar + alarm).
+- **4-character room code (P2):** friendly codes like `JZDQ` via Colyseus matchmaking
+  (`filterBy(["code"])`); QR and code both join. Rooms lock once the game starts.
+- **Richer audio (A1):** noise-burst explosion on game over, a distinct "break" alarm,
+  and a looping **klaxon alarm** while health is near the death line.
+### Changed
+- **Cockpit polish (A2):** LED-style inset value readouts, a scanline on the command
+  readout (first step; more in the backlog).
+
+## [0.6.1] - 2026-09-22
+### Changed
+- Fewer tiles per panel (now 5-6, was up to 10). Like the original, each panel keeps a
+  small number of large, readable controls; difficulty comes from the presets
+  (timing/drain), not from cramming more tiles. With the one-screen layout the few tiles
+  now fill the screen and stay large.
+
+## [0.6.0] - 2026-09-22
+### Changed
+- Game screen now fits a single viewport (no scrolling) on small phones like the
+  iPhone 13 mini: the panel fills the remaining height and tiles auto-size to fit.
+- Cockpit visual pass: metal instrument tiles with corner rivets, glowing readouts,
+  a ">"-prompted command with amber glow, a subtle starfield background, stronger
+  damage flash.
+### Added
+- Feedback webhook also supports plain-text targets (e.g. ntfy.sh) alongside
+  Discord/Slack JSON, so feedback can be pushed to a persistent inbox.
+
 ## [0.5.0] - 2026-09-21
 ### Added
 - Difficulty presets in the lobby (Casual / Normal / Hard / Insane), chosen by the host

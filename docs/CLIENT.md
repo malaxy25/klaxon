@@ -1,37 +1,30 @@
 # Klaxon — Client
 
-Der Svelte-Client. Vollstaendige Dateien mit Pfad - so sehen sie am Ende aus.
+Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
+(`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-> Verifiziert in einer Node-22-Sandbox: `vite build` kompiliert sauber (205 Module).
-> Kernpfade (setName/playAgain/setDifficulty/feedback, Stats-Sync, w/h-Footprints)
-> ueber den echten Colyseus-Server getestet. Auf Windows-PowerShell BOM-frei
-> (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
+> Verifiziert: `vite build` kompiliert sauber. Kernpfade (Code-Join, kaputte Panels +
+> Reparatur, setDifficulty, Feedback, Stats) ueber den echten Server getestet.
+> Cockpit-Optik am besten auf dem Geraet pruefen.
 
-## Was der Client kann
+## Highlights
 
-- **Home:** Name, Spiel erstellen/beitreten, How-to-play, Footer (Version + GitHub).
-- **How-to-play-Overlay** und **Cold-Start-Overlay** (Fortschritt + Retry).
-- **Lobby:** Raumcode + QR, Namensfeld, **Schwierigkeits-Presets** (Host), Ready, Start.
-- **Spielbildschirm:** Command + Countdown, Health-vs-Todesgrenze-Leiste, responsives
-  dichtes Panel, Typ-Farben, Mute, Shake, Banner.
-- **Game Over:** **Stats-Seite** (Team-Gesamtzahl, MVP, "Loose cannon", Crew-Tabelle)
-  plus **Feedback-Feld** (ohne Account/Mail), dann Host Play again / Leave.
+- 4-Zeichen-**Raumcode** (Join per Code + QR), Raum-Lock nach Start.
+- **Kaputte Panels**: Control blockiert, per Halten (~1,5 s) reparieren.
+- Reicherer **Sound** inkl. Klaxon-Alarm bei niedriger Health; Cockpit-Kacheln,
+  LED-Readouts, One-Screen-Fit, wenige/grosse Kacheln.
+- Lobby: Schwierigkeits-Presets. Game Over: Stats + Feedback. How-to-play, Cold-Start-Overlay.
 
 ## Dateibaum
 
 ```
 packages/client/src/
-├── app.css
-├── App.svelte
+├── app.css               # Theme + Starfield + diverse Bloecke
+├── App.svelte            # Router + QR-Join (Code) + Overlays
 └── lib/
-    ├── store.svelte.ts   # Zustand, Verbindung, Sound, Name, playAgain, setDifficulty, sendFeedback, Stats
-    ├── Help.svelte
-    ├── Connecting.svelte
-    ├── Control.svelte
-    ├── Home.svelte
-    ├── Lobby.svelte       # + Schwierigkeits-Presets
-    ├── Game.svelte
-    └── GameOver.svelte    # + Stats + Feedback
+    ├── store.svelte.ts   # Zustand, Verbindung, Code-Join, Sound/Alarm, Repair, Stats, VERSION
+    ├── Help.svelte  Connecting.svelte  Control.svelte (broken/repair)
+    ├── Home.svelte  Lobby.svelte  Game.svelte  GameOver.svelte
 ```
 
 ---
@@ -146,6 +139,19 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
 .diff-label b { color: var(--ink); }
 .diff-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .btn.diff { padding: 0.5em 0.8em; font-size: 0.85rem; }
+
+/* Subtle starfield background (cockpit flavor) */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1px 1px at 18% 28%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 72% 62%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 42% 82%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 60% 12%, rgba(255,255,255,0.28), transparent),
+    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
+  background-attachment: fixed;
+}
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -153,12 +159,12 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.5.0";
+export const VERSION = "0.7.0";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
-  min: number; max: number; options: string[]; w: number; h: number;
+  min: number; max: number; options: string[]; w: number; h: number; broken: boolean;
 };
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
@@ -178,6 +184,7 @@ export const S = $state({
   connecting: false,
   error: "",
   roomId: "",
+  code: "",
   sessionId: "",
   name: lsGet("klaxon_name", "Player"),
   muted: lsGet("klaxon_muted", "0") === "1",
@@ -199,6 +206,13 @@ const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? "ws://localhos
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Cold-Start-sicher: der erste Versuch kann ins Timeout laufen, waehrend der
 // Render-Free-Server aufwacht -> ein paar Sekunden warten und erneut versuchen.
+function genCode(): string {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 4; i++) c += abc[Math.floor(Math.random() * abc.length)];
+  return c;
+}
+
 async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   const deadline = Date.now() + 70000;
   for (;;) {
@@ -237,11 +251,27 @@ function beep(freq: number, durMs: number, type: OscillatorType = "square", gain
   osc.start(t);
   osc.stop(t + durMs / 1000);
 }
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver") {
+function noiseBurst(durMs: number, gain = 0.08) {
+  if (S.muted || !audioCtx) return;
+  const sr = audioCtx.sampleRate, len = Math.floor((sr * durMs) / 1000);
+  const buf = audioCtx.createBuffer(1, len, sr); const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const g = audioCtx.createGain(); g.gain.setValueAtTime(gain, audioCtx.currentTime);
+  src.connect(g).connect(audioCtx.destination); src.start();
+}
+
+let alarmTimer: ReturnType<typeof setInterval> | undefined;
+function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 150, "square", 0.045), 170); }
+function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
+function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
+
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
-  else if (kind === "gameOver") { beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
+  else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "gameOver") { stopAlarm(); noiseBurst(500, 0.1); beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
 }
 
 export function openHelp() { S.showHelp = true; }
@@ -259,7 +289,7 @@ export function me(): PlayerView | undefined {
 }
 
 export function joinUrl(): string {
-  return location.origin + location.pathname + "?r=" + S.roomId;
+  return location.origin + location.pathname + "?r=" + S.code;
 }
 
 function pulse(kind: "good" | "bad") {
@@ -291,6 +321,7 @@ function snapshot() {
   S.health = st.health;
   S.deathLimit = st.deathLimit;
   S.startLevel = st.startLevel ?? 3;
+  S.code = st.code ?? "";
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -298,7 +329,7 @@ function snapshot() {
     p.panel.forEach((c: any) =>
       panel.push({
         id: c.id, kind: c.kind, label: c.label, value: c.value,
-        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1,
+        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, broken: c.broken ?? false,
       })
     );
     players.push({
@@ -323,6 +354,7 @@ function snapshot() {
   if (st.phase === "playing" && prevPhase !== "playing") {
     S.feedbackSent = false;
   }
+  if (st.phase === "playing" && (st.health - st.deathLimit) < 15) startAlarm(); else stopAlarm();
 }
 
 async function bind(r: any) {
@@ -334,6 +366,7 @@ async function bind(r: any) {
   r.onMessage("evt", (e: any) => {
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
+    else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
   });
   r.onLeave(() => {
     S.error = "Connection lost.";
@@ -358,7 +391,8 @@ export async function createGame() {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    await bind(await connectWithRetry(() => client!.create("spaceteam")));
+    const newCode = genCode();
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -381,9 +415,27 @@ export async function joinGame(id: string) {
 
 export function setDifficulty(level: number) { room?.send("setDifficulty", level); }
 export function sendFeedback(text: string) { room?.send("feedback", text); }
+export async function joinByCode(code: string) {
+  ensureAudio();
+  const cc = code.trim().toUpperCase();
+  S.connecting = true; S.error = "";
+  try {
+    client ??= new Client(SERVER_URL);
+    try {
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc })));
+    } catch {
+      S.error = "No game found for code " + cc + ".";
+    }
+  } catch (e: any) {
+    S.error = "Join failed: " + (e?.message ?? "");
+  } finally {
+    S.connecting = false;
+  }
+}
 export function ready(v: boolean) { room?.send("ready", v); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
+export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
 }
@@ -524,27 +576,43 @@ export function setControl(controlId: string, value: string) {
 
 ```svelte
 <script lang="ts">
-  import { setControl, type ControlView } from "./store.svelte";
+  import { setControl, repairControl, type ControlView } from "./store.svelte";
   let { control }: { control: ControlView } = $props();
 
   const press = () => setControl(control.id, "");
   const flip = () => setControl(control.id, control.value === "true" ? "false" : "true");
   const onSlide = (e: Event) => setControl(control.id, (e.target as HTMLInputElement).value);
   const choose = (opt: string) => setControl(control.id, opt);
+
+  let prog = $state(0);
+  let holding = false;
+  let raf = 0;
+  const REPAIR_MS = 1500;
+  function startHold(e: PointerEvent) {
+    if (!control.broken) return;
+    e.preventDefault();
+    holding = true;
+    const t0 = performance.now();
+    const step = () => {
+      if (!holding) return;
+      prog = Math.min(1, (performance.now() - t0) / REPAIR_MS);
+      if (prog >= 1) { holding = false; prog = 0; repairControl(control.id); return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  function endHold() { holding = false; prog = 0; cancelAnimationFrame(raf); }
 </script>
 
-<div class="control kind-{control.kind}"
+<div class="control kind-{control.kind}" class:broken={control.broken}
      style="grid-column: span {control.w}; grid-row: span {control.h};">
   <div class="face">
     {#if control.kind === "button"}
       <button class="hw press" onclick={press}>PRESS</button>
     {:else if control.kind === "toggle"}
-      <button class="hw toggle" class:on={control.value === "true"} onclick={flip}>
-        {control.value === "true" ? "ON" : "OFF"}
-      </button>
+      <button class="hw toggle" class:on={control.value === "true"} onclick={flip}>{control.value === "true" ? "ON" : "OFF"}</button>
     {:else if control.kind === "slider"}
-      <input class="range" type="range" min={control.min} max={control.max} step="1"
-             value={control.value} oninput={onSlide} />
+      <input class="range" type="range" min={control.min} max={control.max} step="1" value={control.value} oninput={onSlide} />
       <div class="readout">{control.value}</div>
     {:else if control.kind === "selector"}
       <div class="opts">
@@ -555,38 +623,71 @@ export function setControl(controlId: string, value: string) {
     {/if}
   </div>
   <div class="name">{control.label}</div>
+
+  {#if control.broken}
+    <div class="broken-overlay" onpointerdown={startHold} onpointerup={endHold} onpointerleave={endHold} onpointercancel={endHold}>
+      <div class="fix">HOLD<br />TO FIX</div>
+      <div class="fixbar"><div class="fixfill" style="width:{prog * 100}%"></div></div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .control {
-    background: var(--panel); border: 1px solid var(--line);
-    border-top-width: 3px;
-    border-radius: var(--radius); padding: 8px;
-    display: flex; flex-direction: column; justify-content: center; gap: 6px;
-    height: 100%; min-height: 0; overflow: hidden;
+    position: relative; height: 100%; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: center; gap: 5px;
+    padding: 7px 8px 6px; border-radius: 8px;
+    background: linear-gradient(180deg, #1a3d38 0%, #12302c 100%);
+    border: 1px solid var(--line); border-top-width: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -6px 12px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .control::after {
+    content: ""; position: absolute; inset: 4px; pointer-events: none; border-radius: 6px;
+    background:
+      radial-gradient(circle at 2px 2px, rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
+      radial-gradient(circle at calc(100% - 2px) 2px, rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
+      radial-gradient(circle at 2px calc(100% - 2px), rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
+      radial-gradient(circle at calc(100% - 2px) calc(100% - 2px), rgba(255,255,255,0.22) 0.5px, transparent 1.6px);
   }
   .kind-button   { border-top-color: var(--danger); }
   .kind-toggle   { border-top-color: var(--ok); }
   .kind-slider   { border-top-color: var(--amber); }
   .kind-selector { border-top-color: #7cc4e8; }
+  .control.broken { filter: grayscale(0.5) brightness(0.72); }
 
-  .face { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 0; }
+  .face { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-height: 0; }
   .name {
-    font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.15;
+    font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.1; letter-spacing: 0.3px;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .hw {
     appearance: none; cursor: pointer; width: 100%;
-    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
-    border-radius: 8px; padding: 0.55em; font-weight: 700; font-size: 0.9rem;
+    border: 1px solid var(--line); background: linear-gradient(180deg,#25514a,#1a3d38); color: var(--ink);
+    border-radius: 7px; padding: 0.5em; font-weight: 700; font-size: 0.9rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.4);
   }
   .hw:active { transform: translateY(1px); }
-  .hw.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
-  .press { background: #3a1414; border-color: #6b2020; color: #ffd9d2; }
+  .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
+  .press { background: linear-gradient(180deg,#5a1c1c,#3a1414); border-color: #6b2020; color: #ffd9d2; }
+  .press:active { box-shadow: 0 0 12px rgba(229,72,77,0.6); }
   .range { width: 100%; accent-color: var(--amber); }
-  .readout { font-family: ui-monospace, Menlo, monospace; text-align: center; color: var(--amber); font-size: 1.05rem; }
-  .opts { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+  .readout {
+    align-self: center; font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.05rem;
+    background: #0a1615; border: 1px solid var(--line); border-radius: 4px; padding: 1px 10px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6); text-shadow: 0 0 6px rgba(245,166,35,0.6);
+  }
+  .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
   .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem; }
+
+  .broken-overlay {
+    position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+    border: 2px solid var(--danger); border-radius: 8px;
+    background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px);
+  }
+  .broken-overlay .fix { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #ffd9d2; font-size: 0.8rem; text-align: center; line-height: 1.05; text-shadow: 0 0 6px rgba(229,72,77,0.9); }
+  .fixbar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
+  .fixfill { height: 100%; background: var(--ok); }
 </style>
 ```
 
@@ -594,7 +695,7 @@ export function setControl(controlId: string, value: string) {
 
 ```svelte
 <script lang="ts">
-  import { S, createGame, joinGame, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
   let code = $state("");
 </script>
 
@@ -614,8 +715,8 @@ export function setControl(controlId: string, value: string) {
 
   <div class="or">or join with a code</div>
   <div class="join-row">
-    <input class="input" placeholder="Room code" bind:value={code} />
-    <button class="btn" disabled={!code || S.connecting} onclick={() => joinGame(code.trim())}>Join</button>
+    <input class="input" placeholder="Room code" maxlength="6" bind:value={code} style="text-transform:uppercase" />
+    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
   </div>
 
   {#if S.error}<p class="error">{S.error}</p>{/if}
@@ -660,7 +761,7 @@ export function setControl(controlId: string, value: string) {
   <button class="helplink" onclick={openHelp}>How to play</button>
 
   <div class="join-card">
-    <div class="code">{S.roomId}</div>
+    <div class="code">{S.code}</div>
     {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
     <div class="url">{joinUrl()}</div>
   </div>
@@ -722,21 +823,17 @@ export function setControl(controlId: string, value: string) {
 
 <div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
   <header class="hud">
-    <span class="sector">Sector {S.level}</span>
+    <span class="sector">SECTOR {S.level}</span>
     <div class="bar" class:danger>
       <div class="floor" style="width:{floorPct}%"></div>
       <div class="health" style="width:{healthPct}%"></div>
     </div>
-    <button class="mute" onclick={toggleMute} aria-label="Toggle sound">
-      {S.muted ? "unmute" : "mute"}
-    </button>
+    <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
   </header>
 
   <section class="command">
     {#key mine?.instructionText}
-      <div class="command-inner" class:pulse={S.flash === "good"}>
-        {mine?.instructionText ?? "Stand by..."}
-      </div>
+      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText ?? "Stand by..."}</div>
       <div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>
     {/key}
   </section>
@@ -747,45 +844,55 @@ export function setControl(controlId: string, value: string) {
     {/each}
   </section>
 
-  {#if S.banner}
-    <div class="banner"><span>{S.banner}</span></div>
-  {/if}
+  {#if S.banner}<div class="banner"><span>{S.banner}</span></div>{/if}
 </div>
 
 <style>
-  .game { max-width: 720px; margin: 0 auto; padding: 12px 12px 40px; }
-  .game.flash-good { box-shadow: inset 0 0 0 3px var(--ok); }
-  .game.flash-bad { box-shadow: inset 0 0 0 3px var(--danger); }
+  .game {
+    height: 100vh; height: 100dvh;
+    max-width: 720px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 8px 10px 10px; overflow: hidden;
+  }
+  .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
+  .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
 
-  .hud { display: flex; align-items: center; gap: 12px; padding: 6px 2px 12px; }
-  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
-  .bar { position: relative; flex: 1; height: 18px; border-radius: 9px; background: #0c1a19; border: 1px solid var(--line); overflow: hidden; }
-  .floor { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(45deg,#3a1414,#3a1414 6px,#511a1a 6px,#511a1a 12px); }
-  .health { position: absolute; inset: 0 auto 0 0; background: var(--ok); transition: width 0.25s ease; }
-  .bar.danger .health { background: var(--danger); }
-  .mute { appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.35em 0.6em; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+  .hud { flex: none; display: flex; align-items: center; gap: 10px; }
+  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
+  .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
+  .floor { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(45deg,#3a1414,#3a1414 5px,#511a1a 5px,#511a1a 10px); }
+  .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
+  .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }
+  .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }
 
-  .command { margin: 8px 0 16px; padding: 18px 16px 14px; text-align: center; background: var(--panel); border: 1px solid var(--amber); border-radius: var(--radius); }
-  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.5rem; line-height: 1.25; color: var(--amber); font-weight: 700; }
-  .timer { height: 4px; margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); }
+  .command {
+    flex: none; text-align: center; padding: 12px 14px 10px;
+    background: linear-gradient(180deg,#123230,#0e2420);
+    border: 1px solid var(--amber); border-radius: 10px;
+    box-shadow: inset 0 0 22px rgba(245,166,35,0.12), 0 2px 6px rgba(0,0,0,0.4);
+    position: relative; overflow: hidden;
+  }
+  .command::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px); }
+  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.35rem; line-height: 1.2; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
+  .command-inner::before { content: "\25B6\00a0"; opacity: 0.85; }
+  .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
 
-  .panel { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: 96px; grid-auto-flow: row dense; gap: 8px; }
-  @media (min-width: 420px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-  @media (min-width: 620px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
-  @media (min-width: 920px) { .panel { grid-template-columns: repeat(6, minmax(0,1fr)); } }
+  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px; }
+  @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
 
   .banner { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
-  .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.88); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; }
+  .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.9); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(245,166,35,0.5); }
 
   @media (prefers-reduced-motion: no-preference) {
     .game.shake { animation: shake 0.4s ease; }
     .banner span { animation: bannerpop 0.3s ease; }
     .timer-fill { animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
   }
-  @keyframes shake { 10%,90% { transform: translateX(-2px); } 20%,80% { transform: translateX(4px); } 30%,50%,70% { transform: translateX(-8px); } 40%,60% { transform: translateX(8px); } }
-  @keyframes bannerpop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+  @keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-9px)} 40%,60%{transform:translateX(9px)} }
+  @keyframes bannerpop { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes drain { from{transform:scaleX(1)} to{transform:scaleX(0)} }
 </style>
 ```
 
@@ -877,7 +984,7 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinGame, openHelp } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -888,7 +995,7 @@ export function setControl(controlId: string, value: string) {
   onMount(() => {
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
-      joinGame(r);
+      joinByCode(r);
     } else {
       try {
         if (!localStorage.getItem("klaxon_seen_help")) {

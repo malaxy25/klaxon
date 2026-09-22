@@ -133,32 +133,47 @@ lokal.
 - **Mixed-Content-Fehler im Handy-Browser:** Client ist `https`, Server muss `wss`
   sein (nicht `ws`). Render liefert `wss` automatisch auf der `https`-Domain.
 
-## Feedback einsammeln (optional)
+## Feedback einsammeln
 
 Am Game-Over-Screen gibt es ein Feedback-Feld. Tester tippen Text ein und schicken ihn
-ab - ohne Account, ohne deine Mail. Der Server verarbeitet es so:
+ab - **ohne Account, ohne deine Mail**. Der Server verarbeitet es je nach Setup so:
 
-- **Standard (kein Setup):** Feedback erscheint in den **Render-Logs** des Servers
-  (Dashboard -> Web Service -> Logs), Zeilen `FEEDBACK [Klaxon] ...` inkl. Name, Sektor
-  und Schwierigkeit.
-- **Optional:** setz auf dem Server die Env-Variable `FEEDBACK_WEBHOOK` = eine
-  Webhook-URL. Der Server POSTet dann JSON mit `content` UND `text` (deckt die meisten
-  Dienste ab).
+**0) Standard ohne Setup - Render-Logs (nicht persistent).**
+Feedback erscheint in den Logs von `klaxon-backend` (Render-Dashboard -> Service
+`klaxon-backend` -> Tab **Logs**, im Suchfeld `FEEDBACK` filtern). Achtung: Render-Free
+haelt Logs nur kurz vor - fuer "live zuschauen" ok, nicht zum Nachschlagen.
 
-**Kein Discord? Dienste, die einen eingehenden Webhook annehmen und dir die
-Nachrichten als Log/Kanal zeigen:**
+Fuer etwas Dauerhaftes setz auf dem **Server** (`klaxon-backend` -> Environment) die
+Variable **`FEEDBACK_WEBHOOK`** auf eine der folgenden URLs (danach deployt Render neu):
 
-- **Pipedream** (pipedream.com) - Gratis-Account, sofort eine HTTPS-URL, eingebauter
-  Request-Inspector, der jedes Feedback mit vollem Inhalt protokolliert; kann spaeter
-  an E-Mail/Sheet weiterleiten. Bester "zeig mir die Logs"-Fit.
-- **webhook.site** - ganz ohne Account, sofort eine URL, Live-Log aller Requests. Ideal
-  fuer eine kurze Testphase (die Gratis-URL/Requests laufen nach einer Weile ab).
-- **Slack** oder **Google Chat** (Incoming Webhook) - falls du eins nutzt: Feedback
-  landet in einem Kanal. Beide lesen das `text`-Feld (senden wir mit).
-- **ntfy.sh** - ohne Account, Push aufs Handy + Web-Log je Topic (zeigt den rohen JSON).
-- **Microsoft Teams** - nur noch ueber Power Automate Workflows (die alten Incoming
-  Webhooks hat MS im Mai 2026 abgeschaltet); Vorlage "Post to a channel when a webhook
-  request is received", etwas mehr Klickarbeit + Adaptive-Card-Payload.
+**1) ntfy.sh - schnellste Push-Loesung, kein Account.**
+- Denk dir eine schwer zu erratende Topic-URL aus, z. B.
+  `https://ntfy.sh/klaxon-feedback-x7k2`.
+- `FEEDBACK_WEBHOOK` = diese URL.
+- Installier die **ntfy**-App (iOS/Android) oder oeffne die URL im Browser und
+  abonniere das Topic. Feedback kommt als Push. (Aufbewahrung ~1 Tag.)
 
-Empfehlung: schnelle Testrunde -> **webhook.site**; dauerhaft -> **Pipedream**.
-Nach dem Setzen/Aendern von `FEEDBACK_WEBHOOK` deployt Render den Server neu.
+**2) Google Sheet via Apps Script - dauerhaft, du besitzt es.**
+Feedback landet fuer immer in einer Tabelle; Tester brauchen keinen Account, deine
+Mail bleibt verborgen.
+1. Neues **Google Sheet** anlegen.
+2. **Erweiterungen -> Apps Script**, den Code einfuegen und speichern:
+   ```javascript
+   function doPost(e) {
+     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+     var body = e.postData ? e.postData.contents : "";
+     var msg = body;
+     try { var j = JSON.parse(body); msg = j.text || j.content || body; } catch (err) {}
+     sheet.appendRow([new Date(), msg]);
+     return ContentService.createTextOutput("ok");
+   }
+   ```
+3. **Bereitstellen -> Neue Bereitstellung -> Typ: Web-App**. Ausfuehren als: *ich*;
+   Zugriff: **Jeder**. Bereitstellen und autorisieren.
+4. Die **Web-App-URL** kopieren (endet auf `/exec`) und als `FEEDBACK_WEBHOOK` setzen.
+
+Jedes Feedback haengt dann eine Zeile (Zeitstempel + Text) an die Tabelle an.
+
+> Die Webhook-URL ist ein Secret in den Render-Env-Variablen - sie steht nicht im Repo
+> und wird niemandem angezeigt. Der Server sendet an `ntfy.sh` reinen Text, an alle
+> anderen Ziele JSON (`content`/`text`) - passt fuer Discord, Slack und Apps Script.

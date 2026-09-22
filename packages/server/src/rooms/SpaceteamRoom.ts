@@ -2,6 +2,13 @@ import { Room, Client } from "colyseus";
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { SpaceteamGame, GameEvent } from "@spaceteam/shared";
 
+function genCode(): string {
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 4; i++) s += abc[Math.floor(Math.random() * abc.length)];
+  return s;
+}
+
 class ControlSchema extends Schema {
   @type("string") id = "";
   @type("string") kind = "";
@@ -12,6 +19,7 @@ class ControlSchema extends Schema {
   @type(["string"]) options = new ArraySchema<string>();
   @type("number") w = 1;
   @type("number") h = 1;
+  @type("boolean") broken = false;
   @type("string") ownerId = "";
 }
 
@@ -36,6 +44,7 @@ class GameState extends Schema {
   @type("number") health = 50;
   @type("number") deathLimit = 0;
   @type("number") startLevel = 3;
+  @type("string") code = "";
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -45,8 +54,11 @@ export class SpaceteamRoom extends Room {
   private game!: SpaceteamGame;
   private debug = process.env.DEBUG_TARGETS === "1";
 
-  onCreate() {
+  onCreate(options: any) {
     this.game = new SpaceteamGame({ singlePlayer: process.env.SINGLE_PLAYER === "1" });
+    const code = String(options?.code || genCode()).toUpperCase().slice(0, 6);
+    this.setMetadata({ code });
+    this.state.code = code;
 
     this.onMessage("setName", (client, name: string) => {
       const p = this.game.players.get(client.sessionId);
@@ -59,11 +71,15 @@ export class SpaceteamRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) this.syncFull();
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.backToLobby()) this.syncFull();
+      if (p?.host && this.game.backToLobby()) { this.unlock(); this.syncFull(); }
+    });
+    this.onMessage("repairControl", (client, controlId: string) => {
+      const events = this.game.repair(client.sessionId, String(controlId));
+      if (events.length) { events.forEach((e) => this.emitEvent(e)); this.syncFull(); }
     });
     this.onMessage("setDifficulty", (client, level: number) => {
       const p = this.game.players.get(client.sessionId);
@@ -77,8 +93,12 @@ export class SpaceteamRoom extends Room {
       console.log("FEEDBACK", line);
       const hook = process.env.FEEDBACK_WEBHOOK;
       if (hook) {
-        fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line }) })
-          .catch((e) => console.error("feedback webhook failed:", e));
+        // ntfy.sh will reinen Text; Discord/Slack/Apps-Script koennen JSON.
+        const isText = /ntfy\.sh/i.test(hook);
+        const init = isText
+          ? { method: "POST", headers: { "Content-Type": "text/plain" }, body: line }
+          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line }) };
+        fetch(hook, init).catch((e) => console.error("feedback webhook failed:", e));
       }
       client.send("feedbackAck", true);
     });
@@ -151,13 +171,13 @@ export class SpaceteamRoom extends Room {
           const cs = new ControlSchema();
           cs.id = c.id; cs.kind = c.type; cs.label = c.label; cs.value = c.value;
           cs.min = c.min ?? 0; cs.max = c.max ?? 0; cs.ownerId = c.ownerId;
-          cs.w = c.w ?? 1; cs.h = c.h ?? 1;
+          cs.w = c.w ?? 1; cs.h = c.h ?? 1; cs.broken = c.broken ?? false;
           cs.options = new ArraySchema<string>(...(c.options ?? []));
           sp.panel.push(cs);
         }
       } else {
         // nur Werte aktualisieren
-        for (let i = 0; i < ep.panel.length; i++) sp.panel[i].value = ep.panel[i].value;
+        for (let i = 0; i < ep.panel.length; i++) { sp.panel[i].value = ep.panel[i].value; sp.panel[i].broken = ep.panel[i].broken ?? false; }
       }
     }
   }

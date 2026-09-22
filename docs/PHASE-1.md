@@ -161,7 +161,7 @@ export function difficultyForLevel(level: number): Difficulty {
 
 // Panelgröße wächst mit dem Level (analog zu volleren Grids).
 export function panelSizeForLevel(level: number): number {
-  return Math.min(10, 5 + level);
+  return Math.min(6, 4 + Math.ceil(level / 4));
 }
 ```
 

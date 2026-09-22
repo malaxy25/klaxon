@@ -166,7 +166,7 @@ Konfigurationsgetrieben in `shared/difficulty.ts`. Basiswerte:
 
 Rampe pro Level (aus OpenSpaceTeam übernommen): Zeit −1250 ms (min 7000),
 Drain +0.35 (max 1.25), Grenzanstieg +0.15 (max 1.25), Heilung −0.5 (min 3),
-Strafe +0.25 (max 11.5). Panelgröße `min(10, 5 + level)`. Die Lobby-Presets Casual/Normal/Hard/Insane setzen den **Start-Sektor** (1/3/5/8) — das Spiel springt tiefer in die Kurve; Default Normal.
+Strafe +0.25 (max 11.5). Panelgröße `min(6, 4 + ceil(level/4))` — bewusst **wenige, große** Kacheln (wie im Original); die Schwierigkeit kommt aus den Presets (Zeit/Aderlass), nicht aus mehr Kacheln. Die Lobby-Presets Casual/Normal/Hard/Insane setzen den **Start-Sektor** (1/3/5/8) — das Spiel springt tiefer in die Kurve; Default Normal.
 
 Zielverteilung: ein Befehl zielt mit **1/6** auf ein Control im eigenen Panel,
 sonst auf ein fremdes — daraus entsteht das Zurufen. Zielwert immer **≠ aktueller
@@ -210,10 +210,12 @@ am bequemsten).
   (Ladebalken + rotierende Sprüche) mit automatischem Verbindungs-Retry (~70 s),
   **In-App-Tutorial** (How-to-play-Overlay), **Schwierigkeits-Presets** (Host waehlt Start-Sektor). Offen:
   mehr Technobabble, Feinschliff der Kurve, echtes 4×4-Bin-Packing (statt CSS-dense).
-- **Phase 3 — Reife:** Spezial-Events (Asteroid/Schwarzes Loch, Modifier), PWA-
-  Installation, echtes Reconnect, hübscher 4-stelliger Raumcode, Observability.
-- **Phase 3 — Reife:** Spezial-Events (Asteroid/Schwarzes Loch, Modifier), PWA-
-  Installation, echtes Reconnect, hübscher 4-stelliger Raumcode, Observability.
+- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
+  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). Offen: Spezial-Events
+  (Asteroid/Schwarzes Loch, DeviceMotion), PWA-Installation, echtes Reconnect, Observability.
+- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
+  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). Offen: Spezial-Events
+  (Asteroid/Schwarzes Loch, DeviceMotion), PWA-Installation, echtes Reconnect, Observability.
 
 ---
 

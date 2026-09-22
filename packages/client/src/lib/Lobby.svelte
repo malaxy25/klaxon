@@ -29,7 +29,7 @@
   <button class="helplink" onclick={openHelp}>How to play</button>
 
   <div class="join-card">
-    <div class="code">{S.roomId}</div>
+    <div class="code">{S.code}</div>
     {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
     <div class="url">{joinUrl()}</div>
   </div>

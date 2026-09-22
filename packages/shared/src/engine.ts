@@ -43,6 +43,7 @@ export class SpaceteamGame {
   private now: () => number;
   private singlePlayer: boolean;
   private lastTick: number;
+  private nextBreakAt = 0;
 
   constructor(opts: EngineOptions = {}) {
     this.rng = opts.rng ?? Math.random;
@@ -104,6 +105,7 @@ export class SpaceteamGame {
     this.assignPanels();
     this.assignInstructions();
     this.lastTick = this.now();
+    this.nextBreakAt = this.now() + this.breakInterval();
     return true;
   }
 
@@ -145,6 +147,24 @@ export class SpaceteamGame {
   }
 
   // ---------- Instruktionsgenerierung ----------
+  private breakInterval(): number {
+    // Rate steigt mit Sektor: ~14s runter bis min 6s
+    return Math.max(6000, 14000 - this.level * 1000);
+  }
+
+  private countBroken(): number {
+    let n = 0;
+    for (const p of this.players.values()) for (const c of p.panel) if (c.broken) n++;
+    return n;
+  }
+
+  repair(playerId: string, controlId: string): GameEvent[] {
+    const p = this.players.get(playerId);
+    const c = p?.panel.find((x) => x.id === controlId);
+    if (c && c.broken) { c.broken = false; return [{ type: "repaired", playerId, controlId }]; }
+    return [];
+  }
+
   private takenControlIds(): Set<string> {
     const s = new Set<string>();
     for (const p of this.players.values()) {
@@ -171,10 +191,11 @@ export class SpaceteamGame {
     const taken = this.takenControlIds();
     const target = this.pickTargetPlayer(player);
 
-    const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id));
+    const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id) && !c.broken);
     let pool = untakenPreferred;
-    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id));
-    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c)); // Notnagel
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id) && !c.broken);
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !c.broken); // Notnagel
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c)); // absoluter Notnagel
 
     const control = pick(pool, this.rng);
     const deadline = this.now() + this.difficulty.instructionTimeMs;
@@ -197,6 +218,7 @@ export class SpaceteamGame {
     if (!player) return { completed: false, events };
     const control = player.panel.find((c) => c.id === controlId);
     if (!control) return { completed: false, events };
+    if (control.broken) return { completed: false, events };
 
     // Wert übernehmen (Button hält keinen Wert)
     if (control.type !== "button") control.value = value;
@@ -229,6 +251,20 @@ export class SpaceteamGame {
 
     this.health -= this.difficulty.healthDrainPerSec * dt;
     this.deathLimit = Math.min(MAX_DEATH_LIMIT, this.deathLimit + this.difficulty.deathLimitRisePerSec * dt);
+
+    // Panels koennen brechen (max. so viele gleichzeitig wie Spieler)
+    if (now >= this.nextBreakAt) {
+      this.nextBreakAt = now + this.breakInterval();
+      if (this.countBroken() < this.players.size) {
+        const taken = this.takenControlIds();
+        const pool = this.allControls().filter((c) => !c.broken && !taken.has(c.id));
+        if (pool.length > 0) {
+          const c = pick(pool, this.rng);
+          c.broken = true;
+          events.push({ type: "broke", controlId: c.id });
+        }
+      }
+    }
 
     // Abgelaufene Befehle
     for (const p of this.players.values()) {

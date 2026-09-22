@@ -8,7 +8,7 @@ const port = parseInt(process.env.PORT, 10) || 2567;
 const server = defineServer({
   rooms: {
     my_room: defineRoom(MyRoom),
-    spaceteam: defineRoom(SpaceteamRoom),
+    spaceteam: defineRoom(SpaceteamRoom).filterBy(["code"]),
   },
 });
 
