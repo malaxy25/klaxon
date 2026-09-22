@@ -174,6 +174,11 @@ Mail bleibt verborgen.
 
 Jedes Feedback haengt dann eine Zeile (Zeitstempel + Text) an die Tabelle an.
 
+**Zwei Ziele parallel:** Willst du z. B. gleichzeitig ntfy **und** ein Google Sheet,
+setz `FEEDBACK_WEBHOOK` auf das eine und **`FEEDBACK_WEBHOOK_2`** auf das andere - der
+Server sendet an beide. (Alternativ mehrere URLs komma-getrennt in einer Variable.)
+
+
 > Die Webhook-URL ist ein Secret in den Render-Env-Variablen - sie steht nicht im Repo
 > und wird niemandem angezeigt. Der Server sendet an `ntfy.sh` reinen Text, an alle
 > anderen Ziele JSON (`content`/`text`) - passt fuer Discord, Slack und Apps Script.

@@ -19,7 +19,7 @@
 
   <div class="or">or join with a code</div>
   <div class="join-row">
-    <input class="input" placeholder="Room code" maxlength="6" bind:value={code} style="text-transform:uppercase" />
+    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
     <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
   </div>
 

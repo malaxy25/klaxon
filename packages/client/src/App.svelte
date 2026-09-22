@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinByCode, openHelp } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp, initMotion } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -10,6 +10,7 @@
   import EventOverlay from "./lib/EventOverlay.svelte";
 
   onMount(() => {
+    initMotion();
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
       joinByCode(r);
@@ -38,5 +39,6 @@
 {#if S.eventResult}
   <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
 {/if}
+{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
 {#if S.connecting}<Connecting />{/if}
 {#if S.showHelp}<Help />{/if}

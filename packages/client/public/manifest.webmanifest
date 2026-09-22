@@ -1,0 +1,15 @@
+{
+  "name": "Klaxon",
+  "short_name": "Klaxon",
+  "description": "A cooperative shouting party game for the same room.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1c1b",
+  "theme_color": "#0e1c1b",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

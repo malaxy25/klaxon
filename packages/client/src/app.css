@@ -124,3 +124,7 @@ body {
 .ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
 .ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
 .ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }
+
+/* Reconnecting overlay */
+.reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
+.reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }

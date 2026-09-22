@@ -210,12 +210,12 @@ am bequemsten).
   (Ladebalken + rotierende Sprüche) mit automatischem Verbindungs-Retry (~70 s),
   **In-App-Tutorial** (How-to-play-Overlay), **Schwierigkeits-Presets** (Host waehlt Start-Sektor). Offen:
   mehr Technobabble, Feinschliff der Kurve, echtes 4×4-Bin-Packing (statt CSS-dense).
-- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
+- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
   Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). Offen: PWA-Installation, echtes Reconnect, Observability, weitere Event-Typen.
-- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). Offen: Observability, PNG-App-Icons, Feintuning.
+- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
   Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). Offen: PWA-Installation, echtes Reconnect, Observability, weitere Event-Typen.
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). Offen: Observability, PNG-App-Icons, Feintuning.
 
 ---
 

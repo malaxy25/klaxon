@@ -70,7 +70,7 @@ Motion-Prompt zeigen? Wurmloch (Panel-Tausch) als rein serverseitiges Event ohne
 gratis und sehr on-theme.)
 
 ### A2 — Cockpit-Feinschliff weiter   (Prio: mittel, Aufwand: M, iterativ)
-> 🔶 **Erster Schritt in v0.7.0** (LED-Readouts, Scanline). Weiter iterativ.
+> 🔶 **In Arbeit** (v0.7.0: LED-Readouts, Scanline; v0.8.2: Kippschalter, Slider-Ticks). Weiter iterativ.
 
 **Problem:** Erster Pass ist drin (Metall, Nieten, Glow). Das Original hat mehr:
 physische Kippschalter, 7-Segment-Ziffern, Schiff/Starfield-Header, Panel-Fugen.
@@ -86,6 +86,8 @@ Schritt auf dem Geraet pruefen.
 ## Polish & Infrastruktur
 
 ### P1 — Reconnect   (Prio: mittel, Aufwand: M)
+> ✅ **Erledigt in v0.8.3** (Server haelt Platz ~30 s, Client reconnectet per Token, Overlay).
+
 Aktuell beendet ein Disconnect die Runde. Ziel: Colyseus `allowReconnection` +
 Rejoin-UI, damit ein kurzer Abbruch (Handy sperrt, WLAN wackelt) die Runde nicht killt.
 
@@ -96,6 +98,8 @@ Aktuell dient die Colyseus-`roomId` als Code (z. B. `iHA-GlHtV`). Eigenes Matchm
 fuer einen leicht tippbaren 4-Zeichen-Code (QR bleibt der Hauptweg).
 
 ### P3 — PWA-Installation   (Prio: niedrig, Aufwand: S-M)
+> ✅ **Erledigt in v0.8.3** (manifest + service worker + apple-touch). Fuer knackige iOS-Icons spaeter PNGs.
+
 Manifest + Service Worker, damit man Klaxon auf den Homescreen legen kann (Vollbild,
 App-Gefuehl).
 
@@ -114,4 +118,4 @@ nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
 Siehe [CHANGELOG](CHANGELOG.md): Namen, Play-again, Sound (Basis), Screenshake,
 Level-Banner, Countdown, Cold-Start-Overlay + Retry, How-to-play, Schwierigkeits-Presets,
 End-of-game-Stats, In-Game-Feedback (persistent via ntfy/Google Sheet), One-Screen-Fit,
-Cockpit-Pass, wenige/grosse Kacheln.
+Cockpit-Pass, wenige/grosse Kacheln, Alien-Schleim-Hazard (wischen), Kippschalter + Slider-Ticks.

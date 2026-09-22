@@ -3,6 +3,38 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.3] - 2026-09-22
+### Added
+- Three more special events: **Power surge** (hold), **Decompression** (do NOT touch
+  until the timer ends), **Wormhole** (your panel gets scrambled - tap to stabilize).
+- **Reconnect (P1):** a dropped connection (phone locks, WiFi blip) no longer ends the
+  round - the seat is held ~30 s and the client rejoins automatically; a "Reconnecting"
+  overlay shows meanwhile.
+- **PWA (P3):** installable to the home screen (web manifest + service worker + Apple
+  touch meta), standalone display.
+
+## [0.8.2] - 2026-09-22
+### Added
+- New hazard: **alien slime** - a random control gets slimed and must be **wiped off**
+  (swipe across it) to clear it, alongside the existing jammed panels (hold to fix).
+  Each hazard has its own look and sound.
+### Changed
+- Cockpit polish: toggles render as physical **flip switches**, and sliders show
+  **numbered ticks** (0..max) above the track.
+
+## [0.8.1] - 2026-09-22
+### Fixed
+- Host name entered on Home is applied immediately now (passed as a join option) -
+  no more "Player" until you re-enter it.
+### Changed
+- Motion controls are a clear setting in the lobby (next to difficulty); auto-on where
+  no permission is needed (Android/desktop) and also requested on "I'm ready". An
+  "Enable shake & tilt" button also appears during shake/flip events.
+- Room-code input auto-capitalises.
+- Browser tab title is now "Klaxon" (was "client") with a fitting favicon.
+- Feedback can go to two webhooks in parallel via `FEEDBACK_WEBHOOK` and
+  `FEEDBACK_WEBHOOK_2` (e.g. ntfy + Google Sheet).
+
 ## [0.8.0] - 2026-09-22
 ### Added
 - **Special team events (G2):** a random event interrupts play - **Meteor shower

@@ -27,7 +27,6 @@
   <h1>Ready room</h1>
   <p class="hint">Others join by scanning the code - same room, no download.</p>
   <button class="helplink" onclick={openHelp}>How to play</button>
-  <button class="helplink" onclick={enableMotion}>{S.motionOk ? "Motion enabled (shake/tilt)" : "Enable shake & tilt (optional)"}</button>
 
   <div class="join-card">
     <div class="code">{S.code}</div>
@@ -61,6 +60,13 @@
         {/each}
       </div>
     {/if}
+  </div>
+
+  <div class="difficulty">
+    <span class="diff-label">Motion controls (shake / tilt)</span>
+    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
+      {S.motionOk ? "On" : "Enable"}
+    </button>
   </div>
 
   <button class="btn wide" onclick={() => ready(!mine?.ready)}>

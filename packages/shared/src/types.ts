@@ -10,7 +10,7 @@ export interface Control {
   options?: string[];   // selector
   w?: number;           // Grid-Breite in Zellen (Panel-Layout)
   h?: number;           // Grid-Hoehe in Zellen (Panel-Layout)
-  broken?: boolean;     // haengt/blockiert bis Reparatur
+  hazard?: "broken" | "slimed" | ""; // Panne: kaputt (halten) / verschleimt (wischen)
   ownerId: string;      // Spieler, dem das Control gehört
 }
 
@@ -34,7 +34,7 @@ export interface Difficulty {
 }
 
 export interface GameEvent {
-  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "repaired" | "eventStart" | "eventPassed" | "eventFailed";
+  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "repaired" | "eventStart" | "eventPassed" | "eventFailed";
   playerId?: string;
   controlId?: string;
 }

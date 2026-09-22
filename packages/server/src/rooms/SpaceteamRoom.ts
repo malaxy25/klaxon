@@ -19,7 +19,7 @@ class ControlSchema extends Schema {
   @type(["string"]) options = new ArraySchema<string>();
   @type("number") w = 1;
   @type("number") h = 1;
-  @type("boolean") broken = false;
+  @type("string") hazard = "";
   @type("string") ownerId = "";
 }
 
@@ -80,8 +80,8 @@ export class SpaceteamRoom extends Room {
       const p = this.game.players.get(client.sessionId);
       if (p?.host && this.game.backToLobby()) { this.unlock(); this.syncFull(); }
     });
-    this.onMessage("repairControl", (client, controlId: string) => {
-      const events = this.game.repair(client.sessionId, String(controlId));
+    this.onMessage("clearHazard", (client, controlId: string) => {
+      const events = this.game.clearHazard(client.sessionId, String(controlId));
       if (events.length) { events.forEach((e) => this.emitEvent(e)); this.syncFull(); }
     });
     this.onMessage("eventAction", (client) => {
@@ -99,15 +99,19 @@ export class SpaceteamRoom extends Room {
       if (!clean) return;
       const line = `[Klaxon] ${p?.name || "?"} (sector ${this.game.level}, diff ${this.game.startLevel}): ${clean}`;
       console.log("FEEDBACK", line);
-      const hook = process.env.FEEDBACK_WEBHOOK;
-      if (hook) {
+      const send = (hook: string) => {
         // ntfy.sh will reinen Text; Discord/Slack/Apps-Script koennen JSON.
         const isText = /ntfy\.sh/i.test(hook);
         const init = isText
           ? { method: "POST", headers: { "Content-Type": "text/plain" }, body: line }
           : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line }) };
         fetch(hook, init).catch((e) => console.error("feedback webhook failed:", e));
-      }
+      };
+      const hooks = [process.env.FEEDBACK_WEBHOOK, process.env.FEEDBACK_WEBHOOK_2]
+        .filter(Boolean)
+        .flatMap((h) => String(h).split(/[\s,]+/))
+        .filter(Boolean);
+      for (const h of hooks) send(h);
       client.send("feedbackAck", true);
     });
     this.onMessage("setControl", (client, m: { controlId: string; value: string }) => {
@@ -128,15 +132,24 @@ export class SpaceteamRoom extends Room {
     }, 250);
   }
 
-  onJoin(client: Client) {
-    this.game.addPlayer(client.sessionId, "Player");
+  onJoin(client: Client, options: any) {
+    const name = String(options?.name || "Player").slice(0, 20) || "Player";
+    this.game.addPlayer(client.sessionId, name);
     this.syncFull();
   }
 
-  onLeave(client: Client) {
-    const events = this.game.removePlayer(client.sessionId);
-    events.forEach((e) => this.emitEvent(e));
-    this.syncFull();
+  async onLeave(client: Client, code?: number) {
+    const p = this.game.players.get(client.sessionId);
+    if (p) { p.connected = false; this.syncFull(); }
+    try {
+      if (code === 1000) throw new Error("consented");
+      await this.allowReconnection(client, 30);
+      if (p) { p.connected = true; this.syncFull(); }
+    } catch {
+      const events = this.game.removePlayer(client.sessionId);
+      events.forEach((e) => this.emitEvent(e));
+      this.syncFull();
+    }
   }
 
   private emitEvent(e: GameEvent) {
@@ -182,13 +195,13 @@ export class SpaceteamRoom extends Room {
           const cs = new ControlSchema();
           cs.id = c.id; cs.kind = c.type; cs.label = c.label; cs.value = c.value;
           cs.min = c.min ?? 0; cs.max = c.max ?? 0; cs.ownerId = c.ownerId;
-          cs.w = c.w ?? 1; cs.h = c.h ?? 1; cs.broken = c.broken ?? false;
+          cs.w = c.w ?? 1; cs.h = c.h ?? 1; cs.hazard = c.hazard ?? "";
           cs.options = new ArraySchema<string>(...(c.options ?? []));
           sp.panel.push(cs);
         }
       } else {
         // nur Werte aktualisieren
-        for (let i = 0; i < ep.panel.length; i++) { sp.panel[i].value = ep.panel[i].value; sp.panel[i].broken = ep.panel[i].broken ?? false; }
+        for (let i = 0; i < ep.panel.length; i++) { sp.panel[i].value = ep.panel[i].value; sp.panel[i].hazard = ep.panel[i].hazard ?? ""; }
       }
     }
   }

@@ -1,11 +1,11 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.0";
+export const VERSION = "0.8.3";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
-  min: number; max: number; options: string[]; w: number; h: number; broken: boolean;
+  min: number; max: number; options: string[]; w: number; h: number; hazard: string;
 };
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
@@ -43,6 +43,7 @@ export const S = $state({
   eventMs: 0,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
+  reconnecting: false,
   feedbackSent: false,
 });
 
@@ -71,6 +72,7 @@ async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
 
 let client: Client | null = null;
 let room: any = null;
+let reconToken = "";
 let flashTimer: ReturnType<typeof setTimeout> | undefined;
 let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 let bannerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -111,11 +113,12 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "eventStart" | "eventPassed" | "eventFailed") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
   else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "slimed") { beep(320, 120, "sine", 0.05); setTimeout(() => beep(190, 200, "sine", 0.05), 100); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
   else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
   else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
@@ -135,6 +138,8 @@ export function toggleMute() {
 export function me(): PlayerView | undefined {
   return S.players.find((p) => p.id === S.sessionId);
 }
+
+function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
 
 export function joinUrl(): string {
   return location.origin + location.pathname + "?r=" + S.code;
@@ -179,7 +184,7 @@ function snapshot() {
     p.panel.forEach((c: any) =>
       panel.push({
         id: c.id, kind: c.kind, label: c.label, value: c.value,
-        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, broken: c.broken ?? false,
+        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, hazard: c.hazard ?? "",
       })
     );
     players.push({
@@ -209,6 +214,7 @@ function snapshot() {
 
 async function bind(r: any) {
   room = r;
+  reconToken = r.reconnectionToken ?? reconToken;
   S.roomId = r.roomId;
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
@@ -221,14 +227,30 @@ async function bind(r: any) {
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
+    else if (e.type === "slimed") { pulse("bad"); playSound("slimed"); }
   });
-  r.onLeave(() => {
-    S.error = "Connection lost.";
-    S.screen = "home";
-    room = null;
-  });
+  r.onLeave((code: number) => { handleLeave(code); });
   snapshot();
-  commitName();
+}
+
+async function handleLeave(code: number) {
+  room = null;
+  if (code === 1000) { S.screen = "home"; return; } // sauberer Abschied
+  S.reconnecting = true;
+  const deadline = Date.now() + 30000;
+  while (Date.now() < deadline) {
+    try {
+      const r = await client!.reconnect(reconToken);
+      await bind(r);
+      S.reconnecting = false;
+      return;
+    } catch {
+      await sleep(2000);
+    }
+  }
+  S.reconnecting = false;
+  S.error = "Connection lost.";
+  S.screen = "home";
 }
 
 export function updateName(v: string) {
@@ -246,7 +268,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -276,7 +298,7 @@ export async function joinByCode(code: string) {
   try {
     client ??= new Client(SERVER_URL);
     try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc })));
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName() })));
     } catch {
       S.error = "No game found for code " + cc + ".";
     }
@@ -286,11 +308,17 @@ export async function joinByCode(code: string) {
     S.connecting = false;
   }
 }
-export function ready(v: boolean) { room?.send("ready", v); }
+export function ready(v: boolean) { room?.send("ready", v); if (v && !S.motionOk) enableMotion(); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
-export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
+export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function initMotion() {
+  try {
+    const DM: any = (window as any).DeviceMotionEvent;
+    if (DM && typeof DM.requestPermission !== "function") S.motionOk = true;
+  } catch { /* ignore */ }
+}
 export async function enableMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;

@@ -155,9 +155,14 @@ export class SpaceteamGame {
   // ---------- Instruktionsgenerierung ----------
   private eventInterval(): number { return 28000; }
 
+  private shuffle<T>(arr: T[]): void {
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+  }
+
   private startEvent(): GameEvent {
-    const types = ["meteor", "blackhole", "brace"];
+    const types = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
     const type = pick(types, this.rng);
+    if (type === "wormhole") for (const p of this.players.values()) this.shuffle(p.panel);
     this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
     return { type: "eventStart" };
   }
@@ -165,6 +170,13 @@ export class SpaceteamGame {
   markEventDone(playerId: string): GameEvent[] {
     const events: GameEvent[] = [];
     if (!this.event || !this.players.has(playerId)) return events;
+    if (this.event.type === "freeze") {
+      this.event = null;
+      this.health -= 15;
+      this.nextEventAt = this.now() + this.eventInterval();
+      events.push({ type: "eventFailed" });
+      return events;
+    }
     this.event.done.add(playerId);
     const connected = [...this.players.values()].filter((p) => p.connected);
     if (connected.every((p) => this.event!.done.has(p.id))) {
@@ -181,16 +193,16 @@ export class SpaceteamGame {
     return Math.max(6000, 14000 - this.level * 1000);
   }
 
-  private countBroken(): number {
+  private countHazarded(): number {
     let n = 0;
-    for (const p of this.players.values()) for (const c of p.panel) if (c.broken) n++;
+    for (const p of this.players.values()) for (const c of p.panel) if (c.hazard) n++;
     return n;
   }
 
-  repair(playerId: string, controlId: string): GameEvent[] {
+  clearHazard(playerId: string, controlId: string): GameEvent[] {
     const p = this.players.get(playerId);
     const c = p?.panel.find((x) => x.id === controlId);
-    if (c && c.broken) { c.broken = false; return [{ type: "repaired", playerId, controlId }]; }
+    if (c && c.hazard) { c.hazard = ""; return [{ type: "repaired", playerId, controlId }]; }
     return [];
   }
 
@@ -220,10 +232,10 @@ export class SpaceteamGame {
     const taken = this.takenControlIds();
     const target = this.pickTargetPlayer(player);
 
-    const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id) && !c.broken);
+    const untakenPreferred = target.panel.filter((c) => canTarget(c) && !taken.has(c.id) && !c.hazard);
     let pool = untakenPreferred;
-    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id) && !c.broken);
-    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !c.broken); // Notnagel
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !taken.has(c.id) && !c.hazard);
+    if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c) && !c.hazard); // Notnagel
     if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c)); // absoluter Notnagel
 
     const control = pick(pool, this.rng);
@@ -247,7 +259,7 @@ export class SpaceteamGame {
     if (!player) return { completed: false, events };
     const control = player.panel.find((c) => c.id === controlId);
     if (!control) return { completed: false, events };
-    if (control.broken) return { completed: false, events };
+    if (control.hazard) return { completed: false, events };
 
     // Wert übernehmen (Button hält keinen Wert)
     if (control.type !== "button") control.value = value;
@@ -286,10 +298,11 @@ export class SpaceteamGame {
     if (this.event) {
       for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
       if (now >= this.event.endsAt) {
+        const survived = this.event.type === "freeze";
         this.event = null;
-        this.health -= 15;
+        if (survived) { this.health = Math.min(MAX_HEALTH, this.health + 15); events.push({ type: "eventPassed" }); }
+        else { this.health -= 15; events.push({ type: "eventFailed" }); }
         this.nextEventAt = now + this.eventInterval();
-        events.push({ type: "eventFailed" });
       }
       if (this.health <= this.deathLimit) { this.phase = "over"; events.push({ type: "gameOver" }); }
       return events;
@@ -304,13 +317,14 @@ export class SpaceteamGame {
     // Panels koennen brechen (max. so viele gleichzeitig wie Spieler)
     if (now >= this.nextBreakAt) {
       this.nextBreakAt = now + this.breakInterval();
-      if (this.countBroken() < this.players.size) {
+      if (this.countHazarded() < this.players.size) {
         const taken = this.takenControlIds();
-        const pool = this.allControls().filter((c) => !c.broken && !taken.has(c.id));
+        const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
         if (pool.length > 0) {
           const c = pick(pool, this.rng);
-          c.broken = true;
-          events.push({ type: "broke", controlId: c.id });
+          const kind = this.rng() < 0.5 ? "broken" : "slimed";
+          c.hazard = kind as any;
+          events.push({ type: kind === "broken" ? "broke" : "slimed", controlId: c.id });
         }
       }
     }

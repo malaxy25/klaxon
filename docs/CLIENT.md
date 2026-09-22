@@ -3,34 +3,101 @@
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
 (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-> Verifiziert: Build sauber (207 Module). Kernpfade (Code-Join, kaputte Panels,
-> Spezial-Events start/pass/fail, Feedback, Stats) ueber den echten Server getestet.
-> Sensor-Gesten (Shake/Flip) und Cockpit-Optik am besten auf dem Geraet pruefen.
+> Verifiziert: Build sauber (207 Module). Events (6 Typen), Hazards (kaputt/Schleim),
+> Reconnect (Server haelt Platz, Client reconnectet per Token) und PWA-Dateien getestet.
 
-## Highlights
+## Neu in v0.8.3
 
-- **Spezial-Events**: Meteor (Shake), Black hole (Flip/Tilt), Brace (Tap) mit
-  PASS/FAIL akustisch + optisch (SURVIVED/HULL BREACH) + Vibration; Tap-Fallback.
-- **Kaputte Panels** (Halten ~1,5 s reparieren), **4-Zeichen-Raumcode**, Klaxon-Alarm.
-- One-Screen-Fit, wenige/grosse Cockpit-Kacheln, Schwierigkeits-Presets, Stats + Feedback.
-- iOS-Text-Selektion beim Halten unterdrueckt.
+- Events: Power surge (halten), Decompression (nicht anfassen), Wormhole (Panel gemischt).
+- Reconnect: Overlay "Reconnecting..."; Client verbindet per `reconnectionToken` neu.
+- PWA: `manifest.webmanifest` + `sw.js` + Apple-Touch-Meta -> installierbar (Homescreen).
 
 ## Dateibaum
 
 ```
-packages/client/src/
-├── app.css
-├── App.svelte            # Router + Overlays (Connecting/Help/Event) + PASS/FAIL-Banner
-└── lib/
-    ├── store.svelte.ts   # Zustand, Verbindung, Sound/Alarm/Vibration, Events, Repair, VERSION
-    ├── EventOverlay.svelte  # Spezial-Event (Gesten + Tap-Fallback + Countdown)
-    ├── Help.svelte  Connecting.svelte  Control.svelte  Home.svelte
-    ├── Lobby.svelte  Game.svelte  GameOver.svelte
+packages/client/
+├── index.html                 # Titel, Favicon, PWA-Meta + SW-Registrierung
+├── public/ favicon.svg, manifest.webmanifest, sw.js
+└── src/
+    ├── app.css  App.svelte     # Router + Overlays (Event/Connecting/Help/Reconnect) + Banner
+    └── lib/ store.svelte.ts, EventOverlay.svelte, Help.svelte, Connecting.svelte,
+             Control.svelte, Home.svelte, Lobby.svelte, Game.svelte, GameOver.svelte
 ```
 
 ---
 
 # Vollstaendige Dateien
+
+## Datei: `spaceteam/packages/client/index.html`
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klaxon</title>
+    <meta name="theme-color" content="#0e1c1b" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Klaxon" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+      }
+    </script>
+  </body>
+</html>
+```
+
+## Datei: `spaceteam/packages/client/public/manifest.webmanifest`
+
+```json
+{
+  "name": "Klaxon",
+  "short_name": "Klaxon",
+  "description": "A cooperative shouting party game for the same room.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1c1b",
+  "theme_color": "#0e1c1b",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
+```
+
+## Datei: `spaceteam/packages/client/public/sw.js`
+
+```js
+// Minimaler Service Worker: nur damit die App installierbar ist (network-first).
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+});
+```
+
+## Datei: `spaceteam/packages/client/public/favicon.svg`
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0e1c1b"/>
+  <path d="M32 13 L54 51 H10 Z" fill="#f5a623"/>
+  <rect x="29" y="25" width="6" height="14" rx="3" fill="#1a1205"/>
+  <circle cx="32" cy="45" r="3.3" fill="#1a1205"/>
+</svg>
+```
 
 ## Datei: `spaceteam/packages/client/src/app.css`
 
@@ -161,6 +228,10 @@ body {
 .ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
 .ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
 .ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }
+
+/* Reconnecting overlay */
+.reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
+.reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -168,12 +239,12 @@ body {
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.0";
+export const VERSION = "0.8.3";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
-  min: number; max: number; options: string[]; w: number; h: number; broken: boolean;
+  min: number; max: number; options: string[]; w: number; h: number; hazard: string;
 };
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
@@ -211,6 +282,7 @@ export const S = $state({
   eventMs: 0,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
+  reconnecting: false,
   feedbackSent: false,
 });
 
@@ -239,6 +311,7 @@ async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
 
 let client: Client | null = null;
 let room: any = null;
+let reconToken = "";
 let flashTimer: ReturnType<typeof setTimeout> | undefined;
 let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 let bannerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -279,11 +352,12 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "eventStart" | "eventPassed" | "eventFailed") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
   else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "slimed") { beep(320, 120, "sine", 0.05); setTimeout(() => beep(190, 200, "sine", 0.05), 100); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
   else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
   else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
@@ -303,6 +377,8 @@ export function toggleMute() {
 export function me(): PlayerView | undefined {
   return S.players.find((p) => p.id === S.sessionId);
 }
+
+function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
 
 export function joinUrl(): string {
   return location.origin + location.pathname + "?r=" + S.code;
@@ -347,7 +423,7 @@ function snapshot() {
     p.panel.forEach((c: any) =>
       panel.push({
         id: c.id, kind: c.kind, label: c.label, value: c.value,
-        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, broken: c.broken ?? false,
+        min: c.min, max: c.max, options: [...c.options], w: c.w ?? 1, h: c.h ?? 1, hazard: c.hazard ?? "",
       })
     );
     players.push({
@@ -377,6 +453,7 @@ function snapshot() {
 
 async function bind(r: any) {
   room = r;
+  reconToken = r.reconnectionToken ?? reconToken;
   S.roomId = r.roomId;
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
@@ -389,14 +466,30 @@ async function bind(r: any) {
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
+    else if (e.type === "slimed") { pulse("bad"); playSound("slimed"); }
   });
-  r.onLeave(() => {
-    S.error = "Connection lost.";
-    S.screen = "home";
-    room = null;
-  });
+  r.onLeave((code: number) => { handleLeave(code); });
   snapshot();
-  commitName();
+}
+
+async function handleLeave(code: number) {
+  room = null;
+  if (code === 1000) { S.screen = "home"; return; } // sauberer Abschied
+  S.reconnecting = true;
+  const deadline = Date.now() + 30000;
+  while (Date.now() < deadline) {
+    try {
+      const r = await client!.reconnect(reconToken);
+      await bind(r);
+      S.reconnecting = false;
+      return;
+    } catch {
+      await sleep(2000);
+    }
+  }
+  S.reconnecting = false;
+  S.error = "Connection lost.";
+  S.screen = "home";
 }
 
 export function updateName(v: string) {
@@ -414,7 +507,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -444,7 +537,7 @@ export async function joinByCode(code: string) {
   try {
     client ??= new Client(SERVER_URL);
     try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc })));
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName() })));
     } catch {
       S.error = "No game found for code " + cc + ".";
     }
@@ -454,11 +547,17 @@ export async function joinByCode(code: string) {
     S.connecting = false;
   }
 }
-export function ready(v: boolean) { room?.send("ready", v); }
+export function ready(v: boolean) { room?.send("ready", v); if (v && !S.motionOk) enableMotion(); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
-export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
+export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function initMotion() {
+  try {
+    const DM: any = (window as any).DeviceMotionEvent;
+    if (DM && typeof DM.requestPermission !== "function") S.motionOk = true;
+  } catch { /* ignore */ }
+}
 export async function enableMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;
@@ -479,36 +578,48 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { S, sendEventAction } from "./store.svelte";
+  import { S, sendEventAction, enableMotion } from "./store.svelte";
 
-  const LABELS: Record<string, { title: string; action: string; hint: string }> = {
-    meteor: { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard" },
-    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side" },
-    brace: { title: "BRACE!", action: "TAP FAST!", hint: "" },
+  type Mode = "tap" | "hold" | "freeze";
+  const INFO: Record<string, { title: string; action: string; hint: string; mode: Mode; gesture?: "shake" | "orient" }> = {
+    meteor:    { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard", mode: "tap", gesture: "shake" },
+    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side", mode: "tap", gesture: "orient" },
+    brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
+    surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
+    freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
+    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panel scrambled - tap to lock in", mode: "tap" },
   };
-  let info = $derived(LABELS[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "" });
+  let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
 
   let didIt = $state(false);
   let taps = $state(0);
+  let holdProg = $state(0);
   let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
   let timer: ReturnType<typeof setInterval>;
-  let shakeCount = 0;
+  let shakeCount = 0, holding = false, holdRaf = 0;
 
   function complete() { if (didIt) return; didIt = true; sendEventAction(); }
   function onTap() { if (didIt) return; taps++; if (taps >= 5) complete(); }
+  function holdStart(e: PointerEvent) {
+    if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
+    const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
+      if (holdProg >= 1) { holding = false; complete(); return; } holdRaf = requestAnimationFrame(step); };
+    holdRaf = requestAnimationFrame(step);
+  }
+  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(holdRaf); }
+  function onFreezeTouch() { sendEventAction(); } // beruehren = Fehlschlag
+
   function onMotion(e: DeviceMotionEvent) {
     const a = e.accelerationIncludingGravity || (e as any).acceleration; if (!a) return;
-    const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
-    if (mag > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
+    if (Math.hypot(a.x || 0, a.y || 0, a.z || 0) > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
   }
   function onOrient(e: DeviceOrientationEvent) {
-    const beta = Math.abs(e.beta ?? 0), gamma = Math.abs(e.gamma ?? 0);
-    if (gamma > 55 || beta > 130) complete();
+    if (Math.abs(e.gamma ?? 0) > 55 || Math.abs(e.beta ?? 0) > 130) complete();
   }
   onMount(() => {
     timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
-    if (S.eventType === "meteor") window.addEventListener("devicemotion", onMotion);
-    if (S.eventType === "blackhole") window.addEventListener("deviceorientation", onOrient);
+    if (info.gesture === "shake") window.addEventListener("devicemotion", onMotion);
+    if (info.gesture === "orient") window.addEventListener("deviceorientation", onOrient);
   });
   onDestroy(() => {
     clearInterval(timer);
@@ -518,27 +629,41 @@ export function setControl(controlId: string, value: string) {
   let doneCount = $derived(S.players.filter((p) => p.eventDone).length);
 </script>
 
-<div class="event-overlay">
+<div class="event-overlay" class:freeze={info.mode === "freeze"}
+     onpointerdown={info.mode === "freeze" ? onFreezeTouch : undefined}>
   <div class="ev-box">
     <div class="ev-title">{info.title}</div>
     <div class="ev-action">{info.action}</div>
-    {#if !didIt}
+
+    {#if info.mode === "freeze"}
+      <div class="ev-hint">Do not tap anything until the timer ends</div>
+    {:else if didIt}
+      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
+    {:else if info.mode === "hold"}
+      <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
+      <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
+    {:else}
       <button class="btn wide primary" onclick={onTap}>
-        {S.eventType === "brace" ? "TAP! (" + taps + "/5)" : "Can't move? TAP (" + taps + "/5)"}
+        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/5)" : "Can't move? TAP (" + taps + "/5)"}
       </button>
       {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
-    {:else}
-      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
+      {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}
     {/if}
+
     <div class="ev-count">{secs}s</div>
   </div>
 </div>
 
 <style>
   .event-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(60,10,12,0.9); }
+  .event-overlay.freeze { background: rgba(10,30,50,0.92); }
   .ev-box { width: 100%; max-width: 420px; text-align: center; }
   .ev-title { font-family: ui-monospace, Menlo, monospace; color: #ffd9d2; letter-spacing: 3px; font-size: 1rem; }
-  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.3rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
+  .event-overlay.freeze .ev-title { color: #cfe6ff; }
+  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.2rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
+  .event-overlay.freeze .ev-action { color: #7cc4e8; text-shadow: 0 0 14px rgba(124,196,232,0.7); }
+  .ev-bar { height: 8px; margin-top: 12px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
+  .ev-fill { height: 100%; background: var(--amber); }
   .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
   .ev-waiting { color: var(--ok); font-weight: 600; }
   .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
@@ -547,142 +672,11 @@ export function setControl(controlId: string, value: string) {
 </style>
 ```
 
-## Datei: `spaceteam/packages/client/src/lib/Help.svelte`
-
-```svelte
-<script lang="ts">
-  import { closeHelp } from "./store.svelte";
-</script>
-
-<svelte:window onkeydown={(e) => { if (e.key === "Escape") closeHelp(); }} />
-
-<div class="help-backdrop" onclick={closeHelp} role="presentation">
-  <div class="help" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-    <h2>How to play</h2>
-    <p class="lead">You are a crew flying a failing spaceship. Everyone plays on their own
-      phone, together in the same room.</p>
-    <ol>
-      <li><b>Read your command out loud.</b> It usually controls something on
-        <b>someone else's</b> panel - so shout it across the room.</li>
-      <li><b>Hear a command for one of your controls? Do it - fast.</b> Whoever has that
-        control acts on it.</li>
-      <li><b>Keep the bar above the rising red line.</b> Completed commands push it up;
-        misses and time push it down.</li>
-      <li><b>Fill the bar to jump to the next sector.</b> Each sector is faster and harsher.</li>
-    </ol>
-    <h3>Your controls</h3>
-    <ul class="legend">
-      <li><span class="dot b"></span> <b>Button</b> - press it</li>
-      <li><span class="dot t"></span> <b>Toggle</b> - switch on / off</li>
-      <li><span class="dot s"></span> <b>Slider</b> - set the number</li>
-      <li><span class="dot x"></span> <b>Selector</b> - pick the option</li>
-    </ul>
-    <p class="tip">It gets loud and chaotic. That is the point.</p>
-    <button class="btn wide primary" onclick={closeHelp}>Got it</button>
-  </div>
-</div>
-
-<style>
-  .help-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(10,22,21,0.92); display: flex; align-items: flex-start; justify-content: center; padding: 18px; overflow-y: auto; }
-  .help { width: 100%; max-width: 440px; margin: auto; background: var(--panel); border: 1px solid var(--amber); border-radius: var(--radius); padding: 22px; }
-  h2 { margin: 0 0 10px; color: var(--amber); font-family: ui-monospace, Menlo, monospace; letter-spacing: 2px; }
-  h3 { margin: 18px 0 6px; font-size: 0.95rem; color: var(--ink); }
-  .lead { color: var(--ink); margin: 0 0 12px; line-height: 1.4; }
-  ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
-  ol li { line-height: 1.35; }
-  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-  .legend li { display: flex; align-items: center; gap: 8px; }
-  .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
-  .dot.b { background: var(--danger); }
-  .dot.t { background: var(--ok); }
-  .dot.s { background: var(--amber); }
-  .dot.x { background: #7cc4e8; }
-  .tip { color: var(--muted); font-style: italic; margin: 14px 0 16px; }
-</style>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Connecting.svelte`
-
-```svelte
-<script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-
-  const lines = [
-    "Waking the ship's reactor...",
-    "Spinning up the flux capacitor...",
-    "Poking the server with a stick...",
-    "Defrosting the cryo-core...",
-    "Aligning the neutrino manifold...",
-    "Convincing the hamsters to run...",
-    "Bribing the plasma injectors...",
-    "The free server was napping. Rude to wake it...",
-    "Reticulating splines...",
-    "Almost there - free tier, be patient...",
-  ];
-
-  let msg = $state(lines[0]);
-  let progress = $state(8);
-  let elapsed = $state(0);
-  let i = 0;
-  let ticks = 0;
-  let timer: ReturnType<typeof setInterval>;
-
-  onMount(() => {
-    timer = setInterval(() => {
-      ticks++;
-      elapsed = ticks * 0.25;
-      progress = progress + (96 - progress) * 0.03;
-      if (ticks % 10 === 0) { i = (i + 1) % lines.length; msg = lines[i]; }
-    }, 250);
-  });
-  onDestroy(() => clearInterval(timer));
-</script>
-
-<div class="connecting">
-  <div class="box">
-    <div class="title">Boarding</div>
-    <div class="msg">{msg}</div>
-    <div class="pbar"><div class="pfill" style="width:{progress}%"></div></div>
-    {#if elapsed > 3}
-      <p class="hint">First start can take up to a minute while the free server wakes up. Hang tight.</p>
-    {/if}
-  </div>
-</div>
-
-<style>
-  .connecting {
-    position: fixed; inset: 0; z-index: 50;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px; background: rgba(10, 22, 21, 0.94);
-    backdrop-filter: blur(2px);
-    animation: cfade 0.25s ease 0.4s both;
-  }
-  @keyframes cfade { from { opacity: 0; } to { opacity: 1; } }
-  .box {
-    width: 100%; max-width: 380px; text-align: center;
-    background: var(--panel); border: 1px solid var(--amber);
-    border-radius: var(--radius); padding: 26px 22px;
-  }
-  .title {
-    font-family: ui-monospace, Menlo, monospace; letter-spacing: 4px;
-    color: var(--amber); font-size: 1.4rem; font-weight: 700; margin-bottom: 14px;
-  }
-  .msg {
-    font-family: ui-monospace, Menlo, monospace; color: var(--ink);
-    font-size: 1rem; min-height: 2.6em; line-height: 1.3;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .pbar { height: 8px; background: #0c1a19; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
-  .pfill { height: 100%; background: var(--amber); transition: width 0.25s linear; }
-  .hint { color: var(--muted); font-size: 0.8rem; margin: 14px 0 0; }
-</style>
-```
-
 ## Datei: `spaceteam/packages/client/src/lib/Control.svelte`
 
 ```svelte
 <script lang="ts">
-  import { setControl, repairControl, type ControlView } from "./store.svelte";
+  import { setControl, clearHazard, type ControlView } from "./store.svelte";
   let { control }: { control: ControlView } = $props();
 
   const press = () => setControl(control.id, "");
@@ -690,34 +684,54 @@ export function setControl(controlId: string, value: string) {
   const onSlide = (e: Event) => setControl(control.id, (e.target as HTMLInputElement).value);
   const choose = (opt: string) => setControl(control.id, opt);
 
-  let prog = $state(0);
-  let holding = false;
-  let raf = 0;
+  let ticks = $derived(
+    control.kind === "slider"
+      ? Array.from({ length: (control.max ?? 0) - (control.min ?? 0) + 1 }, (_, i) => (control.min ?? 0) + i)
+      : []
+  );
+
+  // Hazard "broken": halten zum Reparieren
+  let holdProg = $state(0);
+  let holding = false; let raf = 0;
   const REPAIR_MS = 1500;
-  function startHold(e: PointerEvent) {
-    if (!control.broken) return;
-    e.preventDefault();
-    holding = true;
+  function holdStart(e: PointerEvent) {
+    if (control.hazard !== "broken") return; e.preventDefault(); holding = true;
     const t0 = performance.now();
     const step = () => {
       if (!holding) return;
-      prog = Math.min(1, (performance.now() - t0) / REPAIR_MS);
-      if (prog >= 1) { holding = false; prog = 0; repairControl(control.id); return; }
+      holdProg = Math.min(1, (performance.now() - t0) / REPAIR_MS);
+      if (holdProg >= 1) { holding = false; holdProg = 0; clearHazard(control.id); return; }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   }
-  function endHold() { holding = false; prog = 0; cancelAnimationFrame(raf); }
+  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(raf); }
+
+  // Hazard "slimed": wegwischen (Swipe)
+  let wipeProg = $state(0);
+  let wiping = false; let lx = 0, ly = 0;
+  const WIPE_PX = 240;
+  function wipeStart(e: PointerEvent) {
+    if (control.hazard !== "slimed") return; e.preventDefault(); wiping = true; lx = e.clientX; ly = e.clientY;
+  }
+  function wipeMove(e: PointerEvent) {
+    if (!wiping) return;
+    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
+    lx = e.clientX; ly = e.clientY;
+    if (wipeProg >= 1) { wiping = false; wipeProg = 0; clearHazard(control.id); }
+  }
+  function wipeEnd() { wiping = false; wipeProg = 0; }
 </script>
 
-<div class="control kind-{control.kind}" class:broken={control.broken}
+<div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
      style="grid-column: span {control.w}; grid-row: span {control.h};">
   <div class="face">
     {#if control.kind === "button"}
       <button class="hw press" onclick={press}>PRESS</button>
     {:else if control.kind === "toggle"}
-      <button class="hw toggle" class:on={control.value === "true"} onclick={flip}>{control.value === "true" ? "ON" : "OFF"}</button>
+      <button class="switch" class:on={control.value === "true"} onclick={flip} aria-label="toggle"><span class="knob"></span></button>
     {:else if control.kind === "slider"}
+      <div class="ticks">{#each ticks as t}<span>{t}</span>{/each}</div>
       <input class="range" type="range" min={control.min} max={control.max} step="1" value={control.value} oninput={onSlide} />
       <div class="readout">{control.value}</div>
     {:else if control.kind === "selector"}
@@ -730,10 +744,15 @@ export function setControl(controlId: string, value: string) {
   </div>
   <div class="name">{control.label}</div>
 
-  {#if control.broken}
-    <div class="broken-overlay" onpointerdown={startHold} onpointerup={endHold} onpointerleave={endHold} onpointercancel={endHold}>
-      <div class="fix">HOLD<br />TO FIX</div>
-      <div class="fixbar"><div class="fixfill" style="width:{prog * 100}%"></div></div>
+  {#if control.hazard === "broken"}
+    <div class="hz hz-broken" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>
+      <div class="hz-label">HOLD<br />TO FIX</div>
+      <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
+    </div>
+  {:else if control.hazard === "slimed"}
+    <div class="hz hz-slimed" onpointerdown={wipeStart} onpointermove={wipeMove} onpointerup={wipeEnd} onpointerleave={wipeEnd} onpointercancel={wipeEnd}>
+      <div class="hz-label">ALIEN GOO<br />WIPE IT OFF</div>
+      <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
     </div>
   {/if}
 </div>
@@ -759,7 +778,7 @@ export function setControl(controlId: string, value: string) {
   .kind-toggle   { border-top-color: var(--ok); }
   .kind-slider   { border-top-color: var(--amber); }
   .kind-selector { border-top-color: #7cc4e8; }
-  .control.broken { filter: grayscale(0.5) brightness(0.72); }
+  .control.hazarded { filter: brightness(0.85); }
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-height: 0; }
   .name {
@@ -776,6 +795,17 @@ export function setControl(controlId: string, value: string) {
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
   .press { background: linear-gradient(180deg,#5a1c1c,#3a1414); border-color: #6b2020; color: #ffd9d2; }
   .press:active { box-shadow: 0 0 12px rgba(229,72,77,0.6); }
+
+  /* Toggle als Kippschalter */
+  .switch { position: relative; height: 42px; width: 58px; margin: 2px auto; padding: 0; border-radius: 22px; cursor: pointer;
+    background: linear-gradient(180deg,#0c1a19,#14302c); border: 1px solid var(--line); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); }
+  .switch .knob { position: absolute; left: 5px; right: 5px; height: 16px; top: 22px; border-radius: 8px;
+    background: linear-gradient(180deg,#95a5a2,#4a5b58); box-shadow: 0 1px 2px rgba(0,0,0,0.6); transition: top 0.12s ease, background 0.12s ease; }
+  .switch.on { border-color: var(--amber); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 12px rgba(245,166,35,0.5); }
+  .switch.on .knob { top: 4px; background: linear-gradient(180deg,#ffd98a,#f5a623); }
+
+  /* Slider mit Ticks */
+  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.6rem; color: var(--muted); }
   .range { width: 100%; accent-color: var(--amber); }
   .readout {
     align-self: center; font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.05rem;
@@ -785,15 +815,19 @@ export function setControl(controlId: string, value: string) {
   .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
   .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem; }
 
-  .broken-overlay {
-    position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
-    border: 2px solid var(--danger); border-radius: 8px;
-    background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px);
-  }
-  .broken-overlay .fix { font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: #ffd9d2; font-size: 0.8rem; text-align: center; line-height: 1.05; text-shadow: 0 0 6px rgba(229,72,77,0.9); }
-  .fixbar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
-  .fixfill { height: 100%; background: var(--ok); }
+  /* Hazard-Overlays */
+  .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; }
+  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.78rem; text-align: center; line-height: 1.05; }
+  .hz-bar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
+  .hz-fill { height: 100%; background: var(--ok); }
+  .hz-fill.green { background: #9be06a; }
+  .hz-broken { border: 2px solid var(--danger);
+    background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
+  .hz-broken .hz-label { color: #ffd9d2; text-shadow: 0 0 6px rgba(229,72,77,0.9); }
+  .hz-slimed { border: 2px solid #6fae3f;
+    background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
+  .hz-slimed .hz-label { color: #eafce0; text-shadow: 0 0 6px rgba(60,140,40,0.9); }
 </style>
 ```
 
@@ -821,7 +855,7 @@ export function setControl(controlId: string, value: string) {
 
   <div class="or">or join with a code</div>
   <div class="join-row">
-    <input class="input" placeholder="Room code" maxlength="6" bind:value={code} style="text-transform:uppercase" />
+    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
     <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
   </div>
 
@@ -865,7 +899,6 @@ export function setControl(controlId: string, value: string) {
   <h1>Ready room</h1>
   <p class="hint">Others join by scanning the code - same room, no download.</p>
   <button class="helplink" onclick={openHelp}>How to play</button>
-  <button class="helplink" onclick={enableMotion}>{S.motionOk ? "Motion enabled (shake/tilt)" : "Enable shake & tilt (optional)"}</button>
 
   <div class="join-card">
     <div class="code">{S.code}</div>
@@ -899,6 +932,13 @@ export function setControl(controlId: string, value: string) {
         {/each}
       </div>
     {/if}
+  </div>
+
+  <div class="difficulty">
+    <span class="diff-label">Motion controls (shake / tilt)</span>
+    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
+      {S.motionOk ? "On" : "Enable"}
+    </button>
   </div>
 
   <button class="btn wide" onclick={() => ready(!mine?.ready)}>
@@ -1091,7 +1131,7 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinByCode, openHelp } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp, initMotion } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -1101,6 +1141,7 @@ export function setControl(controlId: string, value: string) {
   import EventOverlay from "./lib/EventOverlay.svelte";
 
   onMount(() => {
+    initMotion();
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
       joinByCode(r);
@@ -1129,6 +1170,7 @@ export function setControl(controlId: string, value: string) {
 {#if S.eventResult}
   <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
 {/if}
+{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
 {#if S.connecting}<Connecting />{/if}
 {#if S.showHelp}<Help />{/if}
 ```
