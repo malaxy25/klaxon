@@ -7,6 +7,7 @@
   import GameOver from "./lib/GameOver.svelte";
   import Connecting from "./lib/Connecting.svelte";
   import Help from "./lib/Help.svelte";
+  import EventOverlay from "./lib/EventOverlay.svelte";
 
   onMount(() => {
     const r = new URLSearchParams(location.search).get("r");
@@ -33,10 +34,9 @@
   <GameOver />
 {/if}
 
-{#if S.connecting}
-  <Connecting />
+{#if S.eventType}<EventOverlay />{/if}
+{#if S.eventResult}
+  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
 {/if}
-
-{#if S.showHelp}
-  <Help />
-{/if}
+{#if S.connecting}<Connecting />{/if}
+{#if S.showHelp}<Help />{/if}

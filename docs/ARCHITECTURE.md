@@ -211,11 +211,11 @@ am bequemsten).
   **In-App-Tutorial** (How-to-play-Overlay), **Schwierigkeits-Presets** (Host waehlt Start-Sektor). Offen:
   mehr Technobabble, Feinschliff der Kurve, echtes 4×4-Bin-Packing (statt CSS-dense).
 - **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
-  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). Offen: Spezial-Events
-  (Asteroid/Schwarzes Loch, DeviceMotion), PWA-Installation, echtes Reconnect, Observability.
+  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). Offen: PWA-Installation, echtes Reconnect, Observability, weitere Event-Typen.
 - **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels + Reparatur, ✅ 4-stelliger
-  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). Offen: Spezial-Events
-  (Asteroid/Schwarzes Loch, DeviceMotion), PWA-Installation, echtes Reconnect, Observability.
+  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). Offen: PWA-Installation, echtes Reconnect, Observability, weitere Event-Typen.
 
 ---
 

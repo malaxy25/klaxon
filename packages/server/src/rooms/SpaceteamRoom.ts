@@ -33,6 +33,7 @@ class PlayerSchema extends Schema {
   @type("string") instructionText = "";
   @type("number") statCompleted = 0;
   @type("number") statExpired = 0;
+  @type("boolean") eventDone = false;
   // nur mit DEBUG_TARGETS=1 befüllt (für automatisierte Tests):
   @type("string") dbgTargetControlId = "";
   @type("string") dbgTargetValue = "";
@@ -45,6 +46,8 @@ class GameState extends Schema {
   @type("number") deathLimit = 0;
   @type("number") startLevel = 3;
   @type("string") code = "";
+  @type("string") eventType = "";
+  @type("number") eventMs = 0;
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -80,6 +83,11 @@ export class SpaceteamRoom extends Room {
     this.onMessage("repairControl", (client, controlId: string) => {
       const events = this.game.repair(client.sessionId, String(controlId));
       if (events.length) { events.forEach((e) => this.emitEvent(e)); this.syncFull(); }
+    });
+    this.onMessage("eventAction", (client) => {
+      const events = this.game.markEventDone(client.sessionId);
+      events.forEach((e) => this.emitEvent(e));
+      this.syncFull();
     });
     this.onMessage("setDifficulty", (client, level: number) => {
       const p = this.game.players.get(client.sessionId);
@@ -141,6 +149,8 @@ export class SpaceteamRoom extends Room {
     this.state.health = Math.round(this.game.health);
     this.state.deathLimit = Math.round(this.game.deathLimit);
     this.state.startLevel = this.game.startLevel;
+    this.state.eventType = this.game.event?.type ?? "";
+    this.state.eventMs = this.game.event ? 6000 : 0;
   }
 
   private syncFull() {
@@ -159,6 +169,7 @@ export class SpaceteamRoom extends Room {
       sp.instructionText = ep.instruction?.text ?? "";
       sp.statCompleted = ep.statCompleted;
       sp.statExpired = ep.statExpired;
+      sp.eventDone = this.game.event ? this.game.event.done.has(ep.id) : false;
       sp.dbgTargetControlId = this.debug ? (ep.instruction?.targetControlId ?? "") : "";
       sp.dbgTargetValue = this.debug ? (ep.instruction?.targetValue ?? "") : "";
 

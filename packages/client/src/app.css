@@ -116,3 +116,11 @@ body {
     radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
   background-attachment: fixed;
 }
+
+/* No text selection / callout during play (fixes iOS long-press selection) */
+.game, .game *, .event-overlay, .event-overlay * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Event pass/fail banner */
+.ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
+.ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
+.ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }

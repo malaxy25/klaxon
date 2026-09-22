@@ -3,6 +3,19 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.0] - 2026-09-22
+### Added
+- **Special team events (G2):** a random event interrupts play - **Meteor shower
+  (shake)**, **Black hole (flip/tilt your phone)**, **Brace (tap fast)**. Everyone must
+  react before the timer runs out; success heals the ship, failure damages it.
+- Clear pass/fail feedback that works even when you cannot see the screen: distinct
+  sounds (rising alarm / success chord / explosion), a full-screen SURVIVED / HULL
+  BREACH banner, and device vibration where supported.
+- Optional "Enable shake & tilt" in the lobby (iOS motion permission); a tap fallback
+  always works if motion is unavailable.
+### Fixed
+- iOS no longer selects/marks text when holding a control (e.g. repairing a jammed panel).
+
 ## [0.7.0] - 2026-09-22
 ### Added
 - **Breaking panels (G1):** under time pressure a random control jams (rate rises with

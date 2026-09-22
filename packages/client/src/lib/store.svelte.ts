@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.7.0";
+export const VERSION = "0.8.0";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -10,7 +10,7 @@ export type ControlView = {
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
-  statCompleted: number; statExpired: number;
+  statCompleted: number; statExpired: number; eventDone: boolean;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -39,6 +39,10 @@ export const S = $state({
   banner: "",
   showHelp: false,
   startLevel: 3,
+  eventType: "",
+  eventMs: 0,
+  eventResult: "" as "" | "passed" | "failed",
+  motionOk: false,
   feedbackSent: false,
 });
 
@@ -107,11 +111,14 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "eventStart" | "eventPassed" | "eventFailed") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
   else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
+  else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
+  else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
   else if (kind === "gameOver") { stopAlarm(); noiseBurst(500, 0.1); beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
 }
 
@@ -163,6 +170,8 @@ function snapshot() {
   S.deathLimit = st.deathLimit;
   S.startLevel = st.startLevel ?? 3;
   S.code = st.code ?? "";
+  S.eventType = st.eventType ?? "";
+  S.eventMs = st.eventMs ?? 0;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -176,7 +185,7 @@ function snapshot() {
     players.push({
       id: p.id, name: p.name, host: p.host, ready: p.ready,
       connected: p.connected, instructionText: p.instructionText, panel,
-      statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0,
+      statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0, eventDone: p.eventDone ?? false,
     });
   });
   S.players = players;
@@ -204,7 +213,11 @@ async function bind(r: any) {
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
   r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
+  const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
   r.onMessage("evt", (e: any) => {
+    if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
+    else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
+    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); setTimeout(() => (S.eventResult = ""), 1300); }
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
@@ -277,6 +290,17 @@ export function ready(v: boolean) { room?.send("ready", v); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
+export function sendEventAction() { room?.send("eventAction"); }
+export async function enableMotion() {
+  try {
+    const DM: any = (window as any).DeviceMotionEvent;
+    const DO: any = (window as any).DeviceOrientationEvent;
+    let ok = true;
+    if (DM && typeof DM.requestPermission === "function") ok = (await DM.requestPermission()) === "granted";
+    if (DO && typeof DO.requestPermission === "function") { try { await DO.requestPermission(); } catch {} }
+    S.motionOk = ok;
+  } catch { S.motionOk = false; }
+}
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
 }

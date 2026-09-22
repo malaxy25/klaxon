@@ -30,6 +30,8 @@ blockieren) und muessen erst repariert werden. Erzeugt Hektik und Teamarbeit.
 Low-Health)? Optional Befehl "Fix the X" statt stiller Blockade?
 
 ### G2 — Spezial-Team-Events   (Prio: mittel, Aufwand: L)
+> ✅ **Erledigt in v0.8.0** (Meteor/Shake, Black hole/Flip, Brace/Tap; PASS/FAIL akustisch + optisch + Vibration; Tap-Fallback). Plan bleibt als Referenz.
+
 **Problem:** Gemeinsame "alle machen X"-Momente: Meteoritenschauer -> alle **schuetteln**;
 schwarzes Loch -> alle **drehen** das Geraet; Wurmloch -> Panels tauschen; usw.
 

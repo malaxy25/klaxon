@@ -3,28 +3,29 @@
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
 (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-> Verifiziert: `vite build` kompiliert sauber. Kernpfade (Code-Join, kaputte Panels +
-> Reparatur, setDifficulty, Feedback, Stats) ueber den echten Server getestet.
-> Cockpit-Optik am besten auf dem Geraet pruefen.
+> Verifiziert: Build sauber (207 Module). Kernpfade (Code-Join, kaputte Panels,
+> Spezial-Events start/pass/fail, Feedback, Stats) ueber den echten Server getestet.
+> Sensor-Gesten (Shake/Flip) und Cockpit-Optik am besten auf dem Geraet pruefen.
 
 ## Highlights
 
-- 4-Zeichen-**Raumcode** (Join per Code + QR), Raum-Lock nach Start.
-- **Kaputte Panels**: Control blockiert, per Halten (~1,5 s) reparieren.
-- Reicherer **Sound** inkl. Klaxon-Alarm bei niedriger Health; Cockpit-Kacheln,
-  LED-Readouts, One-Screen-Fit, wenige/grosse Kacheln.
-- Lobby: Schwierigkeits-Presets. Game Over: Stats + Feedback. How-to-play, Cold-Start-Overlay.
+- **Spezial-Events**: Meteor (Shake), Black hole (Flip/Tilt), Brace (Tap) mit
+  PASS/FAIL akustisch + optisch (SURVIVED/HULL BREACH) + Vibration; Tap-Fallback.
+- **Kaputte Panels** (Halten ~1,5 s reparieren), **4-Zeichen-Raumcode**, Klaxon-Alarm.
+- One-Screen-Fit, wenige/grosse Cockpit-Kacheln, Schwierigkeits-Presets, Stats + Feedback.
+- iOS-Text-Selektion beim Halten unterdrueckt.
 
 ## Dateibaum
 
 ```
 packages/client/src/
-├── app.css               # Theme + Starfield + diverse Bloecke
-├── App.svelte            # Router + QR-Join (Code) + Overlays
+├── app.css
+├── App.svelte            # Router + Overlays (Connecting/Help/Event) + PASS/FAIL-Banner
 └── lib/
-    ├── store.svelte.ts   # Zustand, Verbindung, Code-Join, Sound/Alarm, Repair, Stats, VERSION
-    ├── Help.svelte  Connecting.svelte  Control.svelte (broken/repair)
-    ├── Home.svelte  Lobby.svelte  Game.svelte  GameOver.svelte
+    ├── store.svelte.ts   # Zustand, Verbindung, Sound/Alarm/Vibration, Events, Repair, VERSION
+    ├── EventOverlay.svelte  # Spezial-Event (Gesten + Tap-Fallback + Countdown)
+    ├── Help.svelte  Connecting.svelte  Control.svelte  Home.svelte
+    ├── Lobby.svelte  Game.svelte  GameOver.svelte
 ```
 
 ---
@@ -152,6 +153,14 @@ body {
     radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
   background-attachment: fixed;
 }
+
+/* No text selection / callout during play (fixes iOS long-press selection) */
+.game, .game *, .event-overlay, .event-overlay * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Event pass/fail banner */
+.ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
+.ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
+.ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -159,7 +168,7 @@ body {
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.7.0";
+export const VERSION = "0.8.0";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -169,7 +178,7 @@ export type ControlView = {
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
-  statCompleted: number; statExpired: number;
+  statCompleted: number; statExpired: number; eventDone: boolean;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -198,6 +207,10 @@ export const S = $state({
   banner: "",
   showHelp: false,
   startLevel: 3,
+  eventType: "",
+  eventMs: 0,
+  eventResult: "" as "" | "passed" | "failed",
+  motionOk: false,
   feedbackSent: false,
 });
 
@@ -266,11 +279,14 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "eventStart" | "eventPassed" | "eventFailed") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
   else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
+  else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
+  else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
+  else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
   else if (kind === "gameOver") { stopAlarm(); noiseBurst(500, 0.1); beep(300, 160, "sawtooth"); setTimeout(() => beep(130, 450, "sawtooth"), 150); }
 }
 
@@ -322,6 +338,8 @@ function snapshot() {
   S.deathLimit = st.deathLimit;
   S.startLevel = st.startLevel ?? 3;
   S.code = st.code ?? "";
+  S.eventType = st.eventType ?? "";
+  S.eventMs = st.eventMs ?? 0;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -335,7 +353,7 @@ function snapshot() {
     players.push({
       id: p.id, name: p.name, host: p.host, ready: p.ready,
       connected: p.connected, instructionText: p.instructionText, panel,
-      statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0,
+      statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0, eventDone: p.eventDone ?? false,
     });
   });
   S.players = players;
@@ -363,7 +381,11 @@ async function bind(r: any) {
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
   r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
+  const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
   r.onMessage("evt", (e: any) => {
+    if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
+    else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
+    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); setTimeout(() => (S.eventResult = ""), 1300); }
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
@@ -436,9 +458,93 @@ export function ready(v: boolean) { room?.send("ready", v); }
 export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function repairControl(controlId: string) { room?.send("repairControl", controlId); }
+export function sendEventAction() { room?.send("eventAction"); }
+export async function enableMotion() {
+  try {
+    const DM: any = (window as any).DeviceMotionEvent;
+    const DO: any = (window as any).DeviceOrientationEvent;
+    let ok = true;
+    if (DM && typeof DM.requestPermission === "function") ok = (await DM.requestPermission()) === "granted";
+    if (DO && typeof DO.requestPermission === "function") { try { await DO.requestPermission(); } catch {} }
+    S.motionOk = ok;
+  } catch { S.motionOk = false; }
+}
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
 }
+```
+
+## Datei: `spaceteam/packages/client/src/lib/EventOverlay.svelte`
+
+```svelte
+<script lang="ts">
+  import { onMount, onDestroy } from "svelte";
+  import { S, sendEventAction } from "./store.svelte";
+
+  const LABELS: Record<string, { title: string; action: string; hint: string }> = {
+    meteor: { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard" },
+    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side" },
+    brace: { title: "BRACE!", action: "TAP FAST!", hint: "" },
+  };
+  let info = $derived(LABELS[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "" });
+
+  let didIt = $state(false);
+  let taps = $state(0);
+  let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
+  let timer: ReturnType<typeof setInterval>;
+  let shakeCount = 0;
+
+  function complete() { if (didIt) return; didIt = true; sendEventAction(); }
+  function onTap() { if (didIt) return; taps++; if (taps >= 5) complete(); }
+  function onMotion(e: DeviceMotionEvent) {
+    const a = e.accelerationIncludingGravity || (e as any).acceleration; if (!a) return;
+    const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+    if (mag > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
+  }
+  function onOrient(e: DeviceOrientationEvent) {
+    const beta = Math.abs(e.beta ?? 0), gamma = Math.abs(e.gamma ?? 0);
+    if (gamma > 55 || beta > 130) complete();
+  }
+  onMount(() => {
+    timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
+    if (S.eventType === "meteor") window.addEventListener("devicemotion", onMotion);
+    if (S.eventType === "blackhole") window.addEventListener("deviceorientation", onOrient);
+  });
+  onDestroy(() => {
+    clearInterval(timer);
+    window.removeEventListener("devicemotion", onMotion);
+    window.removeEventListener("deviceorientation", onOrient);
+  });
+  let doneCount = $derived(S.players.filter((p) => p.eventDone).length);
+</script>
+
+<div class="event-overlay">
+  <div class="ev-box">
+    <div class="ev-title">{info.title}</div>
+    <div class="ev-action">{info.action}</div>
+    {#if !didIt}
+      <button class="btn wide primary" onclick={onTap}>
+        {S.eventType === "brace" ? "TAP! (" + taps + "/5)" : "Can't move? TAP (" + taps + "/5)"}
+      </button>
+      {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
+    {:else}
+      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
+    {/if}
+    <div class="ev-count">{secs}s</div>
+  </div>
+</div>
+
+<style>
+  .event-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(60,10,12,0.9); }
+  .ev-box { width: 100%; max-width: 420px; text-align: center; }
+  .ev-title { font-family: ui-monospace, Menlo, monospace; color: #ffd9d2; letter-spacing: 3px; font-size: 1rem; }
+  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.3rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
+  .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
+  .ev-waiting { color: var(--ok); font-weight: 600; }
+  .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
+  @media (prefers-reduced-motion: no-preference) { .ev-action { animation: evpulse 0.6s ease-in-out infinite alternate; } }
+  @keyframes evpulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+</style>
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/Help.svelte`
@@ -732,7 +838,7 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, VERSION, REPO_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, VERSION, REPO_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -759,6 +865,7 @@ export function setControl(controlId: string, value: string) {
   <h1>Ready room</h1>
   <p class="hint">Others join by scanning the code - same room, no download.</p>
   <button class="helplink" onclick={openHelp}>How to play</button>
+  <button class="helplink" onclick={enableMotion}>{S.motionOk ? "Motion enabled (shake/tilt)" : "Enable shake & tilt (optional)"}</button>
 
   <div class="join-card">
     <div class="code">{S.code}</div>
@@ -991,6 +1098,7 @@ export function setControl(controlId: string, value: string) {
   import GameOver from "./lib/GameOver.svelte";
   import Connecting from "./lib/Connecting.svelte";
   import Help from "./lib/Help.svelte";
+  import EventOverlay from "./lib/EventOverlay.svelte";
 
   onMount(() => {
     const r = new URLSearchParams(location.search).get("r");
@@ -1017,12 +1125,11 @@ export function setControl(controlId: string, value: string) {
   <GameOver />
 {/if}
 
-{#if S.connecting}
-  <Connecting />
+{#if S.eventType}<EventOverlay />{/if}
+{#if S.eventResult}
+  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
 {/if}
-
-{#if S.showHelp}
-  <Help />
-{/if}
+{#if S.connecting}<Connecting />{/if}
+{#if S.showHelp}<Help />{/if}
 ```
 

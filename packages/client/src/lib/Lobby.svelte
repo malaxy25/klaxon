@@ -1,6 +1,6 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, VERSION, REPO_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, VERSION, REPO_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -27,6 +27,7 @@
   <h1>Ready room</h1>
   <p class="hint">Others join by scanning the code - same room, no download.</p>
   <button class="helplink" onclick={openHelp}>How to play</button>
+  <button class="helplink" onclick={enableMotion}>{S.motionOk ? "Motion enabled (shake/tilt)" : "Enable shake & tilt (optional)"}</button>
 
   <div class="join-card">
     <div class="code">{S.code}</div>

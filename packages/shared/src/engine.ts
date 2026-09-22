@@ -44,6 +44,9 @@ export class SpaceteamGame {
   private singlePlayer: boolean;
   private lastTick: number;
   private nextBreakAt = 0;
+  event: { type: string; endsAt: number; done: Set<string> } | null = null;
+  private nextEventAt = 0;
+  private readonly EVENT_MS = 6000;
 
   constructor(opts: EngineOptions = {}) {
     this.rng = opts.rng ?? Math.random;
@@ -106,6 +109,8 @@ export class SpaceteamGame {
     this.assignInstructions();
     this.lastTick = this.now();
     this.nextBreakAt = this.now() + this.breakInterval();
+    this.event = null;
+    this.nextEventAt = this.now() + 18000;
     return true;
   }
 
@@ -116,6 +121,7 @@ export class SpaceteamGame {
     this.level = 0;
     this.health = STARTING_HEALTH;
     this.deathLimit = 0;
+    this.event = null;
     for (const p of this.players.values()) {
       p.panel = [];
       p.instruction = null;
@@ -147,6 +153,29 @@ export class SpaceteamGame {
   }
 
   // ---------- Instruktionsgenerierung ----------
+  private eventInterval(): number { return 28000; }
+
+  private startEvent(): GameEvent {
+    const types = ["meteor", "blackhole", "brace"];
+    const type = pick(types, this.rng);
+    this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
+    return { type: "eventStart" };
+  }
+
+  markEventDone(playerId: string): GameEvent[] {
+    const events: GameEvent[] = [];
+    if (!this.event || !this.players.has(playerId)) return events;
+    this.event.done.add(playerId);
+    const connected = [...this.players.values()].filter((p) => p.connected);
+    if (connected.every((p) => this.event!.done.has(p.id))) {
+      this.event = null;
+      this.health = Math.min(MAX_HEALTH, this.health + 15);
+      this.nextEventAt = this.now() + this.eventInterval();
+      events.push({ type: "eventPassed" });
+    }
+    return events;
+  }
+
   private breakInterval(): number {
     // Rate steigt mit Sektor: ~14s runter bis min 6s
     return Math.max(6000, 14000 - this.level * 1000);
@@ -246,11 +275,31 @@ export class SpaceteamGame {
     const events: GameEvent[] = [];
     if (this.phase !== "playing") return events;
     const now = nowMs ?? this.now();
-    const dt = Math.max(0, (now - this.lastTick) / 1000);
+    const dtMs = Math.max(0, now - this.lastTick);
+    const dt = dtMs / 1000;
     this.lastTick = now;
 
     this.health -= this.difficulty.healthDrainPerSec * dt;
     this.deathLimit = Math.min(MAX_DEATH_LIMIT, this.deathLimit + this.difficulty.deathLimitRisePerSec * dt);
+
+    // Aktives Spezial-Event: der Rest pausiert
+    if (this.event) {
+      for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
+      if (now >= this.event.endsAt) {
+        this.event = null;
+        this.health -= 15;
+        this.nextEventAt = now + this.eventInterval();
+        events.push({ type: "eventFailed" });
+      }
+      if (this.health <= this.deathLimit) { this.phase = "over"; events.push({ type: "gameOver" }); }
+      return events;
+    }
+
+    // Neues Event faellig?
+    if (now >= this.nextEventAt && this.players.size >= 2) {
+      events.push(this.startEvent());
+      return events;
+    }
 
     // Panels koennen brechen (max. so viele gleichzeitig wie Spieler)
     if (now >= this.nextBreakAt) {
