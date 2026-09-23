@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { S, me, dbg } from "./store.svelte";
+  import { S, me, dbg, previewSound, toggleMute } from "./store.svelte";
 
   let open = $state(false);
   let reveal = $state(false);
   let paused = $state(false);
   let statsTimer: ReturnType<typeof setInterval> | undefined;
+  let sndAlarm = $state(false);
+  const ONESHOTS = ["completed", "expired", "nextLevel", "broke", "slimed", "eventStart", "eventPassed", "eventFailed", "gameOver"];
 
   const EVENTS = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
   let mine = $derived(me());
@@ -67,6 +69,17 @@
         <div class="dbg-note">loading...</div>
       {/if}
       <button class="dbg-b" onclick={refreshStats}>Refresh</button>
+    </div>
+
+    <div class="dbg-sec">
+      <div class="dbg-t">Sounds</div>
+      <div class="dbg-row">
+        <button class="dbg-b" class:on={!S.muted} onclick={toggleMute}>{S.muted ? "Muted" : "Sound on"}</button>
+        <button class="dbg-b" class:on={sndAlarm} onclick={() => { sndAlarm = !sndAlarm; previewSound("alarm"); }}>Alarm</button>
+      </div>
+      <div class="dbg-row" style="margin-top:5px">
+        {#each ONESHOTS as k}<button class="dbg-b" onclick={() => previewSound(k)}>{k}</button>{/each}
+      </div>
     </div>
 
     {#if mine?.host}

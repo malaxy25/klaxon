@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.9";
+export const VERSION = "0.8.14";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -110,6 +110,98 @@ function noiseBurst(durMs: number, gain = 0.08) {
   src.connect(g).connect(audioCtx.destination); src.start();
 }
 
+function sweep(f0: number, f1: number, durMs: number, type: OscillatorType = "sine", gain = 0.06) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime, dur = durMs / 1000;
+  const o = audioCtx.createOscillator(); o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+
+let ambient: { stop: () => void; mode: "calm" | "drive" } | null = null;
+
+// Treibender Synth-Bass-Loop (A-Moll), wird pro Sektor schneller - im Spiel.
+const DRIVE_SEQ = [220.0, 220.0, 329.63, 220.0, 261.63, 220.0, 392.0, 329.63];
+function driveStepMs() { return Math.max(120, 210 - (S.level || 1) * 8); }
+function ambientNote(freq: number, dur = 0.16, gain = 0.05, type: OscillatorType = "sawtooth") {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = type; o.frequency.value = freq;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+function pulseHit(gain = 0.05) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = "square";
+  o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.09);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.14);
+}
+
+// Ruhiger Melodie-Loop (Am/F) - im Menue/Lobby/Game-Over.
+const CALM_PHRASES = [
+  [220.0, 261.63, 329.63, 440.0, 392.0, 329.63, 293.66, 261.63],
+  [174.61, 261.63, 349.23, 440.0, 349.23, 293.66, 261.63, 220.0],
+];
+function calmNote(freq: number) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime, dur = 0.7;
+  const o = audioCtx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
+  const o2 = audioCtx.createOscillator(); o2.type = "sine"; o2.frequency.value = freq * 2;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+  o.connect(g).connect(audioCtx.destination); o2.connect(g2); g2.connect(g);
+  o.start(t); o.stop(t + dur + 0.05); o2.start(t); o2.stop(t + dur + 0.05);
+}
+
+function startDrive(): { stop: () => void; mode: "drive" } {
+  const st = { i: 0, stopped: false, h: undefined as any };
+  const loop = () => {
+    if (st.stopped) return;
+    const beat = st.i % 8;
+    ambientNote(DRIVE_SEQ[beat]);
+    if (beat === 0) pulseHit(0.06); else if (beat === 4) pulseHit(0.045);
+    st.i++; st.h = setTimeout(loop, driveStepMs());
+  };
+  loop();
+  return { mode: "drive", stop: () => { st.stopped = true; clearTimeout(st.h); } };
+}
+function startCalm(): { stop: () => void; mode: "calm" } {
+  const st = { i: 0, stopped: false, h: undefined as any };
+  const loop = () => {
+    if (st.stopped) return;
+    const ph = CALM_PHRASES[Math.floor(st.i / 8) % CALM_PHRASES.length];
+    calmNote(ph[st.i % 8]); st.i++;
+    st.h = setTimeout(loop, 520);
+  };
+  loop();
+  return { mode: "calm", stop: () => { st.stopped = true; clearTimeout(st.h); } };
+}
+function stopAmbient() {
+  if (!ambient) return;
+  ambient.stop();
+  ambient = null;
+}
+export function applyAmbient() {
+  if (!audioCtx || S.muted) { stopAmbient(); return; }
+  const want: "calm" | "drive" = S.screen === "game" ? "drive" : "calm";
+  if (ambient && ambient.mode === want) return;
+  stopAmbient();
+  ambient = want === "drive" ? startDrive() : startCalm();
+}
+export function unlockAudio() { ensureAudio(); applyAmbient(); }
+
 let alarmTimer: ReturnType<typeof setInterval> | undefined;
 function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 150, "square", 0.045), 170); }
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
@@ -119,8 +211,8 @@ function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "b
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
-  else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
-  else if (kind === "slimed") { beep(320, 120, "sine", 0.05); setTimeout(() => beep(190, 200, "sine", 0.05), 100); }
+  else if (kind === "broke") { sweep(320, 110, 180, "sawtooth", 0.07); noiseBurst(70, 0.05); }
+  else if (kind === "slimed") { sweep(520, 150, 260, "sine", 0.06); setTimeout(() => noiseBurst(130, 0.035), 60); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
   else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
   else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
@@ -134,7 +226,14 @@ export function toggleMute() {
   S.muted = !S.muted;
   lsSet("klaxon_muted", S.muted ? "1" : "0");
   ensureAudio();
-  if (!S.muted) beep(880, 60);
+  if (S.muted) { stopAmbient(); stopAlarm(); }
+  else { beep(880, 60); applyAmbient(); }
+}
+
+export function previewSound(kind: string) {
+  ensureAudio();
+  if (kind === "alarm") { if (alarmTimer) stopAlarm(); else startAlarm(); return; }
+  playSound(kind as any);
 }
 
 export function me(): PlayerView | undefined {
@@ -213,6 +312,7 @@ function snapshot() {
     S.feedbackSent = false;
   }
   if (st.phase === "playing" && (st.health - st.deathLimit) < 15) startAlarm(); else stopAlarm();
+  applyAmbient();
 }
 
 async function bind(r: any) {

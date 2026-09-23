@@ -2,11 +2,11 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.9
+## Neu in v0.8.14
 
-- Health-Balken = Ueberlebens-Abstand (health-deathLimit)/(100-deathLimit): leer = Game
-  Over, voll = naechster Sektor.
-- Hazard-Text ("HOLD TO FIX" / Alien Goo) auf dunkler Box -> lesbar.
+- Zwei Musik-Modi: ruhig (Home/Lobby/Game-Over) -> treibend beim Spielstart, zurueck danach.
+  Auto-Umschaltung per applyAmbient(); Audio-Unlock beim ersten Tap (unlockAudio()).
+- Debug-Panel "Sounds": Alarm + Mute + Einzel-Sounds (Ambient laeuft automatisch).
 
 ## Dateibaum
 
@@ -23,12 +23,285 @@ packages/client/
 
 # Vollstaendige Dateien
 
+## Datei: `spaceteam/packages/client/index.html`
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klaxon</title>
+    <meta name="theme-color" content="#0e1c1b" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Klaxon" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+      }
+    </script>
+  </body>
+</html>
+```
+
+## Datei: `spaceteam/packages/client/public/manifest.webmanifest`
+
+```json
+{
+  "name": "Klaxon",
+  "short_name": "Klaxon",
+  "description": "A cooperative shouting party game for the same room.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1c1b",
+  "theme_color": "#0e1c1b",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
+```
+
+## Datei: `spaceteam/packages/client/public/sw.js`
+
+```js
+// Minimaler Service Worker: nur damit die App installierbar ist (network-first).
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+});
+```
+
+## Datei: `spaceteam/packages/client/public/favicon.svg`
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0e1c1b"/>
+  <path d="M32 13 L54 51 H10 Z" fill="#f5a623"/>
+  <rect x="29" y="25" width="6" height="14" rx="3" fill="#1a1205"/>
+  <circle cx="32" cy="45" r="3.3" fill="#1a1205"/>
+</svg>
+```
+
+## Datei: `spaceteam/packages/client/src/app.css`
+
+```css
+/* Spaceteam - analoges Instrumenten-Cockpit-Theme */
+:root {
+  --bg: #0e1c1b;
+  --panel: #14302c;
+  --panel-2: #1c413b;
+  --ink: #f2e9d0;
+  --muted: #8fa8a2;
+  --amber: #f5a623;
+  --amber-ink: #1a1205;
+  --danger: #e5484d;
+  --ok: #57c08a;
+  --line: #2c524c;
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 60%);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+#app { min-height: 100%; }
+
+h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
+.tagline, .hint { color: var(--muted); font-size: 0.95rem; line-height: 1.4; }
+.error { color: var(--danger); font-weight: 600; }
+
+/* Buttons */
+.btn {
+  appearance: none; border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--ink);
+  padding: 0.7em 1em; border-radius: var(--radius);
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.btn.wide { width: 100%; padding: 0.9em; }
+.btn.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+
+.input {
+  flex: 1; padding: 0.8em; font-size: 1.1rem; letter-spacing: 2px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: #0c1a19; color: var(--ink); text-transform: none;
+}
+
+/* Layout container for all screens */
+.home, .lobby, .over {
+  max-width: 460px; margin: 0 auto; padding: 6vh 20px 40px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.or { text-align: center; color: var(--muted); font-size: 0.9rem; }
+.join-row { display: flex; gap: 8px; }
+
+/* Lobby */
+.join-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 18px; text-align: center;
+}
+.join-card .code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 2rem; letter-spacing: 4px; color: var(--amber);
+}
+.join-card .qr { margin: 12px auto 6px; display: block; border-radius: 8px; }
+.join-card .url { color: var(--muted); font-size: 0.75rem; word-break: break-all; background: none; border: none; padding: 2px 4px; font: inherit; cursor: pointer; touch-action: manipulation; text-align: center; }
+.join-card .url:active { opacity: 0.7; }
+.join-card .urlhint { color: var(--muted); font-size: 0.65rem; opacity: 0.7; margin-top: 2px; }
+.players { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.players li {
+  display: flex; justify-content: space-between;
+  padding: 0.6em 0.8em; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--panel);
+}
+.players li.ready { border-color: var(--ok); }
+.players li.ready span:last-child { color: var(--ok); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .command-inner.pulse { animation: pop 0.25s ease; }
+}
+@keyframes pop { from { transform: scale(1.06); } to { transform: scale(1); } }
+
+/* Name field */
+.field { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.field > span { color: var(--muted); font-size: 0.8rem; }
+.input.name { letter-spacing: 0; font-size: 1rem; }
+
+/* Version / GitHub footer */
+.version { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 6px; }
+.version a { color: var(--muted); }
+.version a:hover { color: var(--amber); }
+
+/* Help link */
+.helplink { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 0; align-self: center; }
+.helplink:hover { color: var(--amber); }
+
+/* Difficulty presets (lobby) */
+.difficulty { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.diff-label { color: var(--muted); font-size: 0.9rem; }
+.diff-label b { color: var(--ink); }
+.diff-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.btn.diff { padding: 0.5em 0.8em; font-size: 0.85rem; }
+
+/* Subtle starfield background (cockpit flavor) */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1px 1px at 18% 28%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 72% 62%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 42% 82%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 60% 12%, rgba(255,255,255,0.28), transparent),
+    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
+  background-attachment: fixed;
+}
+
+/* No text selection / callout during play (fixes iOS long-press selection) */
+.game, .game *, .event-overlay, .event-overlay * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Event pass/fail banner */
+.ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
+.ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
+.ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }
+
+/* Reconnecting overlay */
+.reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
+.reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }
+
+/* Lobby: offline players + kick */
+.players li.offline { opacity: 0.55; }
+.players li.offline span:last-child { color: var(--danger); }
+.pstatus { display: inline-flex; align-items: center; gap: 8px; }
+.kick { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--danger); border-radius: 6px; width: 22px; height: 22px; line-height: 1; cursor: pointer; font-weight: 700; padding: 0; }
+.kick:hover { background: var(--danger); color: #fff; }
+
+/* Prevent iOS double-tap-zoom from swallowing rapid taps on any button */
+button, .btn, .tapbtn { touch-action: manipulation; }
+```
+
+## Datei: `spaceteam/packages/client/src/App.svelte`
+
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio } from "./lib/store.svelte";
+  import Home from "./lib/Home.svelte";
+  import Lobby from "./lib/Lobby.svelte";
+  import Game from "./lib/Game.svelte";
+  import GameOver from "./lib/GameOver.svelte";
+  import Connecting from "./lib/Connecting.svelte";
+  import Help from "./lib/Help.svelte";
+  import EventOverlay from "./lib/EventOverlay.svelte";
+  import Debug from "./lib/Debug.svelte";
+
+  onMount(() => {
+    initMotion();
+    initDebug();
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    const r = new URLSearchParams(location.search).get("r");
+    if (r) {
+      joinByCode(r);
+    } else {
+      try {
+        if (!localStorage.getItem("klaxon_seen_help")) {
+          openHelp();
+          localStorage.setItem("klaxon_seen_help", "1");
+        }
+      } catch { /* ignore */ }
+    }
+  });
+
+  $effect(() => { void S.screen; void S.muted; applyAmbient(); });
+</script>
+
+{#if S.screen === "home"}
+  <Home />
+{:else if S.screen === "lobby"}
+  <Lobby />
+{:else if S.screen === "game"}
+  <Game />
+{:else}
+  <GameOver />
+{/if}
+
+{#if S.eventType}<EventOverlay />{/if}
+{#if S.eventResult}
+  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
+{/if}
+{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
+{#if S.connecting}<Connecting />{/if}
+{#if S.showHelp}<Help />{/if}
+{#if S.debug}<Debug />{/if}
+```
+
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
 
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.9";
+export const VERSION = "0.8.14";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -138,6 +411,98 @@ function noiseBurst(durMs: number, gain = 0.08) {
   src.connect(g).connect(audioCtx.destination); src.start();
 }
 
+function sweep(f0: number, f1: number, durMs: number, type: OscillatorType = "sine", gain = 0.06) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime, dur = durMs / 1000;
+  const o = audioCtx.createOscillator(); o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+
+let ambient: { stop: () => void; mode: "calm" | "drive" } | null = null;
+
+// Treibender Synth-Bass-Loop (A-Moll), wird pro Sektor schneller - im Spiel.
+const DRIVE_SEQ = [220.0, 220.0, 329.63, 220.0, 261.63, 220.0, 392.0, 329.63];
+function driveStepMs() { return Math.max(120, 210 - (S.level || 1) * 8); }
+function ambientNote(freq: number, dur = 0.16, gain = 0.05, type: OscillatorType = "sawtooth") {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = type; o.frequency.value = freq;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.03);
+}
+function pulseHit(gain = 0.05) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = "square";
+  o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.09);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.14);
+}
+
+// Ruhiger Melodie-Loop (Am/F) - im Menue/Lobby/Game-Over.
+const CALM_PHRASES = [
+  [220.0, 261.63, 329.63, 440.0, 392.0, 329.63, 293.66, 261.63],
+  [174.61, 261.63, 349.23, 440.0, 349.23, 293.66, 261.63, 220.0],
+];
+function calmNote(freq: number) {
+  if (S.muted || !audioCtx) return;
+  const t = audioCtx.currentTime, dur = 0.7;
+  const o = audioCtx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
+  const o2 = audioCtx.createOscillator(); o2.type = "sine"; o2.frequency.value = freq * 2;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+  o.connect(g).connect(audioCtx.destination); o2.connect(g2); g2.connect(g);
+  o.start(t); o.stop(t + dur + 0.05); o2.start(t); o2.stop(t + dur + 0.05);
+}
+
+function startDrive(): { stop: () => void; mode: "drive" } {
+  const st = { i: 0, stopped: false, h: undefined as any };
+  const loop = () => {
+    if (st.stopped) return;
+    const beat = st.i % 8;
+    ambientNote(DRIVE_SEQ[beat]);
+    if (beat === 0) pulseHit(0.06); else if (beat === 4) pulseHit(0.045);
+    st.i++; st.h = setTimeout(loop, driveStepMs());
+  };
+  loop();
+  return { mode: "drive", stop: () => { st.stopped = true; clearTimeout(st.h); } };
+}
+function startCalm(): { stop: () => void; mode: "calm" } {
+  const st = { i: 0, stopped: false, h: undefined as any };
+  const loop = () => {
+    if (st.stopped) return;
+    const ph = CALM_PHRASES[Math.floor(st.i / 8) % CALM_PHRASES.length];
+    calmNote(ph[st.i % 8]); st.i++;
+    st.h = setTimeout(loop, 520);
+  };
+  loop();
+  return { mode: "calm", stop: () => { st.stopped = true; clearTimeout(st.h); } };
+}
+function stopAmbient() {
+  if (!ambient) return;
+  ambient.stop();
+  ambient = null;
+}
+export function applyAmbient() {
+  if (!audioCtx || S.muted) { stopAmbient(); return; }
+  const want: "calm" | "drive" = S.screen === "game" ? "drive" : "calm";
+  if (ambient && ambient.mode === want) return;
+  stopAmbient();
+  ambient = want === "drive" ? startDrive() : startCalm();
+}
+export function unlockAudio() { ensureAudio(); applyAmbient(); }
+
 let alarmTimer: ReturnType<typeof setInterval> | undefined;
 function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 150, "square", 0.045), 170); }
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
@@ -147,8 +512,8 @@ function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "b
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
-  else if (kind === "broke") { beep(210, 110, "sawtooth", 0.06); setTimeout(() => beep(150, 170, "sawtooth", 0.06), 90); }
-  else if (kind === "slimed") { beep(320, 120, "sine", 0.05); setTimeout(() => beep(190, 200, "sine", 0.05), 100); }
+  else if (kind === "broke") { sweep(320, 110, 180, "sawtooth", 0.07); noiseBurst(70, 0.05); }
+  else if (kind === "slimed") { sweep(520, 150, 260, "sine", 0.06); setTimeout(() => noiseBurst(130, 0.035), 60); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
   else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
   else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
@@ -162,7 +527,14 @@ export function toggleMute() {
   S.muted = !S.muted;
   lsSet("klaxon_muted", S.muted ? "1" : "0");
   ensureAudio();
-  if (!S.muted) beep(880, 60);
+  if (S.muted) { stopAmbient(); stopAlarm(); }
+  else { beep(880, 60); applyAmbient(); }
+}
+
+export function previewSound(kind: string) {
+  ensureAudio();
+  if (kind === "alarm") { if (alarmTimer) stopAlarm(); else startAlarm(); return; }
+  playSound(kind as any);
 }
 
 export function me(): PlayerView | undefined {
@@ -241,6 +613,7 @@ function snapshot() {
     S.feedbackSent = false;
   }
   if (st.phase === "playing" && (st.health - st.deathLimit) < 15) startAlarm(); else stopAlarm();
+  applyAmbient();
 }
 
 async function bind(r: any) {
@@ -385,12 +758,14 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { S, me, dbg } from "./store.svelte";
+  import { S, me, dbg, previewSound, toggleMute } from "./store.svelte";
 
   let open = $state(false);
   let reveal = $state(false);
   let paused = $state(false);
   let statsTimer: ReturnType<typeof setInterval> | undefined;
+  let sndAlarm = $state(false);
+  const ONESHOTS = ["completed", "expired", "nextLevel", "broke", "slimed", "eventStart", "eventPassed", "eventFailed", "gameOver"];
 
   const EVENTS = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
   let mine = $derived(me());
@@ -452,6 +827,17 @@ export function setControl(controlId: string, value: string) {
         <div class="dbg-note">loading...</div>
       {/if}
       <button class="dbg-b" onclick={refreshStats}>Refresh</button>
+    </div>
+
+    <div class="dbg-sec">
+      <div class="dbg-t">Sounds</div>
+      <div class="dbg-row">
+        <button class="dbg-b" class:on={!S.muted} onclick={toggleMute}>{S.muted ? "Muted" : "Sound on"}</button>
+        <button class="dbg-b" class:on={sndAlarm} onclick={() => { sndAlarm = !sndAlarm; previewSound("alarm"); }}>Alarm</button>
+      </div>
+      <div class="dbg-row" style="margin-top:5px">
+        {#each ONESHOTS as k}<button class="dbg-b" onclick={() => previewSound(k)}>{k}</button>{/each}
+      </div>
     </div>
 
     {#if mine?.host}
@@ -783,6 +1169,161 @@ export function setControl(controlId: string, value: string) {
 </style>
 ```
 
+## Datei: `spaceteam/packages/client/src/lib/Home.svelte`
+
+```svelte
+<script lang="ts">
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
+  let code = $state("");
+
+  let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
+  function tapVersion() {
+    if (S.debug) { setDebug(false); verTaps = 0; alert("Debug OFF"); return; }
+    verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
+    if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
+  }
+</script>
+
+<div class="home">
+  <h1>Klaxon</h1>
+  <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name} oninput={(e) => updateName((e.target as HTMLInputElement).value)} />
+  </label>
+
+  <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
+    {S.connecting ? "Starting..." : "Start a new game"}
+  </button>
+
+  <div class="or">or join with a code</div>
+  <div class="join-row">
+    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
+    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
+  </div>
+
+  {#if S.error}<p class="error">{S.error}</p>{/if}
+
+  <button class="btn wide" onclick={openHelp}>How to play</button>
+
+  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
+</div>
+<style>
+  .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
+  .dbgon { color: #c98fe0; }
+</style>```
+
+## Datei: `spaceteam/packages/client/src/lib/Lobby.svelte`
+
+```svelte
+<script lang="ts">
+  import QRCode from "qrcode";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
+
+  let qr = $state("");
+  let mine = $derived(me());
+  let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
+
+  const DIFFS = [
+    { label: "Casual", level: 1 },
+    { label: "Normal", level: 3 },
+    { label: "Hard", level: 5 },
+    { label: "Insane", level: 8 },
+  ];
+  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
+
+  $effect(() => {
+    if (S.roomId) {
+      QRCode.toDataURL(joinUrl(), { margin: 1, width: 220 })
+        .then((d) => (qr = d))
+        .catch(() => (qr = ""));
+    }
+  });
+
+  let copied = $state(false);
+  let copyT: ReturnType<typeof setTimeout>;
+  async function copyLink() {
+    const text = joinUrl();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+      } catch { /* ignore */ }
+    }
+    copied = true; clearTimeout(copyT); copyT = setTimeout(() => (copied = false), 1500);
+  }
+</script>
+
+<div class="lobby">
+  <h1>Ready room</h1>
+  <p class="hint">Others join by scanning the code - same room, no download.</p>
+  <button class="helplink" onclick={openHelp}>How to play</button>
+
+  <div class="join-card">
+    <div class="code">{S.code}</div>
+    {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
+    <button class="url" onclick={copyLink}>{copied ? "Link copied!" : joinUrl()}</button>
+    <div class="urlhint">{copied ? "" : "tap link to copy"}</div>
+  </div>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name}
+           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
+           onchange={commitName} onblur={commitName} />
+  </label>
+
+  <ul class="players">
+    {#each S.players as p (p.id)}
+      <li class:ready={p.ready} class:offline={!p.connected}>
+        <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
+        <span class="pstatus">
+          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
+          {#if mine?.host && p.id !== S.sessionId}
+            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
+          {/if}
+        </span>
+      </li>
+    {/each}
+  </ul>
+
+  <div class="difficulty">
+    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
+    {#if mine?.host}
+      <div class="diff-opts">
+        {#each DIFFS as d}
+          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div class="difficulty">
+    <span class="diff-label">Motion controls (shake / tilt)</span>
+    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
+      {S.motionOk ? "On" : "Enable"}
+    </button>
+  </div>
+
+  <button class="btn wide" onclick={() => ready(!mine?.ready)}>
+    {mine?.ready ? "Not ready" : "I am ready"}
+  </button>
+
+  {#if mine?.host}
+    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
+    {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
+  {/if}
+  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
+</div>
+```
+
 ## Datei: `spaceteam/packages/client/src/lib/Game.svelte`
 
 ```svelte
@@ -872,143 +1413,6 @@ export function setControl(controlId: string, value: string) {
 </style>
 ```
 
-## Datei: `spaceteam/packages/client/src/lib/Home.svelte`
-
-```svelte
-<script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
-  let code = $state("");
-
-  let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
-  function tapVersion() {
-    if (S.debug) { setDebug(false); verTaps = 0; alert("Debug OFF"); return; }
-    verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
-    if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
-  }
-</script>
-
-<div class="home">
-  <h1>Klaxon</h1>
-  <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
-
-  <label class="field">
-    <span>Your name</span>
-    <input class="input name" maxlength="20" placeholder="Your name"
-           value={S.name} oninput={(e) => updateName((e.target as HTMLInputElement).value)} />
-  </label>
-
-  <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
-    {S.connecting ? "Starting..." : "Start a new game"}
-  </button>
-
-  <div class="or">or join with a code</div>
-  <div class="join-row">
-    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
-    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
-  </div>
-
-  {#if S.error}<p class="error">{S.error}</p>{/if}
-
-  <button class="btn wide" onclick={openHelp}>How to play</button>
-
-  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
-</div>
-<style>
-  .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
-  .dbgon { color: #c98fe0; }
-</style>```
-
-## Datei: `spaceteam/packages/client/src/lib/Lobby.svelte`
-
-```svelte
-<script lang="ts">
-  import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
-
-  let qr = $state("");
-  let mine = $derived(me());
-  let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
-
-  const DIFFS = [
-    { label: "Casual", level: 1 },
-    { label: "Normal", level: 3 },
-    { label: "Hard", level: 5 },
-    { label: "Insane", level: 8 },
-  ];
-  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
-
-  $effect(() => {
-    if (S.roomId) {
-      QRCode.toDataURL(joinUrl(), { margin: 1, width: 220 })
-        .then((d) => (qr = d))
-        .catch(() => (qr = ""));
-    }
-  });
-</script>
-
-<div class="lobby">
-  <h1>Ready room</h1>
-  <p class="hint">Others join by scanning the code - same room, no download.</p>
-  <button class="helplink" onclick={openHelp}>How to play</button>
-
-  <div class="join-card">
-    <div class="code">{S.code}</div>
-    {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
-    <div class="url">{joinUrl()}</div>
-  </div>
-
-  <label class="field">
-    <span>Your name</span>
-    <input class="input name" maxlength="20" placeholder="Your name"
-           value={S.name}
-           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
-           onchange={commitName} onblur={commitName} />
-  </label>
-
-  <ul class="players">
-    {#each S.players as p (p.id)}
-      <li class:ready={p.ready} class:offline={!p.connected}>
-        <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
-        <span class="pstatus">
-          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
-          {#if mine?.host && p.id !== S.sessionId}
-            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
-          {/if}
-        </span>
-      </li>
-    {/each}
-  </ul>
-
-  <div class="difficulty">
-    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
-    {#if mine?.host}
-      <div class="diff-opts">
-        {#each DIFFS as d}
-          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
-        {/each}
-      </div>
-    {/if}
-  </div>
-
-  <div class="difficulty">
-    <span class="diff-label">Motion controls (shake / tilt)</span>
-    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
-      {S.motionOk ? "On" : "Enable"}
-    </button>
-  </div>
-
-  <button class="btn wide" onclick={() => ready(!mine?.ready)}>
-    {mine?.ready ? "Not ready" : "I am ready"}
-  </button>
-
-  {#if mine?.host}
-    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
-    {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
-  {/if}
-  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
-</div>
-```
-
 ## Datei: `spaceteam/packages/client/src/lib/GameOver.svelte`
 
 ```svelte
@@ -1092,55 +1496,134 @@ export function setControl(controlId: string, value: string) {
 </style>
 ```
 
-## Datei: `spaceteam/packages/client/src/App.svelte`
+## Datei: `spaceteam/packages/client/src/lib/Help.svelte`
 
 ```svelte
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { S, joinByCode, openHelp, initMotion, initDebug } from "./lib/store.svelte";
-  import Home from "./lib/Home.svelte";
-  import Lobby from "./lib/Lobby.svelte";
-  import Game from "./lib/Game.svelte";
-  import GameOver from "./lib/GameOver.svelte";
-  import Connecting from "./lib/Connecting.svelte";
-  import Help from "./lib/Help.svelte";
-  import EventOverlay from "./lib/EventOverlay.svelte";
-  import Debug from "./lib/Debug.svelte";
-
-  onMount(() => {
-    initMotion();
-    initDebug();
-    const r = new URLSearchParams(location.search).get("r");
-    if (r) {
-      joinByCode(r);
-    } else {
-      try {
-        if (!localStorage.getItem("klaxon_seen_help")) {
-          openHelp();
-          localStorage.setItem("klaxon_seen_help", "1");
-        }
-      } catch { /* ignore */ }
-    }
-  });
+  import { closeHelp } from "./store.svelte";
 </script>
 
-{#if S.screen === "home"}
-  <Home />
-{:else if S.screen === "lobby"}
-  <Lobby />
-{:else if S.screen === "game"}
-  <Game />
-{:else}
-  <GameOver />
-{/if}
+<svelte:window onkeydown={(e) => { if (e.key === "Escape") closeHelp(); }} />
 
-{#if S.eventType}<EventOverlay />{/if}
-{#if S.eventResult}
-  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
-{/if}
-{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
-{#if S.connecting}<Connecting />{/if}
-{#if S.showHelp}<Help />{/if}
-{#if S.debug}<Debug />{/if}
+<div class="help-backdrop" onclick={closeHelp} role="presentation">
+  <div class="help" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <h2>How to play</h2>
+    <p class="lead">You are a crew flying a failing spaceship. Everyone plays on their own
+      phone, together in the same room.</p>
+    <ol>
+      <li><b>Read your command out loud.</b> It usually controls something on
+        <b>someone else's</b> panel - so shout it across the room.</li>
+      <li><b>Hear a command for one of your controls? Do it - fast.</b> Whoever has that
+        control acts on it.</li>
+      <li><b>Keep the bar above the rising red line.</b> Completed commands push it up;
+        misses and time push it down.</li>
+      <li><b>Fill the bar to jump to the next sector.</b> Each sector is faster and harsher.</li>
+    </ol>
+    <h3>Your controls</h3>
+    <ul class="legend">
+      <li><span class="dot b"></span> <b>Button</b> - press it</li>
+      <li><span class="dot t"></span> <b>Toggle</b> - switch on / off</li>
+      <li><span class="dot s"></span> <b>Slider</b> - set the number</li>
+      <li><span class="dot x"></span> <b>Selector</b> - pick the option</li>
+    </ul>
+    <p class="tip">It gets loud and chaotic. That is the point.</p>
+    <button class="btn wide primary" onclick={closeHelp}>Got it</button>
+  </div>
+</div>
+
+<style>
+  .help-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(10,22,21,0.92); display: flex; align-items: flex-start; justify-content: center; padding: 18px; overflow-y: auto; }
+  .help { width: 100%; max-width: 440px; margin: auto; background: var(--panel); border: 1px solid var(--amber); border-radius: var(--radius); padding: 22px; }
+  h2 { margin: 0 0 10px; color: var(--amber); font-family: ui-monospace, Menlo, monospace; letter-spacing: 2px; }
+  h3 { margin: 18px 0 6px; font-size: 0.95rem; color: var(--ink); }
+  .lead { color: var(--ink); margin: 0 0 12px; line-height: 1.4; }
+  ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+  ol li { line-height: 1.35; }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .legend li { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+  .dot.b { background: var(--danger); }
+  .dot.t { background: var(--ok); }
+  .dot.s { background: var(--amber); }
+  .dot.x { background: #7cc4e8; }
+  .tip { color: var(--muted); font-style: italic; margin: 14px 0 16px; }
+</style>
+```
+
+## Datei: `spaceteam/packages/client/src/lib/Connecting.svelte`
+
+```svelte
+<script lang="ts">
+  import { onMount, onDestroy } from "svelte";
+
+  const lines = [
+    "Waking the ship's reactor...",
+    "Spinning up the flux capacitor...",
+    "Poking the server with a stick...",
+    "Defrosting the cryo-core...",
+    "Aligning the neutrino manifold...",
+    "Convincing the hamsters to run...",
+    "Bribing the plasma injectors...",
+    "The free server was napping. Rude to wake it...",
+    "Reticulating splines...",
+    "Almost there - free tier, be patient...",
+  ];
+
+  let msg = $state(lines[0]);
+  let progress = $state(8);
+  let elapsed = $state(0);
+  let i = 0;
+  let ticks = 0;
+  let timer: ReturnType<typeof setInterval>;
+
+  onMount(() => {
+    timer = setInterval(() => {
+      ticks++;
+      elapsed = ticks * 0.25;
+      progress = progress + (96 - progress) * 0.03;
+      if (ticks % 10 === 0) { i = (i + 1) % lines.length; msg = lines[i]; }
+    }, 250);
+  });
+  onDestroy(() => clearInterval(timer));
+</script>
+
+<div class="connecting">
+  <div class="box">
+    <div class="title">Boarding</div>
+    <div class="msg">{msg}</div>
+    <div class="pbar"><div class="pfill" style="width:{progress}%"></div></div>
+    {#if elapsed > 3}
+      <p class="hint">First start can take up to a minute while the free server wakes up. Hang tight.</p>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .connecting {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: rgba(10, 22, 21, 0.94);
+    backdrop-filter: blur(2px);
+    animation: cfade 0.25s ease 0.4s both;
+  }
+  @keyframes cfade { from { opacity: 0; } to { opacity: 1; } }
+  .box {
+    width: 100%; max-width: 380px; text-align: center;
+    background: var(--panel); border: 1px solid var(--amber);
+    border-radius: var(--radius); padding: 26px 22px;
+  }
+  .title {
+    font-family: ui-monospace, Menlo, monospace; letter-spacing: 4px;
+    color: var(--amber); font-size: 1.4rem; font-weight: 700; margin-bottom: 14px;
+  }
+  .msg {
+    font-family: ui-monospace, Menlo, monospace; color: var(--ink);
+    font-size: 1rem; min-height: 2.6em; line-height: 1.3;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pbar { height: 8px; background: #0c1a19; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .pfill { height: 100%; background: var(--amber); transition: width 0.25s linear; }
+  .hint { color: var(--muted); font-size: 0.8rem; margin: 14px 0 0; }
+</style>
 ```
 

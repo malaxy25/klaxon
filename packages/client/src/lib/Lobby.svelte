@@ -21,6 +21,23 @@
         .catch(() => (qr = ""));
     }
   });
+
+  let copied = $state(false);
+  let copyT: ReturnType<typeof setTimeout>;
+  async function copyLink() {
+    const text = joinUrl();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+      } catch { /* ignore */ }
+    }
+    copied = true; clearTimeout(copyT); copyT = setTimeout(() => (copied = false), 1500);
+  }
 </script>
 
 <div class="lobby">
@@ -31,7 +48,8 @@
   <div class="join-card">
     <div class="code">{S.code}</div>
     {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
-    <div class="url">{joinUrl()}</div>
+    <button class="url" onclick={copyLink}>{copied ? "Link copied!" : joinUrl()}</button>
+    <div class="urlhint">{copied ? "" : "tap link to copy"}</div>
   </div>
 
   <label class="field">

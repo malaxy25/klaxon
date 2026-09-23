@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinByCode, openHelp, initMotion, initDebug } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -13,6 +13,7 @@
   onMount(() => {
     initMotion();
     initDebug();
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
       joinByCode(r);
@@ -25,6 +26,8 @@
       } catch { /* ignore */ }
     }
   });
+
+  $effect(() => { void S.screen; void S.muted; applyAmbient(); });
 </script>
 
 {#if S.screen === "home"}

@@ -3,6 +3,34 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.14] - 2026-09-23
+### Added
+- **Two music modes:** a calm loop on the home / lobby / game-over screens that switches
+  to the driving loop when a round starts (and back afterwards). Audio unlocks on the
+  first tap. The Sound Lab now has both loops as separate buttons.
+
+## [0.8.13] - 2026-09-23
+### Changed
+- **Ambient loop is now driving:** a pulsing synth-bass (Am, with a downbeat pulse) that
+  **speeds up each sector** - more drive as it gets harder. Replaces the calm melody.
+
+## [0.8.12] - 2026-09-23
+### Fixed
+- **Ambient loop was inaudible** (sub-bass ~55 Hz that phone speakers can't reproduce).
+  Replaced with a soft, spacey **looping melody** (Am/F arpeggio) in an audible range.
+
+## [0.8.11] - 2026-09-23
+### Added
+- **Sound preview in the debug panel:** a "Sounds" section to play every sound (hazards,
+  commands, events, game over) and toggle the ambient loop, klaxon alarm, and mute -
+  always on hand for tuning. (Also available as a standalone Sound Lab page.)
+
+## [0.8.10] - 2026-09-23
+### Added
+- **Tap the join link** under the QR code to copy it to the clipboard ("Link copied!").
+- **Ambient background hum** during play, plus **distinct sounds per hazard** (a
+  mechanical buzz for a jammed panel, a wet squelch for alien slime). All respect Mute.
+
 ## [0.8.9] - 2026-09-23
 ### Fixed
 - **Health bar now shows the survival margin** (how far you are above the rising death
