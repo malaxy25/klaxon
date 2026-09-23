@@ -3,13 +3,10 @@
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
 (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-> Verifiziert: Build sauber. 8 Spieler/Raum + Host-Kick netzwerkseitig getestet;
-> Events, Hazards, Reconnect, PWA in fruehen Versionen validiert.
+## Neu in v0.8.5
 
-## Neu in v0.8.4
-
-- Bis 8 Spieler/Raum; Host kann per "x" in der Lobby Spieler entfernen; Offline-Anzeige.
-- Cockpit: Press-Dome, Selector-LED-Zellen, Panel-Rahmen (Dashboard-Look).
+- Event-Taps zuverlaessig auf iOS (touch-action: manipulation + pointerdown, 3 statt 5 Taps).
+  Events laufen zudem immer nach ~6 s ab -> koennen nicht haengen.
 
 ## Dateibaum
 
@@ -236,6 +233,9 @@ body {
 .pstatus { display: inline-flex; align-items: center; gap: 8px; }
 .kick { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--danger); border-radius: 6px; width: 22px; height: 22px; line-height: 1; cursor: pointer; font-weight: 700; padding: 0; }
 .kick:hover { background: var(--danger); color: #fff; }
+
+/* Prevent iOS double-tap-zoom from swallowing rapid taps on any button */
+button, .btn, .tapbtn { touch-action: manipulation; }
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -243,7 +243,7 @@ body {
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.4";
+export const VERSION = "0.8.5";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -604,7 +604,7 @@ export function setControl(controlId: string, value: string) {
   let shakeCount = 0, holding = false, holdRaf = 0;
 
   function complete() { if (didIt) return; didIt = true; sendEventAction(); }
-  function onTap() { if (didIt) return; taps++; if (taps >= 5) complete(); }
+  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
   function holdStart(e: PointerEvent) {
     if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
     const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
@@ -648,8 +648,8 @@ export function setControl(controlId: string, value: string) {
       <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
       <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
     {:else}
-      <button class="btn wide primary" onclick={onTap}>
-        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/5)" : "Can't move? TAP (" + taps + "/5)"}
+      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
+        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
       </button>
       {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
       {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}

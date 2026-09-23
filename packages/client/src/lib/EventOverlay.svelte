@@ -21,7 +21,7 @@
   let shakeCount = 0, holding = false, holdRaf = 0;
 
   function complete() { if (didIt) return; didIt = true; sendEventAction(); }
-  function onTap() { if (didIt) return; taps++; if (taps >= 5) complete(); }
+  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
   function holdStart(e: PointerEvent) {
     if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
     const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
@@ -65,8 +65,8 @@
       <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
       <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
     {:else}
-      <button class="btn wide primary" onclick={onTap}>
-        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/5)" : "Can't move? TAP (" + taps + "/5)"}
+      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
+        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
       </button>
       {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
       {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}

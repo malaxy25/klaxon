@@ -46,6 +46,7 @@ export class SpaceteamGame {
   private nextBreakAt = 0;
   event: { type: string; endsAt: number; done: Set<string> } | null = null;
   private nextEventAt = 0;
+  forceEvent = "";
   private readonly EVENT_MS = 6000;
 
   constructor(opts: EngineOptions = {}) {
@@ -161,7 +162,7 @@ export class SpaceteamGame {
 
   private startEvent(): GameEvent {
     const types = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
-    const type = pick(types, this.rng);
+    const type = this.forceEvent || pick(types, this.rng);
     if (type === "wormhole") for (const p of this.players.values()) this.shuffle(p.panel);
     this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
     return { type: "eventStart" };

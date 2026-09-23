@@ -63,6 +63,7 @@ export class SpaceteamRoom extends Room {
     const code = String(options?.code || genCode()).toUpperCase().slice(0, 6);
     this.setMetadata({ code });
     this.state.code = code;
+    this.game.forceEvent = process.env.FORCE_EVENT || "";
 
     this.onMessage("setName", (client, name: string) => {
       const p = this.game.players.get(client.sessionId);

@@ -3,6 +3,15 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.5] - 2026-09-23
+### Fixed
+- Special-event taps (Brace / Wormhole and the tap fallback) sometimes did not register
+  on iOS because rapid taps triggered double-tap zoom - so the event seemed stuck. Buttons
+  now use `touch-action: manipulation` + pointer events, and tap events need only **3**
+  taps. (Events also always auto-resolve after their ~6 s timer, so they can never hang.)
+### Added
+- Dev: `FORCE_EVENT` env var on the server to force a specific event type while testing.
+
 ## [0.8.4] - 2026-09-23
 ### Added
 - Up to **8 players** per room (was 4). Rooms run in parallel, each with its own code.
