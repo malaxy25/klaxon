@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.9] - 2026-09-23
+### Fixed
+- **Health bar now shows the survival margin** (how far you are above the rising death
+  line): empty = game over, full = next sector. Before it showed raw health with a
+  separate death-line layer, so the bar looked "not empty" when you died.
+- **Hazard prompts** ("HOLD TO FIX" / "ALIEN GOO - WIPE IT OFF") now sit on a dark chip,
+  so they are readable over the busy hazard patterns.
+
 ## [0.8.8] - 2026-09-23
 ### Added
 - Turn on the debug panel without the URL: **tap the version in the Home footer 5x** to

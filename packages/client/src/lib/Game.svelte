@@ -4,8 +4,7 @@
   import Control from "./Control.svelte";
 
   let mine = $derived(me());
-  let healthPct = $derived(Math.max(0, Math.min(100, S.health)));
-  let floorPct = $derived(Math.max(0, Math.min(100, S.deathLimit)));
+  let marginPct = $derived(Math.max(0, Math.min(100, ((S.health - S.deathLimit) / Math.max(1, 100 - S.deathLimit)) * 100)));
   let danger = $derived(S.health - S.deathLimit < 20);
   let cmdMs = $derived(difficultyForLevel(S.level).instructionTimeMs);
 </script>
@@ -14,8 +13,7 @@
   <header class="hud">
     <span class="sector">SECTOR {S.level}</span>
     <div class="bar" class:danger>
-      <div class="floor" style="width:{floorPct}%"></div>
-      <div class="health" style="width:{healthPct}%"></div>
+      <div class="health" style="width:{marginPct}%"></div>
     </div>
     <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
   </header>
@@ -49,7 +47,6 @@
   .hud { flex: none; display: flex; align-items: center; gap: 10px; }
   .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
   .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
-  .floor { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(45deg,#3a1414,#3a1414 5px,#511a1a 5px,#511a1a 10px); }
   .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
   .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }
   .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }

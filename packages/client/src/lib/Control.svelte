@@ -145,14 +145,12 @@
   /* Hazard-Overlays */
   .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; }
-  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.78rem; text-align: center; line-height: 1.05; }
+  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.82rem; text-align: center; line-height: 1.1; color: #fff; background: rgba(0,0,0,0.72); padding: 5px 9px; border-radius: 7px; box-shadow: 0 1px 3px rgba(0,0,0,0.6); }
   .hz-bar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
   .hz-fill { height: 100%; background: var(--ok); }
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .hz-broken .hz-label { color: #ffd9d2; text-shadow: 0 0 6px rgba(229,72,77,0.9); }
   .hz-slimed { border: 2px solid #6fae3f;
     background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
-  .hz-slimed .hz-label { color: #eafce0; text-shadow: 0 0 6px rgba(60,140,40,0.9); }
 </style>
