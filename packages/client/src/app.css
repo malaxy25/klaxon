@@ -128,3 +128,10 @@ body {
 /* Reconnecting overlay */
 .reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
 .reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }
+
+/* Lobby: offline players + kick */
+.players li.offline { opacity: 0.55; }
+.players li.offline span:last-child { color: var(--danger); }
+.pstatus { display: inline-flex; align-items: center; gap: 8px; }
+.kick { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--danger); border-radius: 6px; width: 22px; height: 22px; line-height: 1; cursor: pointer; font-weight: 700; padding: 0; }
+.kick:hover { background: var(--danger); color: #fff; }

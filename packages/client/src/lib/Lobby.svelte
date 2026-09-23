@@ -1,6 +1,6 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, VERSION, REPO_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -44,9 +44,14 @@
 
   <ul class="players">
     {#each S.players as p (p.id)}
-      <li class:ready={p.ready}>
+      <li class:ready={p.ready} class:offline={!p.connected}>
         <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
-        <span>{p.ready ? "ready" : "waiting"}</span>
+        <span class="pstatus">
+          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
+          {#if mine?.host && p.id !== S.sessionId}
+            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
+          {/if}
+        </span>
       </li>
     {/each}
   </ul>

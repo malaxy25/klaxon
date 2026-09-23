@@ -116,8 +116,10 @@
   }
   .hw:active { transform: translateY(1px); }
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { background: linear-gradient(180deg,#5a1c1c,#3a1414); border-color: #6b2020; color: #ffd9d2; }
-  .press:active { box-shadow: 0 0 12px rgba(229,72,77,0.6); }
+  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 68px; margin: 0 auto; font-size: 0.8rem;
+    background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
+  .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
 
   /* Toggle als Kippschalter */
   .switch { position: relative; height: 42px; width: 58px; margin: 2px auto; padding: 0; border-radius: 22px; cursor: pointer;
@@ -136,7 +138,9 @@
     box-shadow: inset 0 0 8px rgba(0,0,0,0.6); text-shadow: 0 0 6px rgba(245,166,35,0.6);
   }
   .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem; }
+  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem;
+    background: #0a1615; color: var(--muted); border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
+  .opts .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
 
   /* Hazard-Overlays */
   .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;

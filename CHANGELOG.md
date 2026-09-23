@@ -3,6 +3,17 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.4] - 2026-09-23
+### Added
+- Up to **8 players** per room (was 4). Rooms run in parallel, each with its own code.
+- **Host can remove a player** from the room (e.g. someone stuck offline) - an "x" next
+  to each other player in the lobby.
+- Disconnected players show as **offline** (greyed) in the lobby; a dropped player no
+  longer ends the round unless fewer than 2 remain.
+### Changed
+- Cockpit polish: **PRESS** buttons are red dome buttons, selector options look like
+  inset LED cells, and the panel sits in a framed metal dashboard.
+
 ## [0.8.3] - 2026-09-22
 ### Added
 - Three more special events: **Power surge** (hold), **Decompression** (do NOT touch

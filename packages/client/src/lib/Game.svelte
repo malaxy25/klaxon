@@ -67,7 +67,9 @@
   .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
   .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
 
-  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px; }
+  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
+    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
+    box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
   @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
   @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
 

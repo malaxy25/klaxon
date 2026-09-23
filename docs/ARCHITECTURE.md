@@ -212,10 +212,10 @@ am bequemsten).
   mehr Technobabble, Feinschliff der Kurve, echtes 4×4-Bin-Packing (statt CSS-dense).
 - **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
   Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). Offen: Observability, PNG-App-Icons, Feintuning.
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). ✅ 8 Spieler/Raum, Host-Kick, robustes Spielerentfernen (Game Over erst < 2). Offen: Observability, PNG-App-Icons, Feintuning.
 - **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
   Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). Offen: Observability, PNG-App-Icons, Feintuning.
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). ✅ 8 Spieler/Raum, Host-Kick, robustes Spielerentfernen (Game Over erst < 2). Offen: Observability, PNG-App-Icons, Feintuning.
 
 ---
 

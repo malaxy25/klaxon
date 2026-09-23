@@ -69,14 +69,14 @@ export class SpaceteamGame {
   removePlayer(id: string): GameEvent[] {
     const wasHost = this.players.get(id)?.host ?? false;
     this.players.delete(id);
-    if (this.phase === "playing") {
-      // Wie OpenSpaceTeam: Disconnect im Spiel beendet die Runde.
-      this.phase = "over";
-      return [{ type: "gameOver" }];
-    }
     if (wasHost && this.players.size > 0) {
       const next = pick([...this.players.values()], this.rng);
       next.host = true;
+    }
+    // Im Spiel nur beenden, wenn zu wenige uebrig sind.
+    if (this.phase === "playing" && this.players.size < 2) {
+      this.phase = "over";
+      return [{ type: "gameOver" }];
     }
     return [];
   }

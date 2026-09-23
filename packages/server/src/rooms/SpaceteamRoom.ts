@@ -53,7 +53,8 @@ class GameState extends Schema {
 
 export class SpaceteamRoom extends Room {
   state = new GameState();
-  maxClients = 4;
+  maxClients = 8;
+  private kicked = new Set<string>();
   private game!: SpaceteamGame;
   private debug = process.env.DEBUG_TARGETS === "1";
 
@@ -88,6 +89,16 @@ export class SpaceteamRoom extends Room {
       const events = this.game.markEventDone(client.sessionId);
       events.forEach((e) => this.emitEvent(e));
       this.syncFull();
+    });
+    this.onMessage("kick", (client, targetId: string) => {
+      const host = this.game.players.get(client.sessionId);
+      if (!host?.host || client.sessionId === targetId) return;
+      this.kicked.add(String(targetId));
+      const events = this.game.removePlayer(String(targetId));
+      events.forEach((e) => this.emitEvent(e));
+      this.syncFull();
+      const target = this.clients.find((c) => c.sessionId === targetId);
+      if (target) { try { target.leave(1000); } catch { /* ignore */ } }
     });
     this.onMessage("setDifficulty", (client, level: number) => {
       const p = this.game.players.get(client.sessionId);
@@ -139,6 +150,7 @@ export class SpaceteamRoom extends Room {
   }
 
   async onLeave(client: Client, code?: number) {
+    if (this.kicked.has(client.sessionId)) { this.kicked.delete(client.sessionId); return; }
     const p = this.game.players.get(client.sessionId);
     if (p) { p.connected = false; this.syncFull(); }
     try {

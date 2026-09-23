@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.3";
+export const VERSION = "0.8.4";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -313,6 +313,7 @@ export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function kick(id: string) { room?.send("kick", id); }
 export function initMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;

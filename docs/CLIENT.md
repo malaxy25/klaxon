@@ -3,25 +3,22 @@
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
 (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-> Verifiziert: Build sauber (207 Module). Events (6 Typen), Hazards (kaputt/Schleim),
-> Reconnect (Server haelt Platz, Client reconnectet per Token) und PWA-Dateien getestet.
+> Verifiziert: Build sauber. 8 Spieler/Raum + Host-Kick netzwerkseitig getestet;
+> Events, Hazards, Reconnect, PWA in fruehen Versionen validiert.
 
-## Neu in v0.8.3
+## Neu in v0.8.4
 
-- Events: Power surge (halten), Decompression (nicht anfassen), Wormhole (Panel gemischt).
-- Reconnect: Overlay "Reconnecting..."; Client verbindet per `reconnectionToken` neu.
-- PWA: `manifest.webmanifest` + `sw.js` + Apple-Touch-Meta -> installierbar (Homescreen).
+- Bis 8 Spieler/Raum; Host kann per "x" in der Lobby Spieler entfernen; Offline-Anzeige.
+- Cockpit: Press-Dome, Selector-LED-Zellen, Panel-Rahmen (Dashboard-Look).
 
 ## Dateibaum
 
 ```
 packages/client/
-├── index.html                 # Titel, Favicon, PWA-Meta + SW-Registrierung
-├── public/ favicon.svg, manifest.webmanifest, sw.js
-└── src/
-    ├── app.css  App.svelte     # Router + Overlays (Event/Connecting/Help/Reconnect) + Banner
-    └── lib/ store.svelte.ts, EventOverlay.svelte, Help.svelte, Connecting.svelte,
-             Control.svelte, Home.svelte, Lobby.svelte, Game.svelte, GameOver.svelte
+├── index.html  public/{favicon.svg, manifest.webmanifest, sw.js}
+└── src/ app.css, App.svelte,
+       lib/ store.svelte.ts, EventOverlay.svelte, Help.svelte, Connecting.svelte,
+            Control.svelte, Home.svelte, Lobby.svelte, Game.svelte, GameOver.svelte
 ```
 
 ---
@@ -232,6 +229,13 @@ body {
 /* Reconnecting overlay */
 .reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
 .reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }
+
+/* Lobby: offline players + kick */
+.players li.offline { opacity: 0.55; }
+.players li.offline span:last-child { color: var(--danger); }
+.pstatus { display: inline-flex; align-items: center; gap: 8px; }
+.kick { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--danger); border-radius: 6px; width: 22px; height: 22px; line-height: 1; cursor: pointer; font-weight: 700; padding: 0; }
+.kick:hover { background: var(--danger); color: #fff; }
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -239,7 +243,7 @@ body {
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.3";
+export const VERSION = "0.8.4";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -552,6 +556,7 @@ export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function kick(id: string) { room?.send("kick", id); }
 export function initMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;
@@ -793,8 +798,10 @@ export function setControl(controlId: string, value: string) {
   }
   .hw:active { transform: translateY(1px); }
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { background: linear-gradient(180deg,#5a1c1c,#3a1414); border-color: #6b2020; color: #ffd9d2; }
-  .press:active { box-shadow: 0 0 12px rgba(229,72,77,0.6); }
+  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 68px; margin: 0 auto; font-size: 0.8rem;
+    background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
+  .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
 
   /* Toggle als Kippschalter */
   .switch { position: relative; height: 42px; width: 58px; margin: 2px auto; padding: 0; border-radius: 22px; cursor: pointer;
@@ -813,7 +820,9 @@ export function setControl(controlId: string, value: string) {
     box-shadow: inset 0 0 8px rgba(0,0,0,0.6); text-shadow: 0 0 6px rgba(245,166,35,0.6);
   }
   .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem; }
+  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem;
+    background: #0a1615; color: var(--muted); border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
+  .opts .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
 
   /* Hazard-Overlays */
   .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
@@ -872,7 +881,7 @@ export function setControl(controlId: string, value: string) {
 ```svelte
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, VERSION, REPO_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -916,9 +925,14 @@ export function setControl(controlId: string, value: string) {
 
   <ul class="players">
     {#each S.players as p (p.id)}
-      <li class:ready={p.ready}>
+      <li class:ready={p.ready} class:offline={!p.connected}>
         <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
-        <span>{p.ready ? "ready" : "waiting"}</span>
+        <span class="pstatus">
+          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
+          {#if mine?.host && p.id !== S.sessionId}
+            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
+          {/if}
+        </span>
       </li>
     {/each}
   </ul>
@@ -1025,7 +1039,9 @@ export function setControl(controlId: string, value: string) {
   .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
   .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
 
-  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px; }
+  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
+    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
+    box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
   @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
   @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
 
