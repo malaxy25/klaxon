@@ -2,11 +2,10 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.14
+## Neu in v0.8.15
 
-- Zwei Musik-Modi: ruhig (Home/Lobby/Game-Over) -> treibend beim Spielstart, zurueck danach.
-  Auto-Umschaltung per applyAmbient(); Audio-Unlock beim ersten Tap (unlockAudio()).
-- Debug-Panel "Sounds": Alarm + Mute + Einzel-Sounds (Ambient laeuft automatisch).
+- Mute-Button oben rechts auch auf Home/Lobby/Game-Over (App.svelte, .mute-fab). Im Spiel
+  bleibt der Mute im HUD.
 
 ## Dateibaum
 
@@ -23,75 +22,60 @@ packages/client/
 
 # Vollstaendige Dateien
 
-## Datei: `spaceteam/packages/client/index.html`
+## Datei: `spaceteam/packages/client/src/App.svelte`
 
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Klaxon</title>
-    <meta name="theme-color" content="#0e1c1b" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Klaxon" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
-      }
-    </script>
-  </body>
-</html>
-```
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio, toggleMute } from "./lib/store.svelte";
+  import Home from "./lib/Home.svelte";
+  import Lobby from "./lib/Lobby.svelte";
+  import Game from "./lib/Game.svelte";
+  import GameOver from "./lib/GameOver.svelte";
+  import Connecting from "./lib/Connecting.svelte";
+  import Help from "./lib/Help.svelte";
+  import EventOverlay from "./lib/EventOverlay.svelte";
+  import Debug from "./lib/Debug.svelte";
 
-## Datei: `spaceteam/packages/client/public/manifest.webmanifest`
+  onMount(() => {
+    initMotion();
+    initDebug();
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    const r = new URLSearchParams(location.search).get("r");
+    if (r) {
+      joinByCode(r);
+    } else {
+      try {
+        if (!localStorage.getItem("klaxon_seen_help")) {
+          openHelp();
+          localStorage.setItem("klaxon_seen_help", "1");
+        }
+      } catch { /* ignore */ }
+    }
+  });
 
-```json
-{
-  "name": "Klaxon",
-  "short_name": "Klaxon",
-  "description": "A cooperative shouting party game for the same room.",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0e1c1b",
-  "theme_color": "#0e1c1b",
-  "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
-  ]
-}
-```
+  $effect(() => { void S.screen; void S.muted; applyAmbient(); });
+</script>
 
-## Datei: `spaceteam/packages/client/public/sw.js`
+{#if S.screen === "home"}
+  <Home />
+{:else if S.screen === "lobby"}
+  <Lobby />
+{:else if S.screen === "game"}
+  <Game />
+{:else}
+  <GameOver />
+{/if}
 
-```js
-// Minimaler Service Worker: nur damit die App installierbar ist (network-first).
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
-self.addEventListener("fetch", (event) => {
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
-});
-```
-
-## Datei: `spaceteam/packages/client/public/favicon.svg`
-
-```xml
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0e1c1b"/>
-  <path d="M32 13 L54 51 H10 Z" fill="#f5a623"/>
-  <rect x="29" y="25" width="6" height="14" rx="3" fill="#1a1205"/>
-  <circle cx="32" cy="45" r="3.3" fill="#1a1205"/>
-</svg>
+{#if S.screen !== "game"}<button class="mute-fab" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>{/if}
+{#if S.eventType}<EventOverlay />{/if}
+{#if S.eventResult}
+  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
+{/if}
+{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
+{#if S.connecting}<Connecting />{/if}
+{#if S.showHelp}<Help />{/if}
+{#if S.debug}<Debug />{/if}
 ```
 
 ## Datei: `spaceteam/packages/client/src/app.css`
@@ -239,61 +223,12 @@ body {
 
 /* Prevent iOS double-tap-zoom from swallowing rapid taps on any button */
 button, .btn, .tapbtn { touch-action: manipulation; }
-```
 
-## Datei: `spaceteam/packages/client/src/App.svelte`
-
-```svelte
-<script lang="ts">
-  import { onMount } from "svelte";
-  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio } from "./lib/store.svelte";
-  import Home from "./lib/Home.svelte";
-  import Lobby from "./lib/Lobby.svelte";
-  import Game from "./lib/Game.svelte";
-  import GameOver from "./lib/GameOver.svelte";
-  import Connecting from "./lib/Connecting.svelte";
-  import Help from "./lib/Help.svelte";
-  import EventOverlay from "./lib/EventOverlay.svelte";
-  import Debug from "./lib/Debug.svelte";
-
-  onMount(() => {
-    initMotion();
-    initDebug();
-    window.addEventListener("pointerdown", unlockAudio, { once: true });
-    const r = new URLSearchParams(location.search).get("r");
-    if (r) {
-      joinByCode(r);
-    } else {
-      try {
-        if (!localStorage.getItem("klaxon_seen_help")) {
-          openHelp();
-          localStorage.setItem("klaxon_seen_help", "1");
-        }
-      } catch { /* ignore */ }
-    }
-  });
-
-  $effect(() => { void S.screen; void S.muted; applyAmbient(); });
-</script>
-
-{#if S.screen === "home"}
-  <Home />
-{:else if S.screen === "lobby"}
-  <Lobby />
-{:else if S.screen === "game"}
-  <Game />
-{:else}
-  <GameOver />
-{/if}
-
-{#if S.eventType}<EventOverlay />{/if}
-{#if S.eventResult}
-  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
-{/if}
-{#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
-{#if S.connecting}<Connecting />{/if}
-{#if S.showHelp}<Help />{/if}
-{#if S.debug}<Debug />{/if}
+/* Mute button on non-game screens (game has its own in the HUD) */
+.mute-fab { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); right: 8px; z-index: 45;
+  appearance: none; border: 1px solid var(--line); background: #14302c; color: var(--muted);
+  border-radius: 8px; padding: 0.35em 0.75em; font-size: 0.75rem; cursor: pointer; touch-action: manipulation; opacity: 0.9; }
+.mute-fab:active { transform: translateY(1px); }
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -301,7 +236,7 @@ button, .btn, .tapbtn { touch-action: manipulation; }
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.14";
+export const VERSION = "0.8.15";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -753,6 +688,250 @@ export function setControl(controlId: string, value: string) {
 }
 ```
 
+## Datei: `spaceteam/packages/client/src/lib/Game.svelte`
+
+```svelte
+<script lang="ts">
+  import { difficultyForLevel } from "@spaceteam/shared";
+  import { S, me, toggleMute } from "./store.svelte";
+  import Control from "./Control.svelte";
+
+  let mine = $derived(me());
+  let marginPct = $derived(Math.max(0, Math.min(100, ((S.health - S.deathLimit) / Math.max(1, 100 - S.deathLimit)) * 100)));
+  let danger = $derived(S.health - S.deathLimit < 20);
+  let cmdMs = $derived(difficultyForLevel(S.level).instructionTimeMs);
+</script>
+
+<div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
+  <header class="hud">
+    <span class="sector">SECTOR {S.level}</span>
+    <div class="bar" class:danger>
+      <div class="health" style="width:{marginPct}%"></div>
+    </div>
+    <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
+  </header>
+
+  <section class="command">
+    {#key mine?.instructionText}
+      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText ?? "Stand by..."}</div>
+      <div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>
+    {/key}
+  </section>
+
+  <section class="panel">
+    {#each mine?.panel ?? [] as c (c.id)}
+      <Control control={c} />
+    {/each}
+  </section>
+
+  {#if S.banner}<div class="banner"><span>{S.banner}</span></div>{/if}
+</div>
+
+<style>
+  .game {
+    height: 100vh; height: 100dvh;
+    max-width: 720px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 8px 10px 10px; overflow: hidden;
+  }
+  .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
+  .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
+
+  .hud { flex: none; display: flex; align-items: center; gap: 10px; }
+  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
+  .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
+  .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
+  .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }
+  .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }
+
+  .command {
+    flex: none; text-align: center; padding: 12px 14px 10px;
+    background: linear-gradient(180deg,#123230,#0e2420);
+    border: 1px solid var(--amber); border-radius: 10px;
+    box-shadow: inset 0 0 22px rgba(245,166,35,0.12), 0 2px 6px rgba(0,0,0,0.4);
+    position: relative; overflow: hidden;
+  }
+  .command::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px); }
+  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.35rem; line-height: 1.2; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
+  .command-inner::before { content: "\25B6\00a0"; opacity: 0.85; }
+  .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
+
+  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
+    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
+    box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
+  @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+
+  .banner { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
+  .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.9); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(245,166,35,0.5); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .game.shake { animation: shake 0.4s ease; }
+    .banner span { animation: bannerpop 0.3s ease; }
+    .timer-fill { animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
+  }
+  @keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-9px)} 40%,60%{transform:translateX(9px)} }
+  @keyframes bannerpop { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes drain { from{transform:scaleX(1)} to{transform:scaleX(0)} }
+</style>
+```
+
+## Datei: `spaceteam/packages/client/src/lib/Home.svelte`
+
+```svelte
+<script lang="ts">
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
+  let code = $state("");
+
+  let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
+  function tapVersion() {
+    if (S.debug) { setDebug(false); verTaps = 0; alert("Debug OFF"); return; }
+    verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
+    if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
+  }
+</script>
+
+<div class="home">
+  <h1>Klaxon</h1>
+  <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name} oninput={(e) => updateName((e.target as HTMLInputElement).value)} />
+  </label>
+
+  <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
+    {S.connecting ? "Starting..." : "Start a new game"}
+  </button>
+
+  <div class="or">or join with a code</div>
+  <div class="join-row">
+    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
+    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
+  </div>
+
+  {#if S.error}<p class="error">{S.error}</p>{/if}
+
+  <button class="btn wide" onclick={openHelp}>How to play</button>
+
+  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
+</div>
+<style>
+  .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
+  .dbgon { color: #c98fe0; }
+</style>```
+
+## Datei: `spaceteam/packages/client/src/lib/Lobby.svelte`
+
+```svelte
+<script lang="ts">
+  import QRCode from "qrcode";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
+
+  let qr = $state("");
+  let mine = $derived(me());
+  let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
+
+  const DIFFS = [
+    { label: "Casual", level: 1 },
+    { label: "Normal", level: 3 },
+    { label: "Hard", level: 5 },
+    { label: "Insane", level: 8 },
+  ];
+  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
+
+  $effect(() => {
+    if (S.roomId) {
+      QRCode.toDataURL(joinUrl(), { margin: 1, width: 220 })
+        .then((d) => (qr = d))
+        .catch(() => (qr = ""));
+    }
+  });
+
+  let copied = $state(false);
+  let copyT: ReturnType<typeof setTimeout>;
+  async function copyLink() {
+    const text = joinUrl();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+      } catch { /* ignore */ }
+    }
+    copied = true; clearTimeout(copyT); copyT = setTimeout(() => (copied = false), 1500);
+  }
+</script>
+
+<div class="lobby">
+  <h1>Ready room</h1>
+  <p class="hint">Others join by scanning the code - same room, no download.</p>
+  <button class="helplink" onclick={openHelp}>How to play</button>
+
+  <div class="join-card">
+    <div class="code">{S.code}</div>
+    {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
+    <button class="url" onclick={copyLink}>{copied ? "Link copied!" : joinUrl()}</button>
+    <div class="urlhint">{copied ? "" : "tap link to copy"}</div>
+  </div>
+
+  <label class="field">
+    <span>Your name</span>
+    <input class="input name" maxlength="20" placeholder="Your name"
+           value={S.name}
+           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
+           onchange={commitName} onblur={commitName} />
+  </label>
+
+  <ul class="players">
+    {#each S.players as p (p.id)}
+      <li class:ready={p.ready} class:offline={!p.connected}>
+        <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
+        <span class="pstatus">
+          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
+          {#if mine?.host && p.id !== S.sessionId}
+            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
+          {/if}
+        </span>
+      </li>
+    {/each}
+  </ul>
+
+  <div class="difficulty">
+    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
+    {#if mine?.host}
+      <div class="diff-opts">
+        {#each DIFFS as d}
+          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div class="difficulty">
+    <span class="diff-label">Motion controls (shake / tilt)</span>
+    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
+      {S.motionOk ? "On" : "Enable"}
+    </button>
+  </div>
+
+  <button class="btn wide" onclick={() => ready(!mine?.ready)}>
+    {mine?.ready ? "Not ready" : "I am ready"}
+  </button>
+
+  {#if mine?.host}
+    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
+    {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
+  {/if}
+  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
+</div>
+```
+
 ## Datei: `spaceteam/packages/client/src/lib/Debug.svelte`
 
 ```svelte
@@ -906,105 +1085,6 @@ export function setControl(controlId: string, value: string) {
   .dbg-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin-bottom: 6px; }
   .dbg-grid b { justify-self: end; }
   .dbg-answer { margin-top: 6px; color: #9be06a; }
-</style>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/EventOverlay.svelte`
-
-```svelte
-<script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import { S, sendEventAction, enableMotion } from "./store.svelte";
-
-  type Mode = "tap" | "hold" | "freeze";
-  const INFO: Record<string, { title: string; action: string; hint: string; mode: Mode; gesture?: "shake" | "orient" }> = {
-    meteor:    { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard", mode: "tap", gesture: "shake" },
-    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side", mode: "tap", gesture: "orient" },
-    brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
-    surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
-    freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
-    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
-  };
-  let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
-
-  let didIt = $state(false);
-  let taps = $state(0);
-  let holdProg = $state(0);
-  let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
-  let timer: ReturnType<typeof setInterval>;
-  let shakeCount = 0, holding = false, holdRaf = 0;
-
-  function complete() { if (didIt) return; didIt = true; sendEventAction(); }
-  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
-  function holdStart(e: PointerEvent) {
-    if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
-    const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
-      if (holdProg >= 1) { holding = false; complete(); return; } holdRaf = requestAnimationFrame(step); };
-    holdRaf = requestAnimationFrame(step);
-  }
-  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(holdRaf); }
-  function onFreezeTouch() { sendEventAction(); } // beruehren = Fehlschlag
-
-  function onMotion(e: DeviceMotionEvent) {
-    const a = e.accelerationIncludingGravity || (e as any).acceleration; if (!a) return;
-    if (Math.hypot(a.x || 0, a.y || 0, a.z || 0) > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
-  }
-  function onOrient(e: DeviceOrientationEvent) {
-    if (Math.abs(e.gamma ?? 0) > 55 || Math.abs(e.beta ?? 0) > 130) complete();
-  }
-  onMount(() => {
-    timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
-    if (info.gesture === "shake") window.addEventListener("devicemotion", onMotion);
-    if (info.gesture === "orient") window.addEventListener("deviceorientation", onOrient);
-  });
-  onDestroy(() => {
-    clearInterval(timer);
-    window.removeEventListener("devicemotion", onMotion);
-    window.removeEventListener("deviceorientation", onOrient);
-  });
-  let doneCount = $derived(S.players.filter((p) => p.eventDone).length);
-</script>
-
-<div class="event-overlay" class:freeze={info.mode === "freeze"}
-     onpointerdown={info.mode === "freeze" ? onFreezeTouch : undefined}>
-  <div class="ev-box">
-    <div class="ev-title">{info.title}</div>
-    <div class="ev-action">{info.action}</div>
-
-    {#if info.mode === "freeze"}
-      <div class="ev-hint">Do not tap anything until the timer ends</div>
-    {:else if didIt}
-      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
-    {:else if info.mode === "hold"}
-      <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
-      <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
-    {:else}
-      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
-        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
-      </button>
-      {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
-      {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}
-    {/if}
-
-    <div class="ev-count">{secs}s</div>
-  </div>
-</div>
-
-<style>
-  .event-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(60,10,12,0.9); }
-  .event-overlay.freeze { background: rgba(10,30,50,0.92); }
-  .ev-box { width: 100%; max-width: 420px; text-align: center; }
-  .ev-title { font-family: ui-monospace, Menlo, monospace; color: #ffd9d2; letter-spacing: 3px; font-size: 1rem; }
-  .event-overlay.freeze .ev-title { color: #cfe6ff; }
-  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.2rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
-  .event-overlay.freeze .ev-action { color: #7cc4e8; text-shadow: 0 0 14px rgba(124,196,232,0.7); }
-  .ev-bar { height: 8px; margin-top: 12px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
-  .ev-fill { height: 100%; background: var(--amber); }
-  .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
-  .ev-waiting { color: var(--ok); font-weight: 600; }
-  .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
-  @media (prefers-reduced-motion: no-preference) { .ev-action { animation: evpulse 0.6s ease-in-out infinite alternate; } }
-  @keyframes evpulse { from { transform: scale(1); } to { transform: scale(1.08); } }
 </style>
 ```
 
@@ -1169,247 +1249,102 @@ export function setControl(controlId: string, value: string) {
 </style>
 ```
 
-## Datei: `spaceteam/packages/client/src/lib/Home.svelte`
+## Datei: `spaceteam/packages/client/src/lib/EventOverlay.svelte`
 
 ```svelte
 <script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
-  let code = $state("");
+  import { onMount, onDestroy } from "svelte";
+  import { S, sendEventAction, enableMotion } from "./store.svelte";
 
-  let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
-  function tapVersion() {
-    if (S.debug) { setDebug(false); verTaps = 0; alert("Debug OFF"); return; }
-    verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
-    if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
+  type Mode = "tap" | "hold" | "freeze";
+  const INFO: Record<string, { title: string; action: string; hint: string; mode: Mode; gesture?: "shake" | "orient" }> = {
+    meteor:    { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard", mode: "tap", gesture: "shake" },
+    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side", mode: "tap", gesture: "orient" },
+    brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
+    surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
+    freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
+    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
+  };
+  let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
+
+  let didIt = $state(false);
+  let taps = $state(0);
+  let holdProg = $state(0);
+  let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
+  let timer: ReturnType<typeof setInterval>;
+  let shakeCount = 0, holding = false, holdRaf = 0;
+
+  function complete() { if (didIt) return; didIt = true; sendEventAction(); }
+  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
+  function holdStart(e: PointerEvent) {
+    if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
+    const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
+      if (holdProg >= 1) { holding = false; complete(); return; } holdRaf = requestAnimationFrame(step); };
+    holdRaf = requestAnimationFrame(step);
   }
-</script>
+  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(holdRaf); }
+  function onFreezeTouch() { sendEventAction(); } // beruehren = Fehlschlag
 
-<div class="home">
-  <h1>Klaxon</h1>
-  <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
-
-  <label class="field">
-    <span>Your name</span>
-    <input class="input name" maxlength="20" placeholder="Your name"
-           value={S.name} oninput={(e) => updateName((e.target as HTMLInputElement).value)} />
-  </label>
-
-  <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
-    {S.connecting ? "Starting..." : "Start a new game"}
-  </button>
-
-  <div class="or">or join with a code</div>
-  <div class="join-row">
-    <input class="input" placeholder="Room code" maxlength="6" autocapitalize="characters" autocorrect="off" spellcheck="false" style="text-transform:uppercase" value={code} oninput={(e) => (code = (e.target as HTMLInputElement).value.toUpperCase())} />
-    <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
-  </div>
-
-  {#if S.error}<p class="error">{S.error}</p>{/if}
-
-  <button class="btn wide" onclick={openHelp}>How to play</button>
-
-  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
-</div>
-<style>
-  .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
-  .dbgon { color: #c98fe0; }
-</style>```
-
-## Datei: `spaceteam/packages/client/src/lib/Lobby.svelte`
-
-```svelte
-<script lang="ts">
-  import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
-
-  let qr = $state("");
-  let mine = $derived(me());
-  let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
-
-  const DIFFS = [
-    { label: "Casual", level: 1 },
-    { label: "Normal", level: 3 },
-    { label: "Hard", level: 5 },
-    { label: "Insane", level: 8 },
-  ];
-  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
-
-  $effect(() => {
-    if (S.roomId) {
-      QRCode.toDataURL(joinUrl(), { margin: 1, width: 220 })
-        .then((d) => (qr = d))
-        .catch(() => (qr = ""));
-    }
+  function onMotion(e: DeviceMotionEvent) {
+    const a = e.accelerationIncludingGravity || (e as any).acceleration; if (!a) return;
+    if (Math.hypot(a.x || 0, a.y || 0, a.z || 0) > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
+  }
+  function onOrient(e: DeviceOrientationEvent) {
+    if (Math.abs(e.gamma ?? 0) > 55 || Math.abs(e.beta ?? 0) > 130) complete();
+  }
+  onMount(() => {
+    timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
+    if (info.gesture === "shake") window.addEventListener("devicemotion", onMotion);
+    if (info.gesture === "orient") window.addEventListener("deviceorientation", onOrient);
   });
-
-  let copied = $state(false);
-  let copyT: ReturnType<typeof setTimeout>;
-  async function copyLink() {
-    const text = joinUrl();
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.focus(); ta.select();
-        document.execCommand("copy"); document.body.removeChild(ta);
-      } catch { /* ignore */ }
-    }
-    copied = true; clearTimeout(copyT); copyT = setTimeout(() => (copied = false), 1500);
-  }
+  onDestroy(() => {
+    clearInterval(timer);
+    window.removeEventListener("devicemotion", onMotion);
+    window.removeEventListener("deviceorientation", onOrient);
+  });
+  let doneCount = $derived(S.players.filter((p) => p.eventDone).length);
 </script>
 
-<div class="lobby">
-  <h1>Ready room</h1>
-  <p class="hint">Others join by scanning the code - same room, no download.</p>
-  <button class="helplink" onclick={openHelp}>How to play</button>
+<div class="event-overlay" class:freeze={info.mode === "freeze"}
+     onpointerdown={info.mode === "freeze" ? onFreezeTouch : undefined}>
+  <div class="ev-box">
+    <div class="ev-title">{info.title}</div>
+    <div class="ev-action">{info.action}</div>
 
-  <div class="join-card">
-    <div class="code">{S.code}</div>
-    {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
-    <button class="url" onclick={copyLink}>{copied ? "Link copied!" : joinUrl()}</button>
-    <div class="urlhint">{copied ? "" : "tap link to copy"}</div>
-  </div>
-
-  <label class="field">
-    <span>Your name</span>
-    <input class="input name" maxlength="20" placeholder="Your name"
-           value={S.name}
-           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
-           onchange={commitName} onblur={commitName} />
-  </label>
-
-  <ul class="players">
-    {#each S.players as p (p.id)}
-      <li class:ready={p.ready} class:offline={!p.connected}>
-        <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
-        <span class="pstatus">
-          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
-          {#if mine?.host && p.id !== S.sessionId}
-            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
-          {/if}
-        </span>
-      </li>
-    {/each}
-  </ul>
-
-  <div class="difficulty">
-    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
-    {#if mine?.host}
-      <div class="diff-opts">
-        {#each DIFFS as d}
-          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
-        {/each}
-      </div>
+    {#if info.mode === "freeze"}
+      <div class="ev-hint">Do not tap anything until the timer ends</div>
+    {:else if didIt}
+      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
+    {:else if info.mode === "hold"}
+      <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
+      <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
+    {:else}
+      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
+        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
+      </button>
+      {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
+      {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}
     {/if}
+
+    <div class="ev-count">{secs}s</div>
   </div>
-
-  <div class="difficulty">
-    <span class="diff-label">Motion controls (shake / tilt)</span>
-    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
-      {S.motionOk ? "On" : "Enable"}
-    </button>
-  </div>
-
-  <button class="btn wide" onclick={() => ready(!mine?.ready)}>
-    {mine?.ready ? "Not ready" : "I am ready"}
-  </button>
-
-  {#if mine?.host}
-    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
-    {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
-  {/if}
-  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
-</div>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Game.svelte`
-
-```svelte
-<script lang="ts">
-  import { difficultyForLevel } from "@spaceteam/shared";
-  import { S, me, toggleMute } from "./store.svelte";
-  import Control from "./Control.svelte";
-
-  let mine = $derived(me());
-  let marginPct = $derived(Math.max(0, Math.min(100, ((S.health - S.deathLimit) / Math.max(1, 100 - S.deathLimit)) * 100)));
-  let danger = $derived(S.health - S.deathLimit < 20);
-  let cmdMs = $derived(difficultyForLevel(S.level).instructionTimeMs);
-</script>
-
-<div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
-  <header class="hud">
-    <span class="sector">SECTOR {S.level}</span>
-    <div class="bar" class:danger>
-      <div class="health" style="width:{marginPct}%"></div>
-    </div>
-    <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
-  </header>
-
-  <section class="command">
-    {#key mine?.instructionText}
-      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText ?? "Stand by..."}</div>
-      <div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>
-    {/key}
-  </section>
-
-  <section class="panel">
-    {#each mine?.panel ?? [] as c (c.id)}
-      <Control control={c} />
-    {/each}
-  </section>
-
-  {#if S.banner}<div class="banner"><span>{S.banner}</span></div>{/if}
 </div>
 
 <style>
-  .game {
-    height: 100vh; height: 100dvh;
-    max-width: 720px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 8px 10px 10px; overflow: hidden;
-  }
-  .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
-  .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
-
-  .hud { flex: none; display: flex; align-items: center; gap: 10px; }
-  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
-  .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
-  .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
-  .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }
-  .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }
-
-  .command {
-    flex: none; text-align: center; padding: 12px 14px 10px;
-    background: linear-gradient(180deg,#123230,#0e2420);
-    border: 1px solid var(--amber); border-radius: 10px;
-    box-shadow: inset 0 0 22px rgba(245,166,35,0.12), 0 2px 6px rgba(0,0,0,0.4);
-    position: relative; overflow: hidden;
-  }
-  .command::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px); }
-  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.35rem; line-height: 1.2; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
-  .command-inner::before { content: "\25B6\00a0"; opacity: 0.85; }
-  .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
-
-  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
-    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
-    box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
-  @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-  @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
-
-  .banner { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
-  .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.9); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(245,166,35,0.5); }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .game.shake { animation: shake 0.4s ease; }
-    .banner span { animation: bannerpop 0.3s ease; }
-    .timer-fill { animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
-  }
-  @keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-9px)} 40%,60%{transform:translateX(9px)} }
-  @keyframes bannerpop { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
-  @keyframes drain { from{transform:scaleX(1)} to{transform:scaleX(0)} }
+  .event-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(60,10,12,0.9); }
+  .event-overlay.freeze { background: rgba(10,30,50,0.92); }
+  .ev-box { width: 100%; max-width: 420px; text-align: center; }
+  .ev-title { font-family: ui-monospace, Menlo, monospace; color: #ffd9d2; letter-spacing: 3px; font-size: 1rem; }
+  .event-overlay.freeze .ev-title { color: #cfe6ff; }
+  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.2rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
+  .event-overlay.freeze .ev-action { color: #7cc4e8; text-shadow: 0 0 14px rgba(124,196,232,0.7); }
+  .ev-bar { height: 8px; margin-top: 12px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
+  .ev-fill { height: 100%; background: var(--amber); }
+  .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
+  .ev-waiting { color: var(--ok); font-weight: 600; }
+  .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
+  @media (prefers-reduced-motion: no-preference) { .ev-action { animation: evpulse 0.6s ease-in-out infinite alternate; } }
+  @keyframes evpulse { from { transform: scale(1); } to { transform: scale(1.08); } }
 </style>
 ```
 
@@ -1493,137 +1428,6 @@ export function setControl(controlId: string, value: string) {
   .feedback { display: flex; flex-direction: column; gap: 8px; }
   .input.fb { letter-spacing: 0; font-size: 0.95rem; resize: vertical; font-family: inherit; }
   .thanks { color: var(--ok); text-align: center; font-weight: 600; }
-</style>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Help.svelte`
-
-```svelte
-<script lang="ts">
-  import { closeHelp } from "./store.svelte";
-</script>
-
-<svelte:window onkeydown={(e) => { if (e.key === "Escape") closeHelp(); }} />
-
-<div class="help-backdrop" onclick={closeHelp} role="presentation">
-  <div class="help" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-    <h2>How to play</h2>
-    <p class="lead">You are a crew flying a failing spaceship. Everyone plays on their own
-      phone, together in the same room.</p>
-    <ol>
-      <li><b>Read your command out loud.</b> It usually controls something on
-        <b>someone else's</b> panel - so shout it across the room.</li>
-      <li><b>Hear a command for one of your controls? Do it - fast.</b> Whoever has that
-        control acts on it.</li>
-      <li><b>Keep the bar above the rising red line.</b> Completed commands push it up;
-        misses and time push it down.</li>
-      <li><b>Fill the bar to jump to the next sector.</b> Each sector is faster and harsher.</li>
-    </ol>
-    <h3>Your controls</h3>
-    <ul class="legend">
-      <li><span class="dot b"></span> <b>Button</b> - press it</li>
-      <li><span class="dot t"></span> <b>Toggle</b> - switch on / off</li>
-      <li><span class="dot s"></span> <b>Slider</b> - set the number</li>
-      <li><span class="dot x"></span> <b>Selector</b> - pick the option</li>
-    </ul>
-    <p class="tip">It gets loud and chaotic. That is the point.</p>
-    <button class="btn wide primary" onclick={closeHelp}>Got it</button>
-  </div>
-</div>
-
-<style>
-  .help-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(10,22,21,0.92); display: flex; align-items: flex-start; justify-content: center; padding: 18px; overflow-y: auto; }
-  .help { width: 100%; max-width: 440px; margin: auto; background: var(--panel); border: 1px solid var(--amber); border-radius: var(--radius); padding: 22px; }
-  h2 { margin: 0 0 10px; color: var(--amber); font-family: ui-monospace, Menlo, monospace; letter-spacing: 2px; }
-  h3 { margin: 18px 0 6px; font-size: 0.95rem; color: var(--ink); }
-  .lead { color: var(--ink); margin: 0 0 12px; line-height: 1.4; }
-  ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
-  ol li { line-height: 1.35; }
-  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-  .legend li { display: flex; align-items: center; gap: 8px; }
-  .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
-  .dot.b { background: var(--danger); }
-  .dot.t { background: var(--ok); }
-  .dot.s { background: var(--amber); }
-  .dot.x { background: #7cc4e8; }
-  .tip { color: var(--muted); font-style: italic; margin: 14px 0 16px; }
-</style>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Connecting.svelte`
-
-```svelte
-<script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-
-  const lines = [
-    "Waking the ship's reactor...",
-    "Spinning up the flux capacitor...",
-    "Poking the server with a stick...",
-    "Defrosting the cryo-core...",
-    "Aligning the neutrino manifold...",
-    "Convincing the hamsters to run...",
-    "Bribing the plasma injectors...",
-    "The free server was napping. Rude to wake it...",
-    "Reticulating splines...",
-    "Almost there - free tier, be patient...",
-  ];
-
-  let msg = $state(lines[0]);
-  let progress = $state(8);
-  let elapsed = $state(0);
-  let i = 0;
-  let ticks = 0;
-  let timer: ReturnType<typeof setInterval>;
-
-  onMount(() => {
-    timer = setInterval(() => {
-      ticks++;
-      elapsed = ticks * 0.25;
-      progress = progress + (96 - progress) * 0.03;
-      if (ticks % 10 === 0) { i = (i + 1) % lines.length; msg = lines[i]; }
-    }, 250);
-  });
-  onDestroy(() => clearInterval(timer));
-</script>
-
-<div class="connecting">
-  <div class="box">
-    <div class="title">Boarding</div>
-    <div class="msg">{msg}</div>
-    <div class="pbar"><div class="pfill" style="width:{progress}%"></div></div>
-    {#if elapsed > 3}
-      <p class="hint">First start can take up to a minute while the free server wakes up. Hang tight.</p>
-    {/if}
-  </div>
-</div>
-
-<style>
-  .connecting {
-    position: fixed; inset: 0; z-index: 50;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px; background: rgba(10, 22, 21, 0.94);
-    backdrop-filter: blur(2px);
-    animation: cfade 0.25s ease 0.4s both;
-  }
-  @keyframes cfade { from { opacity: 0; } to { opacity: 1; } }
-  .box {
-    width: 100%; max-width: 380px; text-align: center;
-    background: var(--panel); border: 1px solid var(--amber);
-    border-radius: var(--radius); padding: 26px 22px;
-  }
-  .title {
-    font-family: ui-monospace, Menlo, monospace; letter-spacing: 4px;
-    color: var(--amber); font-size: 1.4rem; font-weight: 700; margin-bottom: 14px;
-  }
-  .msg {
-    font-family: ui-monospace, Menlo, monospace; color: var(--ink);
-    font-size: 1rem; min-height: 2.6em; line-height: 1.3;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .pbar { height: 8px; background: #0c1a19; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
-  .pfill { height: 100%; background: var(--amber); transition: width 0.25s linear; }
-  .hint { color: var(--muted); font-size: 0.8rem; margin: 14px 0 0; }
 </style>
 ```
 

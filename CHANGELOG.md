@@ -3,6 +3,11 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.15] - 2026-09-23
+### Added
+- **Mute button on the home, lobby and game-over screens** too (top-right) - since those
+  now have music. In-game the mute stays in the HUD.
+
 ## [0.8.14] - 2026-09-23
 ### Added
 - **Two music modes:** a calm loop on the home / lobby / game-over screens that switches

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp, initMotion, initDebug, applyAmbient, unlockAudio, toggleMute } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -40,6 +40,7 @@
   <GameOver />
 {/if}
 
+{#if S.screen !== "game"}<button class="mute-fab" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>{/if}
 {#if S.eventType}<EventOverlay />{/if}
 {#if S.eventResult}
   <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
