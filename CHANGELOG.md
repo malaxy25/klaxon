@@ -3,6 +3,20 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.8] - 2026-09-23
+### Added
+- Turn on the debug panel without the URL: **tap the version in the Home footer 5x** to
+  toggle debug mode (tap once more while on to turn it off). It is remembered, so `?debug`
+  is no longer needed; a small "debug" marker shows in the footer when active.
+
+## [0.8.7] - 2026-09-23
+### Added
+- **In-game debug panel (host):** open any game with `?debug` in the URL to get a floating
+  DEBUG button. From there: trigger any event, break/slime/clear panels, +/-20 health, jump
+  a sector, force game over, solve your (or all) commands, force-start solo, reveal the
+  answer to your command, and pause. No server env vars needed for testing anymore.
+- **Live server stats** in that panel: active rooms, total players, uptime, memory (RSS/heap).
+
 ## [0.8.6] - 2026-09-23
 ### Changed
 - **Wormhole now really swaps panels between players (permanently).** After it, you

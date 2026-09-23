@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.6";
+export const VERSION = "0.8.8";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -10,7 +10,7 @@ export type ControlView = {
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
-  statCompleted: number; statExpired: number; eventDone: boolean;
+  statCompleted: number; statExpired: number; eventDone: boolean; dbgTargetControlId: string; dbgTargetValue: string;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -44,6 +44,8 @@ export const S = $state({
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
+  debug: false,
+  stats: null as any,
   feedbackSent: false,
 });
 
@@ -191,6 +193,7 @@ function snapshot() {
       id: p.id, name: p.name, host: p.host, ready: p.ready,
       connected: p.connected, instructionText: p.instructionText, panel,
       statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0, eventDone: p.eventDone ?? false,
+      dbgTargetControlId: p.dbgTargetControlId ?? "", dbgTargetValue: p.dbgTargetValue ?? "",
     });
   });
   S.players = players;
@@ -220,6 +223,7 @@ async function bind(r: any) {
   r.onStateChange(() => snapshot());
   r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
   const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
+  r.onMessage("debug:stats", (d: any) => { S.stats = d; });
   r.onMessage("evt", (e: any) => {
     if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
     else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
@@ -314,6 +318,19 @@ export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
 export function kick(id: string) { room?.send("kick", id); }
+export function dbg(msg: string, payload?: any) { room?.send(msg, payload); }
+export function initDebug() {
+  try {
+    const url = new URLSearchParams(location.search).has("debug");
+    const saved = localStorage.getItem("klaxon_debug") === "1";
+    S.debug = url || saved;
+    if (url) localStorage.setItem("klaxon_debug", "1");
+  } catch { /* ignore */ }
+}
+export function setDebug(on: boolean) {
+  S.debug = on;
+  try { localStorage.setItem("klaxon_debug", on ? "1" : "0"); } catch { /* ignore */ }
+}
 export function initMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;

@@ -45,6 +45,7 @@ export class SpaceteamGame {
   private lastTick: number;
   private nextBreakAt = 0;
   event: { type: string; endsAt: number; done: Set<string> } | null = null;
+  paused = false;
   private nextEventAt = 0;
   forceEvent = "";
   private readonly EVENT_MS = 6000;
@@ -98,8 +99,10 @@ export class SpaceteamGame {
   }
 
   // ---------- Spielstart / Level ----------
-  start(): boolean {
-    if (this.phase !== "lobby" || !this.canStart()) return false;
+  start(force = false): boolean {
+    if (this.phase !== "lobby") return false;
+    if (!force && !this.canStart()) return false;
+    if (this.players.size < 1) return false;
     this.phase = "playing";
     this.level = this.startLevel;
     this.difficulty = difficultyForLevel(this.level);
@@ -216,6 +219,53 @@ export class SpaceteamGame {
     return [];
   }
 
+  // ---------- Debug ----------
+  forceStartEvent(type: string): GameEvent[] {
+    if (this.phase !== "playing" || this.event) return [];
+    if (type === "wormhole") this.rotatePanels();
+    this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
+    return [{ type: "eventStart" }];
+  }
+  debugHazard(kind: "broken" | "slimed"): GameEvent[] {
+    if (this.phase !== "playing") return [];
+    const taken = this.takenControlIds();
+    const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
+    if (pool.length === 0) return [];
+    const c = pick(pool, this.rng);
+    c.hazard = kind;
+    return [{ type: kind === "broken" ? "broke" : "slimed", controlId: c.id }];
+  }
+  debugClearHazards(): void {
+    for (const p of this.players.values()) for (const c of p.panel) c.hazard = "";
+  }
+  debugHealth(delta: number): void {
+    this.health = Math.max(0, Math.min(MAX_HEALTH, this.health + delta));
+  }
+  debugNextLevel(): GameEvent[] {
+    if (this.phase !== "playing") return [];
+    return [this.nextLevel()];
+  }
+  debugGameOver(): GameEvent[] {
+    if (this.phase !== "playing") return [];
+    this.phase = "over";
+    return [{ type: "gameOver" }];
+  }
+  debugSolve(playerId: string, all: boolean): GameEvent[] {
+    if (this.phase !== "playing") return [];
+    const events: GameEvent[] = [];
+    const targets = all ? [...this.players.values()] : ([this.players.get(playerId)].filter(Boolean) as EnginePlayer[]);
+    for (const p of targets) {
+      if (this.phase !== "playing") break;
+      if (!p.instruction) continue;
+      p.statCompleted++;
+      this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
+      events.push({ type: "completed", playerId: p.id });
+      if (this.health >= MAX_HEALTH) events.push(this.nextLevel());
+      else this.generateInstructionFor(p);
+    }
+    return events;
+  }
+
   private takenControlIds(): Set<string> {
     const s = new Set<string>();
     for (const p of this.players.values()) {
@@ -297,6 +347,7 @@ export class SpaceteamGame {
     const events: GameEvent[] = [];
     if (this.phase !== "playing") return events;
     const now = nowMs ?? this.now();
+    if (this.paused) { this.lastTick = now; return events; }
     const dtMs = Math.max(0, now - this.lastTick);
     const dt = dtMs / 1000;
     this.lastTick = now;

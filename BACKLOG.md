@@ -118,4 +118,4 @@ nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
 Siehe [CHANGELOG](CHANGELOG.md): Namen, Play-again, Sound (Basis), Screenshake,
 Level-Banner, Countdown, Cold-Start-Overlay + Retry, How-to-play, Schwierigkeits-Presets,
 End-of-game-Stats, In-Game-Feedback (persistent via ntfy/Google Sheet), One-Screen-Fit,
-Cockpit-Pass, Alien-Schleim, Kippschalter/Ticks/Press-Dome/LED-Selector/Panel-Rahmen, 8 Spieler, Kick, Offline-Anzeige, Reconnect, PWA, mehr Events.
+Cockpit-Pass, Alien-Schleim, 8 Spieler, Kick, Offline-Anzeige, Reconnect, PWA, 6 Events (inkl. echtes Wurmloch), In-Game-Debug-Panel (?debug) mit Server-Stats.

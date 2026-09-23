@@ -1,4 +1,4 @@
-import { Room, Client } from "colyseus";
+import { Room, Client, matchMaker } from "colyseus";
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { SpaceteamGame, GameEvent } from "@spaceteam/shared";
 
@@ -57,6 +57,7 @@ export class SpaceteamRoom extends Room {
   private kicked = new Set<string>();
   private game!: SpaceteamGame;
   private debug = process.env.DEBUG_TARGETS === "1";
+  private reveal = false;
 
   onCreate(options: any) {
     this.game = new SpaceteamGame({ singlePlayer: process.env.SINGLE_PLAYER === "1" });
@@ -90,6 +91,36 @@ export class SpaceteamRoom extends Room {
       const events = this.game.markEventDone(client.sessionId);
       events.forEach((e) => this.emitEvent(e));
       this.syncFull();
+    });
+    const isHost = (client: Client) => !!this.game.players.get(client.sessionId)?.host;
+    const emitSync = (events: GameEvent[]) => { events.forEach((e) => this.emitEvent(e)); this.syncFull(); };
+    this.onMessage("debug:event", (client, type: string) => { if (isHost(client)) emitSync(this.game.forceStartEvent(String(type))); });
+    this.onMessage("debug:hazard", (client, kind: string) => { if (isHost(client)) emitSync(this.game.debugHazard(kind === "slimed" ? "slimed" : "broken")); });
+    this.onMessage("debug:clearHazards", (client) => { if (isHost(client)) { this.game.debugClearHazards(); this.syncFull(); } });
+    this.onMessage("debug:health", (client, delta: number) => { if (isHost(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
+    this.onMessage("debug:nextLevel", (client) => { if (isHost(client)) emitSync(this.game.debugNextLevel()); });
+    this.onMessage("debug:gameOver", (client) => { if (isHost(client)) emitSync(this.game.debugGameOver()); });
+    this.onMessage("debug:solve", (client, all: boolean) => { if (isHost(client)) emitSync(this.game.debugSolve(client.sessionId, !!all)); });
+    this.onMessage("debug:forceStart", (client) => { if (isHost(client) && this.game.start(true)) { this.lock(); this.syncFull(); } });
+    this.onMessage("debug:reveal", (client, on: boolean) => { if (isHost(client)) { this.reveal = !!on; this.syncFull(); } });
+    this.onMessage("debug:pause", (client, on: boolean) => { if (isHost(client)) { this.game.paused = !!on; this.syncFull(); } });
+    this.onMessage("debug:stats", async (client) => {
+      if (!isHost(client)) return;
+      try {
+        const rooms = await matchMaker.query({ name: "spaceteam" });
+        const players = rooms.reduce((n: number, r: any) => n + (r.clients || 0), 0);
+        const mem = process.memoryUsage();
+        client.send("debug:stats", {
+          rooms: rooms.length,
+          players,
+          uptime: Math.round(process.uptime()),
+          rssMB: Math.round(mem.rss / 1048576),
+          heapMB: Math.round(mem.heapUsed / 1048576),
+          ts: Date.now(),
+        });
+      } catch (e) {
+        client.send("debug:stats", { error: String(e) });
+      }
     });
     this.onMessage("kick", (client, targetId: string) => {
       const host = this.game.players.get(client.sessionId);
@@ -196,8 +227,9 @@ export class SpaceteamRoom extends Room {
       sp.statCompleted = ep.statCompleted;
       sp.statExpired = ep.statExpired;
       sp.eventDone = this.game.event ? this.game.event.done.has(ep.id) : false;
-      sp.dbgTargetControlId = this.debug ? (ep.instruction?.targetControlId ?? "") : "";
-      sp.dbgTargetValue = this.debug ? (ep.instruction?.targetValue ?? "") : "";
+      const showDbg = this.debug || this.reveal;
+      sp.dbgTargetControlId = showDbg ? (ep.instruction?.targetControlId ?? "") : "";
+      sp.dbgTargetValue = showDbg ? (ep.instruction?.targetValue ?? "") : "";
 
       // Panel nur neu aufbauen, wenn es sich geändert hat (Start/Level-Up)
       const changed = sp.panel.length !== ep.panel.length ||

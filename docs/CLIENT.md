@@ -1,11 +1,11 @@
 # Klaxon — Client
 
-Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
-(`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
+Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.6
+## Neu in v0.8.8
 
-- Wurmloch tauscht Panels dauerhaft zwischen Spielern (Engine); Overlay-Hinweis angepasst.
+- Debug-Modus per GUI: Version im Home-Footer 5x tippen -> Debug an/aus (persistent in
+  localStorage), kein `?debug` noetig. Footer zeigt "debug", wenn aktiv.
 
 ## Dateibaum
 
@@ -13,165 +13,21 @@ Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-fr
 packages/client/
 ├── index.html  public/{favicon.svg, manifest.webmanifest, sw.js}
 └── src/ app.css, App.svelte,
-       lib/ store.svelte.ts, EventOverlay.svelte, Help.svelte, Connecting.svelte,
-            Control.svelte, Home.svelte, Lobby.svelte, Game.svelte, GameOver.svelte
+       lib/ store.svelte.ts, Debug.svelte, EventOverlay.svelte, Help.svelte,
+            Connecting.svelte, Control.svelte, Home.svelte, Lobby.svelte,
+            Game.svelte, GameOver.svelte
 ```
 
 ---
 
 # Vollstaendige Dateien
 
-## Datei: `spaceteam/packages/client/src/app.css`
-
-```css
-/* Spaceteam - analoges Instrumenten-Cockpit-Theme */
-:root {
-  --bg: #0e1c1b;
-  --panel: #14302c;
-  --panel-2: #1c413b;
-  --ink: #f2e9d0;
-  --muted: #8fa8a2;
-  --amber: #f5a623;
-  --amber-ink: #1a1205;
-  --danger: #e5484d;
-  --ok: #57c08a;
-  --line: #2c524c;
-  --radius: 10px;
-  color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin: 0;
-  background:
-    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 60%);
-  color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-#app { min-height: 100%; }
-
-h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
-.tagline, .hint { color: var(--muted); font-size: 0.95rem; line-height: 1.4; }
-.error { color: var(--danger); font-weight: 600; }
-
-/* Buttons */
-.btn {
-  appearance: none; border: 1px solid var(--line);
-  background: var(--panel-2); color: var(--ink);
-  padding: 0.7em 1em; border-radius: var(--radius);
-  font-size: 1rem; font-weight: 600; cursor: pointer;
-  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
-}
-.btn:active { transform: translateY(1px); }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn.primary { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
-.btn.wide { width: 100%; padding: 0.9em; }
-.btn.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
-
-.input {
-  flex: 1; padding: 0.8em; font-size: 1.1rem; letter-spacing: 2px;
-  border: 1px solid var(--line); border-radius: var(--radius);
-  background: #0c1a19; color: var(--ink); text-transform: none;
-}
-
-/* Layout container for all screens */
-.home, .lobby, .over {
-  max-width: 460px; margin: 0 auto; padding: 6vh 20px 40px;
-  display: flex; flex-direction: column; gap: 16px;
-}
-.or { text-align: center; color: var(--muted); font-size: 0.9rem; }
-.join-row { display: flex; gap: 8px; }
-
-/* Lobby */
-.join-card {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 18px; text-align: center;
-}
-.join-card .code {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 2rem; letter-spacing: 4px; color: var(--amber);
-}
-.join-card .qr { margin: 12px auto 6px; display: block; border-radius: 8px; }
-.join-card .url { color: var(--muted); font-size: 0.75rem; word-break: break-all; }
-.players { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-.players li {
-  display: flex; justify-content: space-between;
-  padding: 0.6em 0.8em; border: 1px solid var(--line);
-  border-radius: 8px; background: var(--panel);
-}
-.players li.ready { border-color: var(--ok); }
-.players li.ready span:last-child { color: var(--ok); }
-
-@media (prefers-reduced-motion: no-preference) {
-  .command-inner.pulse { animation: pop 0.25s ease; }
-}
-@keyframes pop { from { transform: scale(1.06); } to { transform: scale(1); } }
-
-/* Name field */
-.field { display: flex; flex-direction: column; gap: 4px; text-align: left; }
-.field > span { color: var(--muted); font-size: 0.8rem; }
-.input.name { letter-spacing: 0; font-size: 1rem; }
-
-/* Version / GitHub footer */
-.version { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 6px; }
-.version a { color: var(--muted); }
-.version a:hover { color: var(--amber); }
-
-/* Help link */
-.helplink { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 0; align-self: center; }
-.helplink:hover { color: var(--amber); }
-
-/* Difficulty presets (lobby) */
-.difficulty { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.diff-label { color: var(--muted); font-size: 0.9rem; }
-.diff-label b { color: var(--ink); }
-.diff-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.btn.diff { padding: 0.5em 0.8em; font-size: 0.85rem; }
-
-/* Subtle starfield background (cockpit flavor) */
-body {
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(1px 1px at 18% 28%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 72% 62%, rgba(255,255,255,0.35), transparent),
-    radial-gradient(1px 1px at 42% 82%, rgba(255,255,255,0.3), transparent),
-    radial-gradient(1px 1px at 88% 18%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 60% 12%, rgba(255,255,255,0.28), transparent),
-    radial-gradient(120% 80% at 50% -10%, #16332f 0%, var(--bg) 70%);
-  background-attachment: fixed;
-}
-
-/* No text selection / callout during play (fixes iOS long-press selection) */
-.game, .game *, .event-overlay, .event-overlay * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-
-/* Event pass/fail banner */
-.ev-result { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 2.3rem; letter-spacing: 3px; }
-.ev-result.passed { color: var(--ok); background: rgba(87,192,138,0.16); text-shadow: 0 0 16px rgba(87,192,138,0.8); }
-.ev-result.failed { color: var(--danger); background: rgba(229,72,77,0.2); text-shadow: 0 0 16px rgba(229,72,77,0.9); }
-
-/* Reconnecting overlay */
-.reconnect-overlay { position: fixed; inset: 0; z-index: 58; display: flex; align-items: center; justify-content: center; background: rgba(10,22,21,0.92); }
-.reconnect-overlay .rc-box { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.3rem; letter-spacing: 2px; }
-
-/* Lobby: offline players + kick */
-.players li.offline { opacity: 0.55; }
-.players li.offline span:last-child { color: var(--danger); }
-.pstatus { display: inline-flex; align-items: center; gap: 8px; }
-.kick { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--danger); border-radius: 6px; width: 22px; height: 22px; line-height: 1; cursor: pointer; font-weight: 700; padding: 0; }
-.kick:hover { background: var(--danger); color: #fff; }
-
-/* Prevent iOS double-tap-zoom from swallowing rapid taps on any button */
-button, .btn, .tapbtn { touch-action: manipulation; }
-```
-
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
 
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.6";
+export const VERSION = "0.8.8";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -181,7 +37,7 @@ export type ControlView = {
 export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
-  statCompleted: number; statExpired: number; eventDone: boolean;
+  statCompleted: number; statExpired: number; eventDone: boolean; dbgTargetControlId: string; dbgTargetValue: string;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -215,6 +71,8 @@ export const S = $state({
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
+  debug: false,
+  stats: null as any,
   feedbackSent: false,
 });
 
@@ -362,6 +220,7 @@ function snapshot() {
       id: p.id, name: p.name, host: p.host, ready: p.ready,
       connected: p.connected, instructionText: p.instructionText, panel,
       statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0, eventDone: p.eventDone ?? false,
+      dbgTargetControlId: p.dbgTargetControlId ?? "", dbgTargetValue: p.dbgTargetValue ?? "",
     });
   });
   S.players = players;
@@ -391,6 +250,7 @@ async function bind(r: any) {
   r.onStateChange(() => snapshot());
   r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
   const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
+  r.onMessage("debug:stats", (d: any) => { S.stats = d; });
   r.onMessage("evt", (e: any) => {
     if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
     else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
@@ -485,6 +345,19 @@ export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
 export function kick(id: string) { room?.send("kick", id); }
+export function dbg(msg: string, payload?: any) { room?.send(msg, payload); }
+export function initDebug() {
+  try {
+    const url = new URLSearchParams(location.search).has("debug");
+    const saved = localStorage.getItem("klaxon_debug") === "1";
+    S.debug = url || saved;
+    if (url) localStorage.setItem("klaxon_debug", "1");
+  } catch { /* ignore */ }
+}
+export function setDebug(on: boolean) {
+  S.debug = on;
+  try { localStorage.setItem("klaxon_debug", on ? "1" : "0"); } catch { /* ignore */ }
+}
 export function initMotion() {
   try {
     const DM: any = (window as any).DeviceMotionEvent;
@@ -506,265 +379,146 @@ export function setControl(controlId: string, value: string) {
 }
 ```
 
-## Datei: `spaceteam/packages/client/src/lib/EventOverlay.svelte`
+## Datei: `spaceteam/packages/client/src/lib/Debug.svelte`
 
 ```svelte
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { S, sendEventAction, enableMotion } from "./store.svelte";
+  import { S, me, dbg } from "./store.svelte";
 
-  type Mode = "tap" | "hold" | "freeze";
-  const INFO: Record<string, { title: string; action: string; hint: string; mode: Mode; gesture?: "shake" | "orient" }> = {
-    meteor:    { title: "METEOR SHOWER", action: "SHAKE!", hint: "Shake your phone hard", mode: "tap", gesture: "shake" },
-    blackhole: { title: "BLACK HOLE", action: "FLIP YOUR PHONE!", hint: "Turn it over / on its side", mode: "tap", gesture: "orient" },
-    brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
-    surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
-    freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
-    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
-  };
-  let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
+  let open = $state(false);
+  let reveal = $state(false);
+  let paused = $state(false);
+  let statsTimer: ReturnType<typeof setInterval> | undefined;
 
-  let didIt = $state(false);
-  let taps = $state(0);
-  let holdProg = $state(0);
-  let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
-  let timer: ReturnType<typeof setInterval>;
-  let shakeCount = 0, holding = false, holdRaf = 0;
+  const EVENTS = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
+  let mine = $derived(me());
 
-  function complete() { if (didIt) return; didIt = true; sendEventAction(); }
-  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
-  function holdStart(e: PointerEvent) {
-    if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
-    const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
-      if (holdProg >= 1) { holding = false; complete(); return; } holdRaf = requestAnimationFrame(step); };
-    holdRaf = requestAnimationFrame(step);
-  }
-  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(holdRaf); }
-  function onFreezeTouch() { sendEventAction(); } // beruehren = Fehlschlag
+  function refreshStats() { dbg("debug:stats"); }
+  onMount(() => { refreshStats(); statsTimer = setInterval(() => { if (open) refreshStats(); }, 3000); });
+  onDestroy(() => clearInterval(statsTimer));
 
-  function onMotion(e: DeviceMotionEvent) {
-    const a = e.accelerationIncludingGravity || (e as any).acceleration; if (!a) return;
-    if (Math.hypot(a.x || 0, a.y || 0, a.z || 0) > 22) { shakeCount++; if (shakeCount >= 3) complete(); }
-  }
-  function onOrient(e: DeviceOrientationEvent) {
-    if (Math.abs(e.gamma ?? 0) > 55 || Math.abs(e.beta ?? 0) > 130) complete();
-  }
-  onMount(() => {
-    timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
-    if (info.gesture === "shake") window.addEventListener("devicemotion", onMotion);
-    if (info.gesture === "orient") window.addEventListener("deviceorientation", onOrient);
+  function toggleReveal() { reveal = !reveal; dbg("debug:reveal", reveal); }
+  function togglePause() { paused = !paused; dbg("debug:pause", paused); }
+
+  // Antwort auf mein aktuelles Kommando (nur wenn reveal an)
+  let answer = $derived.by(() => {
+    const id = mine?.dbgTargetControlId;
+    if (!id) return "";
+    const c = mine?.panel.find((x) => x.id === id);
+    const label = c ? c.label : id;
+    const v = mine?.dbgTargetValue;
+    if (c?.kind === "toggle") return label + " -> " + (v === "true" ? "ON" : "OFF");
+    if (c?.kind === "button") return label + " -> PRESS";
+    return label + " -> " + v;
   });
-  onDestroy(() => {
-    clearInterval(timer);
-    window.removeEventListener("devicemotion", onMotion);
-    window.removeEventListener("deviceorientation", onOrient);
-  });
-  let doneCount = $derived(S.players.filter((p) => p.eventDone).length);
+
+  function fmtUptime(sec: number) {
+    if (sec == null) return "-";
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return (h ? h + "h " : "") + (m ? m + "m " : "") + s + "s";
+  }
 </script>
 
-<div class="event-overlay" class:freeze={info.mode === "freeze"}
-     onpointerdown={info.mode === "freeze" ? onFreezeTouch : undefined}>
-  <div class="ev-box">
-    <div class="ev-title">{info.title}</div>
-    <div class="ev-action">{info.action}</div>
+{#if !open}
+  <button class="dbg-fab" onclick={() => { open = true; refreshStats(); }}>DEBUG</button>
+{:else}
+  <div class="dbg-panel">
+    <div class="dbg-head">
+      <span>DEBUG</span>
+      <button class="dbg-x" onclick={() => (open = false)}>close</button>
+    </div>
 
-    {#if info.mode === "freeze"}
-      <div class="ev-hint">Do not tap anything until the timer ends</div>
-    {:else if didIt}
-      <div class="ev-waiting">Done - waiting for crew {doneCount}/{S.players.length}</div>
-    {:else if info.mode === "hold"}
-      <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
-      <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
-    {:else}
-      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
-        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
-      </button>
-      {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
-      {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}
+    {#if !mine?.host}
+      <p class="dbg-note">Only the host can trigger debug actions. (Stats still shown.)</p>
     {/if}
 
-    <div class="ev-count">{secs}s</div>
-  </div>
-</div>
+    <div class="dbg-sec">
+      <div class="dbg-t">Server stats</div>
+      {#if S.stats}
+        {#if S.stats.error}
+          <div class="dbg-note">error: {S.stats.error}</div>
+        {:else}
+          <div class="dbg-grid">
+            <span>Rooms</span><b>{S.stats.rooms}</b>
+            <span>Players</span><b>{S.stats.players}</b>
+            <span>Uptime</span><b>{fmtUptime(S.stats.uptime)}</b>
+            <span>RSS</span><b>{S.stats.rssMB} MB</b>
+            <span>Heap</span><b>{S.stats.heapMB} MB</b>
+          </div>
+        {/if}
+      {:else}
+        <div class="dbg-note">loading...</div>
+      {/if}
+      <button class="dbg-b" onclick={refreshStats}>Refresh</button>
+    </div>
 
-<style>
-  .event-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 22px; background: rgba(60,10,12,0.9); }
-  .event-overlay.freeze { background: rgba(10,30,50,0.92); }
-  .ev-box { width: 100%; max-width: 420px; text-align: center; }
-  .ev-title { font-family: ui-monospace, Menlo, monospace; color: #ffd9d2; letter-spacing: 3px; font-size: 1rem; }
-  .event-overlay.freeze .ev-title { color: #cfe6ff; }
-  .ev-action { font-family: ui-monospace, Menlo, monospace; color: var(--danger); font-weight: 700; font-size: 2.2rem; margin: 8px 0 20px; text-shadow: 0 0 14px rgba(229,72,77,0.7); }
-  .event-overlay.freeze .ev-action { color: #7cc4e8; text-shadow: 0 0 14px rgba(124,196,232,0.7); }
-  .ev-bar { height: 8px; margin-top: 12px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
-  .ev-fill { height: 100%; background: var(--amber); }
-  .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
-  .ev-waiting { color: var(--ok); font-weight: 600; }
-  .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
-  @media (prefers-reduced-motion: no-preference) { .ev-action { animation: evpulse 0.6s ease-in-out infinite alternate; } }
-  @keyframes evpulse { from { transform: scale(1); } to { transform: scale(1.08); } }
-</style>
-```
+    {#if mine?.host}
+      <div class="dbg-sec">
+        <div class="dbg-t">Trigger event</div>
+        <div class="dbg-row">
+          {#each EVENTS as e}<button class="dbg-b" onclick={() => dbg("debug:event", e)}>{e}</button>{/each}
+        </div>
+      </div>
 
-## Datei: `spaceteam/packages/client/src/lib/Control.svelte`
+      <div class="dbg-sec">
+        <div class="dbg-t">Hazards</div>
+        <div class="dbg-row">
+          <button class="dbg-b" onclick={() => dbg("debug:hazard", "broken")}>Break</button>
+          <button class="dbg-b" onclick={() => dbg("debug:hazard", "slimed")}>Slime</button>
+          <button class="dbg-b" onclick={() => dbg("debug:clearHazards")}>Clear</button>
+        </div>
+      </div>
 
-```svelte
-<script lang="ts">
-  import { setControl, clearHazard, type ControlView } from "./store.svelte";
-  let { control }: { control: ControlView } = $props();
+      <div class="dbg-sec">
+        <div class="dbg-t">Health / flow</div>
+        <div class="dbg-row">
+          <button class="dbg-b" onclick={() => dbg("debug:health", -20)}>-20 hp</button>
+          <button class="dbg-b" onclick={() => dbg("debug:health", 20)}>+20 hp</button>
+          <button class="dbg-b" onclick={() => dbg("debug:nextLevel")}>Next sector</button>
+          <button class="dbg-b" onclick={() => dbg("debug:gameOver")}>Game over</button>
+        </div>
+      </div>
 
-  const press = () => setControl(control.id, "");
-  const flip = () => setControl(control.id, control.value === "true" ? "false" : "true");
-  const onSlide = (e: Event) => setControl(control.id, (e.target as HTMLInputElement).value);
-  const choose = (opt: string) => setControl(control.id, opt);
+      <div class="dbg-sec">
+        <div class="dbg-t">Solve / start</div>
+        <div class="dbg-row">
+          <button class="dbg-b" onclick={() => dbg("debug:solve", false)}>Solve mine</button>
+          <button class="dbg-b" onclick={() => dbg("debug:solve", true)}>Solve all</button>
+          <button class="dbg-b" onclick={() => dbg("debug:forceStart")}>Force start</button>
+        </div>
+      </div>
 
-  let ticks = $derived(
-    control.kind === "slider"
-      ? Array.from({ length: (control.max ?? 0) - (control.min ?? 0) + 1 }, (_, i) => (control.min ?? 0) + i)
-      : []
-  );
-
-  // Hazard "broken": halten zum Reparieren
-  let holdProg = $state(0);
-  let holding = false; let raf = 0;
-  const REPAIR_MS = 1500;
-  function holdStart(e: PointerEvent) {
-    if (control.hazard !== "broken") return; e.preventDefault(); holding = true;
-    const t0 = performance.now();
-    const step = () => {
-      if (!holding) return;
-      holdProg = Math.min(1, (performance.now() - t0) / REPAIR_MS);
-      if (holdProg >= 1) { holding = false; holdProg = 0; clearHazard(control.id); return; }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-  }
-  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(raf); }
-
-  // Hazard "slimed": wegwischen (Swipe)
-  let wipeProg = $state(0);
-  let wiping = false; let lx = 0, ly = 0;
-  const WIPE_PX = 240;
-  function wipeStart(e: PointerEvent) {
-    if (control.hazard !== "slimed") return; e.preventDefault(); wiping = true; lx = e.clientX; ly = e.clientY;
-  }
-  function wipeMove(e: PointerEvent) {
-    if (!wiping) return;
-    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
-    lx = e.clientX; ly = e.clientY;
-    if (wipeProg >= 1) { wiping = false; wipeProg = 0; clearHazard(control.id); }
-  }
-  function wipeEnd() { wiping = false; wipeProg = 0; }
-</script>
-
-<div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
-     style="grid-column: span {control.w}; grid-row: span {control.h};">
-  <div class="face">
-    {#if control.kind === "button"}
-      <button class="hw press" onclick={press}>PRESS</button>
-    {:else if control.kind === "toggle"}
-      <button class="switch" class:on={control.value === "true"} onclick={flip} aria-label="toggle"><span class="knob"></span></button>
-    {:else if control.kind === "slider"}
-      <div class="ticks">{#each ticks as t}<span>{t}</span>{/each}</div>
-      <input class="range" type="range" min={control.min} max={control.max} step="1" value={control.value} oninput={onSlide} />
-      <div class="readout">{control.value}</div>
-    {:else if control.kind === "selector"}
-      <div class="opts">
-        {#each control.options as opt}
-          <button class="hw opt" class:on={control.value === opt} onclick={() => choose(opt)}>{opt}</button>
-        {/each}
+      <div class="dbg-sec">
+        <div class="dbg-t">Toggles</div>
+        <div class="dbg-row">
+          <button class="dbg-b" class:on={reveal} onclick={toggleReveal}>Reveal answers</button>
+          <button class="dbg-b" class:on={paused} onclick={togglePause}>Pause</button>
+        </div>
+        {#if reveal && answer}<div class="dbg-answer">Your command: {answer}</div>{/if}
       </div>
     {/if}
   </div>
-  <div class="name">{control.label}</div>
-
-  {#if control.hazard === "broken"}
-    <div class="hz hz-broken" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>
-      <div class="hz-label">HOLD<br />TO FIX</div>
-      <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
-    </div>
-  {:else if control.hazard === "slimed"}
-    <div class="hz hz-slimed" onpointerdown={wipeStart} onpointermove={wipeMove} onpointerup={wipeEnd} onpointerleave={wipeEnd} onpointercancel={wipeEnd}>
-      <div class="hz-label">ALIEN GOO<br />WIPE IT OFF</div>
-      <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
-    </div>
-  {/if}
-</div>
+{/if}
 
 <style>
-  .control {
-    position: relative; height: 100%; min-height: 0; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: center; gap: 5px;
-    padding: 7px 8px 6px; border-radius: 8px;
-    background: linear-gradient(180deg, #1a3d38 0%, #12302c 100%);
-    border: 1px solid var(--line); border-top-width: 3px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -6px 12px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.4);
-  }
-  .control::after {
-    content: ""; position: absolute; inset: 4px; pointer-events: none; border-radius: 6px;
-    background:
-      radial-gradient(circle at 2px 2px, rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
-      radial-gradient(circle at calc(100% - 2px) 2px, rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
-      radial-gradient(circle at 2px calc(100% - 2px), rgba(255,255,255,0.22) 0.5px, transparent 1.6px),
-      radial-gradient(circle at calc(100% - 2px) calc(100% - 2px), rgba(255,255,255,0.22) 0.5px, transparent 1.6px);
-  }
-  .kind-button   { border-top-color: var(--danger); }
-  .kind-toggle   { border-top-color: var(--ok); }
-  .kind-slider   { border-top-color: var(--amber); }
-  .kind-selector { border-top-color: #7cc4e8; }
-  .control.hazarded { filter: brightness(0.85); }
-
-  .face { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-height: 0; }
-  .name {
-    font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.1; letter-spacing: 0.3px;
-    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  }
-  .hw {
-    appearance: none; cursor: pointer; width: 100%;
-    border: 1px solid var(--line); background: linear-gradient(180deg,#25514a,#1a3d38); color: var(--ink);
-    border-radius: 7px; padding: 0.5em; font-weight: 700; font-size: 0.9rem;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.4);
-  }
-  .hw:active { transform: translateY(1px); }
-  .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 68px; margin: 0 auto; font-size: 0.8rem;
-    background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
-    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
-  .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
-
-  /* Toggle als Kippschalter */
-  .switch { position: relative; height: 42px; width: 58px; margin: 2px auto; padding: 0; border-radius: 22px; cursor: pointer;
-    background: linear-gradient(180deg,#0c1a19,#14302c); border: 1px solid var(--line); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); }
-  .switch .knob { position: absolute; left: 5px; right: 5px; height: 16px; top: 22px; border-radius: 8px;
-    background: linear-gradient(180deg,#95a5a2,#4a5b58); box-shadow: 0 1px 2px rgba(0,0,0,0.6); transition: top 0.12s ease, background 0.12s ease; }
-  .switch.on { border-color: var(--amber); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 12px rgba(245,166,35,0.5); }
-  .switch.on .knob { top: 4px; background: linear-gradient(180deg,#ffd98a,#f5a623); }
-
-  /* Slider mit Ticks */
-  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.6rem; color: var(--muted); }
-  .range { width: 100%; accent-color: var(--amber); }
-  .readout {
-    align-self: center; font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 1.05rem;
-    background: #0a1615; border: 1px solid var(--line); border-radius: 4px; padding: 1px 10px;
-    box-shadow: inset 0 0 8px rgba(0,0,0,0.6); text-shadow: 0 0 6px rgba(245,166,35,0.6);
-  }
-  .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem;
-    background: #0a1615; color: var(--muted); border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
-  .opts .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-
-  /* Hazard-Overlays */
-  .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; }
-  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.78rem; text-align: center; line-height: 1.05; }
-  .hz-bar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
-  .hz-fill { height: 100%; background: var(--ok); }
-  .hz-fill.green { background: #9be06a; }
-  .hz-broken { border: 2px solid var(--danger);
-    background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .hz-broken .hz-label { color: #ffd9d2; text-shadow: 0 0 6px rgba(229,72,77,0.9); }
-  .hz-slimed { border: 2px solid #6fae3f;
-    background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
-  .hz-slimed .hz-label { color: #eafce0; text-shadow: 0 0 6px rgba(60,140,40,0.9); }
+  .dbg-fab { position: fixed; right: 8px; bottom: 8px; z-index: 60; font-family: ui-monospace, Menlo, monospace; font-size: 0.7rem;
+    background: #2a1030; color: #e9b7ff; border: 1px solid #7a3d94; border-radius: 8px; padding: 6px 9px; opacity: 0.85; touch-action: manipulation; }
+  .dbg-panel { position: fixed; right: 8px; bottom: 8px; z-index: 60; width: min(320px, 92vw); max-height: 80dvh; overflow: auto;
+    background: rgba(20,10,26,0.97); border: 1px solid #7a3d94; border-radius: 12px; padding: 10px; color: #f0e6f6;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+  .dbg-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; letter-spacing: 2px; color: #e9b7ff; margin-bottom: 6px; }
+  .dbg-x { background: transparent; border: 1px solid #7a3d94; color: #e9b7ff; border-radius: 6px; padding: 2px 8px; touch-action: manipulation; }
+  .dbg-note { color: #b79ac6; margin: 2px 0; }
+  .dbg-sec { border-top: 1px solid #3d2247; padding: 7px 0 3px; }
+  .dbg-t { color: #c98fe0; margin-bottom: 5px; letter-spacing: 1px; }
+  .dbg-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .dbg-b { background: #34184000; border: 1px solid #7a3d94; color: #f0e6f6; border-radius: 7px; padding: 6px 8px; cursor: pointer; touch-action: manipulation; }
+  .dbg-b:active { transform: translateY(1px); }
+  .dbg-b.on { background: #6a2b86; border-color: #b06fd0; }
+  .dbg-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin-bottom: 6px; }
+  .dbg-grid b { justify-self: end; }
+  .dbg-answer { margin-top: 6px; color: #9be06a; }
 </style>
 ```
 
@@ -772,8 +526,15 @@ export function setControl(controlId: string, value: string) {
 
 ```svelte
 <script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, VERSION, REPO_URL } from "./store.svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
   let code = $state("");
+
+  let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
+  function tapVersion() {
+    if (S.debug) { setDebug(false); verTaps = 0; alert("Debug OFF"); return; }
+    verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
+    if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
+  }
 </script>
 
 <div class="home">
@@ -800,282 +561,19 @@ export function setControl(controlId: string, value: string) {
 
   <button class="btn wide" onclick={openHelp}>How to play</button>
 
-  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
+  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Lobby.svelte`
-
-```svelte
-<script lang="ts">
-  import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
-
-  let qr = $state("");
-  let mine = $derived(me());
-  let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
-
-  const DIFFS = [
-    { label: "Casual", level: 1 },
-    { label: "Normal", level: 3 },
-    { label: "Hard", level: 5 },
-    { label: "Insane", level: 8 },
-  ];
-  let diffLabel = $derived(DIFFS.find((d) => d.level === S.startLevel)?.label ?? ("Sector " + S.startLevel));
-
-  $effect(() => {
-    if (S.roomId) {
-      QRCode.toDataURL(joinUrl(), { margin: 1, width: 220 })
-        .then((d) => (qr = d))
-        .catch(() => (qr = ""));
-    }
-  });
-</script>
-
-<div class="lobby">
-  <h1>Ready room</h1>
-  <p class="hint">Others join by scanning the code - same room, no download.</p>
-  <button class="helplink" onclick={openHelp}>How to play</button>
-
-  <div class="join-card">
-    <div class="code">{S.code}</div>
-    {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
-    <div class="url">{joinUrl()}</div>
-  </div>
-
-  <label class="field">
-    <span>Your name</span>
-    <input class="input name" maxlength="20" placeholder="Your name"
-           value={S.name}
-           oninput={(e) => updateName((e.target as HTMLInputElement).value)}
-           onchange={commitName} onblur={commitName} />
-  </label>
-
-  <ul class="players">
-    {#each S.players as p (p.id)}
-      <li class:ready={p.ready} class:offline={!p.connected}>
-        <span>{p.name}{p.host ? " - host" : ""}{p.id === S.sessionId ? " - you" : ""}</span>
-        <span class="pstatus">
-          {#if !p.connected}offline{:else}{p.ready ? "ready" : "waiting"}{/if}
-          {#if mine?.host && p.id !== S.sessionId}
-            <button class="kick" onclick={() => kick(p.id)} aria-label="remove player">x</button>
-          {/if}
-        </span>
-      </li>
-    {/each}
-  </ul>
-
-  <div class="difficulty">
-    <span class="diff-label">Difficulty: <b>{diffLabel}</b></span>
-    {#if mine?.host}
-      <div class="diff-opts">
-        {#each DIFFS as d}
-          <button class="btn diff" class:on={S.startLevel === d.level} onclick={() => setDifficulty(d.level)}>{d.label}</button>
-        {/each}
-      </div>
-    {/if}
-  </div>
-
-  <div class="difficulty">
-    <span class="diff-label">Motion controls (shake / tilt)</span>
-    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
-      {S.motionOk ? "On" : "Enable"}
-    </button>
-  </div>
-
-  <button class="btn wide" onclick={() => ready(!mine?.ready)}>
-    {mine?.ready ? "Not ready" : "I am ready"}
-  </button>
-
-  {#if mine?.host}
-    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
-    {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
-  {/if}
-  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
-</div>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/Game.svelte`
-
-```svelte
-<script lang="ts">
-  import { difficultyForLevel } from "@spaceteam/shared";
-  import { S, me, toggleMute } from "./store.svelte";
-  import Control from "./Control.svelte";
-
-  let mine = $derived(me());
-  let healthPct = $derived(Math.max(0, Math.min(100, S.health)));
-  let floorPct = $derived(Math.max(0, Math.min(100, S.deathLimit)));
-  let danger = $derived(S.health - S.deathLimit < 20);
-  let cmdMs = $derived(difficultyForLevel(S.level).instructionTimeMs);
-</script>
-
-<div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
-  <header class="hud">
-    <span class="sector">SECTOR {S.level}</span>
-    <div class="bar" class:danger>
-      <div class="floor" style="width:{floorPct}%"></div>
-      <div class="health" style="width:{healthPct}%"></div>
-    </div>
-    <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
-  </header>
-
-  <section class="command">
-    {#key mine?.instructionText}
-      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText ?? "Stand by..."}</div>
-      <div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>
-    {/key}
-  </section>
-
-  <section class="panel">
-    {#each mine?.panel ?? [] as c (c.id)}
-      <Control control={c} />
-    {/each}
-  </section>
-
-  {#if S.banner}<div class="banner"><span>{S.banner}</span></div>{/if}
-</div>
-
 <style>
-  .game {
-    height: 100vh; height: 100dvh;
-    max-width: 720px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 8px 10px 10px; overflow: hidden;
-  }
-  .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
-  .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
-
-  .hud { flex: none; display: flex; align-items: center; gap: 10px; }
-  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
-  .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
-  .floor { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(45deg,#3a1414,#3a1414 5px,#511a1a 5px,#511a1a 10px); }
-  .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
-  .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }
-  .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }
-
-  .command {
-    flex: none; text-align: center; padding: 12px 14px 10px;
-    background: linear-gradient(180deg,#123230,#0e2420);
-    border: 1px solid var(--amber); border-radius: 10px;
-    box-shadow: inset 0 0 22px rgba(245,166,35,0.12), 0 2px 6px rgba(0,0,0,0.4);
-    position: relative; overflow: hidden;
-  }
-  .command::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px); }
-  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.35rem; line-height: 1.2; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
-  .command-inner::before { content: "\25B6\00a0"; opacity: 0.85; }
-  .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-  .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
-
-  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
-    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
-    box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
-  @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-  @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
-
-  .banner { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; }
-  .banner span { font-family: ui-monospace, Menlo, monospace; font-size: 2rem; font-weight: 700; color: var(--amber); background: rgba(14,28,27,0.9); border: 1px solid var(--amber); padding: 0.5em 1em; border-radius: 12px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(245,166,35,0.5); }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .game.shake { animation: shake 0.4s ease; }
-    .banner span { animation: bannerpop 0.3s ease; }
-    .timer-fill { animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
-  }
-  @keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-9px)} 40%,60%{transform:translateX(9px)} }
-  @keyframes bannerpop { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
-  @keyframes drain { from{transform:scaleX(1)} to{transform:scaleX(0)} }
-</style>
-```
-
-## Datei: `spaceteam/packages/client/src/lib/GameOver.svelte`
-
-```svelte
-<script lang="ts">
-  import { S, me, playAgain, sendFeedback } from "./store.svelte";
-  let mine = $derived(me());
-
-  const DIFF_NAMES: Record<number, string> = { 1: "Casual", 3: "Normal", 5: "Hard", 8: "Insane" };
-  let diffName = $derived(DIFF_NAMES[S.startLevel] ?? ("Sector " + S.startLevel));
-
-  let players = $derived([...S.players].sort((a, b) => b.statCompleted - a.statCompleted));
-  let totalCompleted = $derived(players.reduce((a, p) => a + p.statCompleted, 0));
-  let mvp = $derived(players.reduce((b: any, p) => (p.statCompleted > (b?.statCompleted ?? -1) ? p : b), null));
-  let ignored = $derived(players.reduce((b: any, p) => (p.statExpired > (b?.statExpired ?? 0) ? p : b), null));
-
-  let fb = $state("");
-  const submit = () => { const t = fb.trim(); if (t) sendFeedback(t); };
-</script>
-
-<div class="over">
-  <h1>Game over</h1>
-  <p class="tagline">Reached <b>Sector {S.level}</b> on <b>{diffName}</b>.</p>
-
-  <div class="stats">
-    <div class="big">{totalCompleted}<span>commands completed</span></div>
-    {#if mvp && mvp.statCompleted > 0}
-      <div class="award"><span class="medal mvp">MVP</span> {mvp.name} - {mvp.statCompleted} done</div>
-    {/if}
-    {#if ignored && ignored.statExpired > 0}
-      <div class="award"><span class="medal bad">Loose cannon</span> {ignored.name} - {ignored.statExpired} orders ignored</div>
-    {:else}
-      <div class="award good">Nobody dropped an order. Impressive.</div>
-    {/if}
-
-    <table class="scoreboard">
-      <thead><tr><th>Crew</th><th>Done</th><th>Missed</th></tr></thead>
-      <tbody>
-        {#each players as p (p.id)}
-          <tr><td>{p.name}{p.id === S.sessionId ? " (you)" : ""}</td><td>{p.statCompleted}</td><td>{p.statExpired}</td></tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="feedback">
-    {#if S.feedbackSent}
-      <p class="thanks">Thanks for the feedback!</p>
-    {:else}
-      <label class="field">
-        <span>How was it? (sent to the dev, no name/email needed)</span>
-        <textarea class="input fb" rows="3" maxlength="500" bind:value={fb} placeholder="Too easy? A bug? An idea?"></textarea>
-      </label>
-      <button class="btn wide" disabled={!fb.trim()} onclick={submit}>Send feedback</button>
-    {/if}
-  </div>
-
-  {#if mine?.host}
-    <button class="btn wide primary" onclick={playAgain}>Play again</button>
-  {:else}
-    <p class="hint">Waiting for the host to start a new round...</p>
-  {/if}
-  <button class="btn wide" onclick={() => (location.href = location.pathname)}>Leave</button>
-</div>
-
-<style>
-  .stats { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .big { font-family: ui-monospace, Menlo, monospace; font-size: 2.2rem; font-weight: 700; color: var(--amber); text-align: center; line-height: 1; }
-  .big span { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 400; margin-top: 4px; }
-  .award { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
-  .award.good { color: var(--ok); }
-  .medal { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
-  .medal.mvp { background: var(--amber); color: var(--amber-ink); }
-  .medal.bad { background: var(--danger); color: #fff; }
-  .scoreboard { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.9rem; }
-  .scoreboard th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 4px 6px; }
-  .scoreboard td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
-  .scoreboard td:nth-child(2), .scoreboard td:nth-child(3), .scoreboard th:nth-child(2), .scoreboard th:nth-child(3) { text-align: right; width: 60px; }
-  .feedback { display: flex; flex-direction: column; gap: 8px; }
-  .input.fb { letter-spacing: 0; font-size: 0.95rem; resize: vertical; font-family: inherit; }
-  .thanks { color: var(--ok); text-align: center; font-weight: 600; }
-</style>
-```
+  .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
+  .dbgon { color: #c98fe0; }
+</style>```
 
 ## Datei: `spaceteam/packages/client/src/App.svelte`
 
 ```svelte
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, joinByCode, openHelp, initMotion } from "./lib/store.svelte";
+  import { S, joinByCode, openHelp, initMotion, initDebug } from "./lib/store.svelte";
   import Home from "./lib/Home.svelte";
   import Lobby from "./lib/Lobby.svelte";
   import Game from "./lib/Game.svelte";
@@ -1083,9 +581,11 @@ export function setControl(controlId: string, value: string) {
   import Connecting from "./lib/Connecting.svelte";
   import Help from "./lib/Help.svelte";
   import EventOverlay from "./lib/EventOverlay.svelte";
+  import Debug from "./lib/Debug.svelte";
 
   onMount(() => {
     initMotion();
+    initDebug();
     const r = new URLSearchParams(location.search).get("r");
     if (r) {
       joinByCode(r);
@@ -1117,5 +617,6 @@ export function setControl(controlId: string, value: string) {
 {#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
 {#if S.connecting}<Connecting />{/if}
 {#if S.showHelp}<Help />{/if}
+{#if S.debug}<Debug />{/if}
 ```
 
