@@ -9,7 +9,7 @@
     brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
     surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
     freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
-    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panel scrambled - tap to lock in", mode: "tap" },
+    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
   };
   let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
 

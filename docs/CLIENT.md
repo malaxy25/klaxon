@@ -3,10 +3,9 @@
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. Auf Windows-PowerShell BOM-frei
 (`Write-NoBom`) und in ASCII schreiben - siehe M0b in `GETTING-STARTED.md`.
 
-## Neu in v0.8.5
+## Neu in v0.8.6
 
-- Event-Taps zuverlaessig auf iOS (touch-action: manipulation + pointerdown, 3 statt 5 Taps).
-  Events laufen zudem immer nach ~6 s ab -> koennen nicht haengen.
+- Wurmloch tauscht Panels dauerhaft zwischen Spielern (Engine); Overlay-Hinweis angepasst.
 
 ## Dateibaum
 
@@ -21,77 +20,6 @@ packages/client/
 ---
 
 # Vollstaendige Dateien
-
-## Datei: `spaceteam/packages/client/index.html`
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Klaxon</title>
-    <meta name="theme-color" content="#0e1c1b" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Klaxon" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
-      }
-    </script>
-  </body>
-</html>
-```
-
-## Datei: `spaceteam/packages/client/public/manifest.webmanifest`
-
-```json
-{
-  "name": "Klaxon",
-  "short_name": "Klaxon",
-  "description": "A cooperative shouting party game for the same room.",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0e1c1b",
-  "theme_color": "#0e1c1b",
-  "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
-  ]
-}
-```
-
-## Datei: `spaceteam/packages/client/public/sw.js`
-
-```js
-// Minimaler Service Worker: nur damit die App installierbar ist (network-first).
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
-self.addEventListener("fetch", (event) => {
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
-});
-```
-
-## Datei: `spaceteam/packages/client/public/favicon.svg`
-
-```xml
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0e1c1b"/>
-  <path d="M32 13 L54 51 H10 Z" fill="#f5a623"/>
-  <rect x="29" y="25" width="6" height="14" rx="3" fill="#1a1205"/>
-  <circle cx="32" cy="45" r="3.3" fill="#1a1205"/>
-</svg>
-```
 
 ## Datei: `spaceteam/packages/client/src/app.css`
 
@@ -243,7 +171,7 @@ button, .btn, .tapbtn { touch-action: manipulation; }
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.5";
+export const VERSION = "0.8.6";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -592,7 +520,7 @@ export function setControl(controlId: string, value: string) {
     brace:     { title: "BRACE!", action: "TAP FAST!", hint: "", mode: "tap" },
     surge:     { title: "POWER SURGE", action: "HOLD!", hint: "Press and hold", mode: "hold" },
     freeze:    { title: "DECOMPRESSION", action: "DO NOT TOUCH!", hint: "Hands off the screen", mode: "freeze" },
-    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panel scrambled - tap to lock in", mode: "tap" },
+    wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
   };
   let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
 

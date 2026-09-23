@@ -156,14 +156,23 @@ export class SpaceteamGame {
   // ---------- Instruktionsgenerierung ----------
   private eventInterval(): number { return 28000; }
 
-  private shuffle<T>(arr: T[]): void {
-    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+  // Wurmloch: Panels dauerhaft zwischen Spielern rotieren (2 Spieler = Tausch).
+  private rotatePanels(): void {
+    const ids = [...this.players.keys()];
+    if (ids.length < 2) return;
+    const panels = ids.map((id) => this.players.get(id)!.panel);
+    for (let i = 0; i < ids.length; i++) {
+      const p = this.players.get(ids[i])!;
+      const newPanel = panels[(i + 1) % ids.length];
+      p.panel = newPanel;
+      for (const c of newPanel) c.ownerId = p.id;
+    }
   }
 
   private startEvent(): GameEvent {
     const types = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
     const type = this.forceEvent || pick(types, this.rng);
-    if (type === "wormhole") for (const p of this.players.values()) this.shuffle(p.panel);
+    if (type === "wormhole") this.rotatePanels();
     this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
     return { type: "eventStart" };
   }

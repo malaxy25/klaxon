@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.6] - 2026-09-23
+### Changed
+- **Wormhole now really swaps panels between players (permanently).** After it, you
+  control someone else's board - you have to re-orient and shout differently. (Was a
+  local shuffle before.) For 2 players it's a straight swap; for more, a rotation.
+
 ## [0.8.5] - 2026-09-23
 ### Fixed
 - Special-event taps (Brace / Wormhole and the tap fallback) sometimes did not register
