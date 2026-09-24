@@ -6,7 +6,7 @@ each other before the ship falls apart. An independent, original clone inspired 
 Spaceteam.
 
 **Play:** https://klaxon-2dnv.onrender.com
-**Current version:** 0.8.15 — see [CHANGELOG.md](CHANGELOG.md)
+**Current version:** 0.8.16 — see [CHANGELOG.md](CHANGELOG.md)
 
 ## What it is
 
@@ -41,6 +41,8 @@ Deployed on Render: server as a Docker web service, client as a static site.
 - Changes: [CHANGELOG.md](CHANGELOG.md)
 - Backlog / known issues & ideas: [BACKLOG.md](BACKLOG.md)
 - Environment variables: [docs/ENV.md](docs/ENV.md)
+- Onboarding a new AI: [docs/AI-CONTEXT.md](docs/AI-CONTEXT.md)
+- Maintenance (updates, Node, deploy): [docs/MAINTENANCE.md](docs/MAINTENANCE.md)
 
 ## Status
 

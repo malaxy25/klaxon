@@ -3,6 +3,16 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.16] - 2026-09-23
+### Added
+- **docs/AI-CONTEXT.md** - onboarding for a future AI (architecture, workflow, and what a
+  deployment consists of) and **docs/MAINTENANCE.md** - keeping libraries, Node and the
+  deploy up to date.
+- **package-lock.json** and the **Dockerfile** are now part of the repo snapshot for
+  reproducible builds.
+### Changed
+- Server container bumped to **Node 24** (Dockerfile: `FROM node:24-alpine`).
+
 ## [0.8.15] - 2026-09-23
 ### Added
 - **Mute button on the home, lobby and game-over screens** too (top-right) - since those
