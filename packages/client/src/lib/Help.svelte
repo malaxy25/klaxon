@@ -25,6 +25,12 @@
       <li><span class="dot s"></span> <b>Slider</b> - set the number</li>
       <li><span class="dot x"></span> <b>Selector</b> - pick the option</li>
     </ul>
+    <h3>Alerts</h3>
+    <ul class="legend">
+      <li><b>Jammed control</b> - hold it down to fix it.</li>
+      <li><b>Alien slime</b> - wipe across it to clean it off.</li>
+      <li><b>Full-screen alert</b> - react before the timer: shake, flip, hold or tap - or DON'T touch.</li>
+    </ul>
     <p class="tip">It gets loud and chaotic. That is the point.</p>
     <button class="btn wide primary" onclick={closeHelp}>Got it</button>
   </div>

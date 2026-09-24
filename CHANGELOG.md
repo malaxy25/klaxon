@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.17] - 2026-09-24
+### Changed
+- **How-to-play** now covers the new alerts in a short block: jammed controls (hold to
+  fix), alien slime (wipe off), and full-screen team events (shake / flip / hold / tap -
+  or don't touch).
+
 ## [0.8.16] - 2026-09-23
 ### Added
 - **docs/AI-CONTEXT.md** - onboarding for a future AI (architecture, workflow, and what a
