@@ -17,6 +17,7 @@ export interface EnginePlayer {
   instruction: Instruction | null;
   statCompleted: number; // vom Spieler ausgefuehrte Befehle
   statExpired: number;   // eigene Befehle, die abliefen
+  maxTiles: number;      // Kachel-Obergrenze je nach Geraet (4..6)
 }
 
 export interface EngineOptions {
@@ -58,13 +59,14 @@ export class SpaceteamGame {
   }
 
   // ---------- Lobby ----------
-  addPlayer(id: string, name: string): void {
+  addPlayer(id: string, name: string, maxTiles = 6): void {
     if (this.players.has(id)) return;
     this.players.set(id, {
       id, name, connected: true,
       host: this.players.size === 0,
       ready: false, panel: [], instruction: null,
       statCompleted: 0, statExpired: 0,
+      maxTiles: Math.max(4, Math.min(6, Math.round(maxTiles) || 6)),
     });
   }
 
@@ -134,8 +136,9 @@ export class SpaceteamGame {
   }
 
   private assignPanels(): void {
-    const size = panelSizeForLevel(this.level);
+    const base = panelSizeForLevel(this.level);
     for (const p of this.players.values()) {
+      const size = Math.max(4, Math.min(base, p.maxTiles ?? 6));
       p.panel = generatePanel(p.id, size, this.rng);
       p.instruction = null;
     }

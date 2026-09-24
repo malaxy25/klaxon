@@ -177,7 +177,8 @@ export class SpaceteamRoom extends Room {
 
   onJoin(client: Client, options: any) {
     const name = String(options?.name || "Player").slice(0, 20) || "Player";
-    this.game.addPlayer(client.sessionId, name);
+    const maxTiles = Number(options?.maxTiles) || 6;
+    this.game.addPlayer(client.sessionId, name, maxTiles);
     this.syncFull();
   }
 

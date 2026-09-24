@@ -3,6 +3,32 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.20] - 2026-09-24
+### Added
+- **Per-device panel sizing:** each player reports their screen height on join and the
+  server caps their panel to 4 / 5 / 6 controls - small phones get fewer, roomier tiles.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): builds shared + server + client on
+  Node 24 on every push, catching breakage before you rely on the deploy.
+### Fixed
+- **Control labels can no longer be clipped:** the label sits in its own row that is
+  always shown; the control area shrinks first if space is tight.
+### Changed
+- BACKLOG: noted securing the debug panel before any public launch (P6).
+
+## [0.8.19] - 2026-09-24
+### Fixed
+- **Wiping off alien slime** (and **holding to fix** a jammed control) could not be
+  completed on narrow tiles: the gesture cancelled the moment your finger left the small
+  tile. It now uses **pointer capture**, so you can swipe/hold across the whole screen;
+  slime threshold lowered a touch.
+
+## [0.8.18] - 2026-09-24
+### Fixed
+- **Small / short screens were too cramped** - control labels got clipped and overlapped
+  by the tile below. Tiles are now more compact (tighter spacing, smaller readouts / ticks
+  / labels) with an extra-compact mode on short screens, so labels stay readable.
+- Shorter slime prompt ("WIPE / IT OFF") so it fits narrow tiles.
+
 ## [0.8.17] - 2026-09-24
 ### Changed
 - **How-to-play** now covers the new alerts in a short block: jammed controls (hold to

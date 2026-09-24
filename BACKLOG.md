@@ -107,6 +107,12 @@ App-Gefuehl).
 Statt CSS-`dense` ein echtes Bin-Packing ohne Luecken. Seit "wenige Kacheln" kaum noch
 noetig - nur falls Luecken stoeren.
 
+### P6 — Debug-Panel absichern   (Prio: niedrig, jetzt; hoch vor oeffentlichem Launch)
+Das Debug-Panel (`?debug` / Version 5x tippen) ist nur host-geprueft, nicht passwort-/
+serverseitig gesperrt. Fuer den Freundeskreis ok. Vor einem echten oeffentlichen Launch:
+serverseitig nur bei gesetztem Debug-Flag erlauben (z. B. Env `ALLOW_DEBUG=1`), sonst
+`debug:*`-Messages ignorieren.
+
 ### P5 — Kleinkram   (Prio: niedrig, Aufwand: S)
 Mehr Technobabble-Vielfalt (Wortlisten erweitern), Feintuning der Schwierigkeitskurve
 nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
@@ -118,4 +124,4 @@ nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
 Siehe [CHANGELOG](CHANGELOG.md): Namen, Play-again, Sound (Basis), Screenshake,
 Level-Banner, Countdown, Cold-Start-Overlay + Retry, How-to-play, Schwierigkeits-Presets,
 End-of-game-Stats, In-Game-Feedback (persistent via ntfy/Google Sheet), One-Screen-Fit,
-Cockpit-Pass, Alien-Schleim, 8 Spieler, Kick, Offline-Anzeige, Reconnect, PWA, 6 Events (inkl. echtes Wurmloch), In-Game-Debug-Panel (?debug) mit Server-Stats.
+Cockpit-Pass, Alien-Schleim, 8 Spieler, Kick, Offline-Anzeige, Reconnect, PWA, 6 Events (inkl. echtes Wurmloch), In-Game-Debug-Panel (?debug) mit Server-Stats, responsive/kompakte Kacheln + Pro-Geraet-Kachel-Cap, CI-Build-Gate.

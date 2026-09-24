@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.17";
+export const VERSION = "0.8.20";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -241,6 +241,12 @@ export function me(): PlayerView | undefined {
 }
 
 function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
+function currentMaxTiles(): number {
+  const h = typeof window !== "undefined" ? window.innerHeight : 900;
+  if (h < 680) return 4;
+  if (h < 780) return 5;
+  return 6;
+}
 
 export function joinUrl(): string {
   return location.origin + location.pathname + "?r=" + S.code;
@@ -372,7 +378,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName() })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -402,7 +408,7 @@ export async function joinByCode(code: string) {
   try {
     client ??= new Client(SERVER_URL);
     try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName() })));
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles() })));
     } catch {
       S.error = "No game found for code " + cc + ".";
     }

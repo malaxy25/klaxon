@@ -38,8 +38,8 @@
   .game {
     height: 100vh; height: 100dvh;
     max-width: 720px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 8px 10px 10px; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 6px 8px 8px; overflow: hidden;
   }
   .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
   .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
@@ -52,21 +52,27 @@
   .mute { flex: none; appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.75rem; cursor: pointer; }
 
   .command {
-    flex: none; text-align: center; padding: 12px 14px 10px;
+    flex: none; text-align: center; padding: 8px 12px 7px;
     background: linear-gradient(180deg,#123230,#0e2420);
     border: 1px solid var(--amber); border-radius: 10px;
     box-shadow: inset 0 0 22px rgba(245,166,35,0.12), 0 2px 6px rgba(0,0,0,0.4);
     position: relative; overflow: hidden;
   }
   .command::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:10px; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px); }
-  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.35rem; line-height: 1.2; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
+  .command-inner { font-family: ui-monospace, Menlo, monospace; font-size: 1.2rem; line-height: 1.15; color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.45); }
   .command-inner::before { content: "\25B6\00a0"; opacity: 0.85; }
   .timer { height: 4px; margin-top: 10px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
   .timer-fill { height: 100%; background: var(--amber); transform-origin: left center; transform: scaleX(1); box-shadow: 0 0 8px rgba(245,166,35,0.6); }
 
-  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 6px;
-    padding: 5px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
+  .panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 4px;
+    padding: 3px; border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2));
     box-shadow: inset 0 0 0 1px var(--line), inset 0 2px 10px rgba(0,0,0,0.4); }
+  @media (max-height: 720px) {
+    .game { gap: 4px; padding: 4px 8px 6px; }
+    .command { padding: 6px 10px 5px; }
+    .command-inner { font-size: 1.05rem; }
+    .panel { gap: 3px; padding: 2px; }
+  }
   @media (min-width: 560px) { .panel { grid-template-columns: repeat(3, minmax(0,1fr)); } }
   @media (min-width: 820px) { .panel { grid-template-columns: repeat(4, minmax(0,1fr)); } }
 
