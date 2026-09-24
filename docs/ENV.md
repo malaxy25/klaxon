@@ -11,6 +11,7 @@ getrennte Sets. Import jeweils im Render-Dashboard: Dienst -> **Environment** ->
 | `VITE_SERVER_URL`   | Static Site     | wss://-URL des Servers (Build-Zeit in Client)     | **ja**         |
 | `FEEDBACK_WEBHOOK`  | klaxon-backend  | Feedback-Ziel (z. B. ntfy.sh)                     | optional       |
 | `FEEDBACK_WEBHOOK_2`| klaxon-backend  | Zweites Feedback-Ziel (z. B. Google Sheet)        | optional       |
+| `STATS_WEBHOOK`     | klaxon-backend  | Usage-Log (start/end je Raum) -> Sheet; siehe docs/STATS.md | optional       |
 | `FORCE_EVENT`       | klaxon-backend  | Debug: erzwingt einen Event-Typ                    | nur Test       |
 | `DEBUG_TARGETS`     | klaxon-backend  | Debug: legt Befehlsziele in den State (fuer Tests) | nur Test       |
 | `SINGLE_PLAYER`     | klaxon-backend  | Debug: Start mit 1 Spieler erlaubt                 | nur Test       |

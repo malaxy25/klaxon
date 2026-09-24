@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.22";
+export const VERSION = "0.8.23";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {

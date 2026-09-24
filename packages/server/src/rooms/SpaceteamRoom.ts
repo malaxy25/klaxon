@@ -1,6 +1,7 @@
 import { Room, Client, matchMaker } from "colyseus";
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { SpaceteamGame, GameEvent } from "@spaceteam/shared";
+import { postStat } from "../stats";
 
 function genCode(): string {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -59,6 +60,8 @@ export class SpaceteamRoom extends Room {
   private debug = process.env.DEBUG_TARGETS === "1";
   private reveal = false;
   private debugKey = process.env.DEBUG_KEY || "";
+  private createdAt = 0;
+  private peak = 0;
   private debugAuthed = new Set<string>();
 
   onCreate(options: any) {
@@ -67,6 +70,7 @@ export class SpaceteamRoom extends Room {
     this.setMetadata({ code });
     this.state.code = code;
     this.game.forceEvent = process.env.FORCE_EVENT || "";
+    this.createdAt = Date.now();
 
     this.onMessage("setName", (client, name: string) => {
       const p = this.game.players.get(client.sessionId);
@@ -79,7 +83,7 @@ export class SpaceteamRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); }
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); postStat({ event: "start", room: this.state.code, players: this.game.players.size, startLevel: this.game.startLevel }); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
@@ -183,7 +187,12 @@ export class SpaceteamRoom extends Room {
     const maxTiles = Number(options?.maxTiles) || 6;
     this.game.addPlayer(client.sessionId, name, maxTiles);
     if (this.debugKey && String(options?.debugKey || "") === this.debugKey) this.debugAuthed.add(client.sessionId);
+    this.peak = Math.max(this.peak, this.game.players.size);
     this.syncFull();
+  }
+
+  onDispose() {
+    postStat({ event: "end", room: this.state.code, peakPlayers: this.peak, durationSec: Math.round((Date.now() - this.createdAt) / 1000) });
   }
 
   async onLeave(client: Client, code?: number) {

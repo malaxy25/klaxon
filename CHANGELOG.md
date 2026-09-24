@@ -3,6 +3,13 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.23] - 2026-09-24
+### Added
+- **Persistent usage log (optional):** if the server env `STATS_WEBHOOK` is set, the server
+  posts one JSON row when a game **starts** (room, players, sector) and one when a room
+  **ends** (room, peak players, duration) - e.g. into a Google Sheet "Usage" tab. No
+  periodic noise. See docs/STATS.md.
+
 ## [0.8.22] - 2026-09-24
 ### Fixed
 - The **join link no longer wraps to two lines** on small phones - it's one line with an
