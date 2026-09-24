@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.22] - 2026-09-24
+### Fixed
+- The **join link no longer wraps to two lines** on small phones - it's one line with an
+  ellipsis (tapping still copies the full link).
+### Changed
+- Clearer message when the connection actually drops (room closed or the free server went
+  to sleep): prompts you to just create or join again.
+
 ## [0.8.21] - 2026-09-24
 ### Added
 - **Cockpit polish:** subtle CRT scanline + vignette over the game, and the sector readout

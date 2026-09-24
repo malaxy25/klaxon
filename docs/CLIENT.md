@@ -151,7 +151,7 @@ h1 { font-size: 1.9rem; letter-spacing: 0.5px; margin: 0 0 0.2em; }
   font-size: 2rem; letter-spacing: 4px; color: var(--amber);
 }
 .join-card .qr { margin: 12px auto 6px; display: block; border-radius: 8px; }
-.join-card .url { color: var(--muted); font-size: 0.75rem; word-break: break-all; background: none; border: none; padding: 2px 4px; font: inherit; cursor: pointer; touch-action: manipulation; text-align: center; }
+.join-card .url { color: var(--muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; margin: 0 auto; background: none; border: none; padding: 2px 8px; font: inherit; cursor: pointer; touch-action: manipulation; text-align: center; }
 .join-card .url:active { opacity: 0.7; }
 .join-card .urlhint { color: var(--muted); font-size: 0.65rem; opacity: 0.7; margin-top: 2px; }
 .players { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -229,6 +229,7 @@ button, .btn, .tapbtn { touch-action: manipulation; }
   appearance: none; border: 1px solid var(--line); background: #14302c; color: var(--muted);
   border-radius: 8px; padding: 0.35em 0.75em; font-size: 0.75rem; cursor: pointer; touch-action: manipulation; opacity: 0.9; }
 .mute-fab:active { transform: translateY(1px); }
+
 ```
 
 ## Datei: `spaceteam/packages/client/src/lib/store.svelte.ts`
@@ -236,7 +237,7 @@ button, .btn, .tapbtn { touch-action: manipulation; }
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.21";
+export const VERSION = "0.8.22";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -595,7 +596,7 @@ async function handleLeave(code: number) {
     }
   }
   S.reconnecting = false;
-  S.error = "Connection lost.";
+  S.error = "Connection lost - the room closed or the server went to sleep. Just create or join again.";
   S.screen = "home";
 }
 

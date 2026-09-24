@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.21";
+export const VERSION = "0.8.22";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -359,7 +359,7 @@ async function handleLeave(code: number) {
     }
   }
   S.reconnecting = false;
-  S.error = "Connection lost.";
+  S.error = "Connection lost - the room closed or the server went to sleep. Just create or join again.";
   S.screen = "home";
 }
 
