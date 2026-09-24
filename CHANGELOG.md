@@ -3,6 +3,16 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.21] - 2026-09-24
+### Added
+- **Cockpit polish:** subtle CRT scanline + vignette over the game, and the sector readout
+  is now an inset amber chip.
+- **Optional debug lock:** if the server env `DEBUG_KEY` is set, the debug panel only
+  unlocks via `?debug=<KEY>`. When it's not set (private / friends use) debug stays
+  host-gated as before - nothing to configure.
+### Changed
+- CI actions bumped to v5 (removes the Node 20 deprecation warning).
+
 ## [0.8.20] - 2026-09-24
 ### Added
 - **Per-device panel sizing:** each player reports their screen height on join and the

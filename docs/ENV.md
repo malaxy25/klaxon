@@ -14,6 +14,7 @@ getrennte Sets. Import jeweils im Render-Dashboard: Dienst -> **Environment** ->
 | `FORCE_EVENT`       | klaxon-backend  | Debug: erzwingt einen Event-Typ                    | nur Test       |
 | `DEBUG_TARGETS`     | klaxon-backend  | Debug: legt Befehlsziele in den State (fuer Tests) | nur Test       |
 | `SINGLE_PLAYER`     | klaxon-backend  | Debug: Start mit 1 Spieler erlaubt                 | nur Test       |
+| `DEBUG_KEY`         | klaxon-backend  | Optional: sperrt das Debug-Panel; nur `?debug=<KEY>` schaltet frei | nur oeffentl.  |
 | `PORT`              | klaxon-backend  | Port - **setzt Render automatisch**               | NICHT setzen   |
 | `NODE_ENV`          | klaxon-backend  | wird vom Dockerfile auf `production` gesetzt        | NICHT setzen   |
 

@@ -58,6 +58,8 @@ export class SpaceteamRoom extends Room {
   private game!: SpaceteamGame;
   private debug = process.env.DEBUG_TARGETS === "1";
   private reveal = false;
+  private debugKey = process.env.DEBUG_KEY || "";
+  private debugAuthed = new Set<string>();
 
   onCreate(options: any) {
     this.game = new SpaceteamGame({ singlePlayer: process.env.SINGLE_PLAYER === "1" });
@@ -93,19 +95,20 @@ export class SpaceteamRoom extends Room {
       this.syncFull();
     });
     const isHost = (client: Client) => !!this.game.players.get(client.sessionId)?.host;
+    const debugOk = (client: Client) => isHost(client) && (!this.debugKey || this.debugAuthed.has(client.sessionId));
     const emitSync = (events: GameEvent[]) => { events.forEach((e) => this.emitEvent(e)); this.syncFull(); };
-    this.onMessage("debug:event", (client, type: string) => { if (isHost(client)) emitSync(this.game.forceStartEvent(String(type))); });
-    this.onMessage("debug:hazard", (client, kind: string) => { if (isHost(client)) emitSync(this.game.debugHazard(kind === "slimed" ? "slimed" : "broken")); });
-    this.onMessage("debug:clearHazards", (client) => { if (isHost(client)) { this.game.debugClearHazards(); this.syncFull(); } });
-    this.onMessage("debug:health", (client, delta: number) => { if (isHost(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
-    this.onMessage("debug:nextLevel", (client) => { if (isHost(client)) emitSync(this.game.debugNextLevel()); });
-    this.onMessage("debug:gameOver", (client) => { if (isHost(client)) emitSync(this.game.debugGameOver()); });
-    this.onMessage("debug:solve", (client, all: boolean) => { if (isHost(client)) emitSync(this.game.debugSolve(client.sessionId, !!all)); });
-    this.onMessage("debug:forceStart", (client) => { if (isHost(client) && this.game.start(true)) { this.lock(); this.syncFull(); } });
-    this.onMessage("debug:reveal", (client, on: boolean) => { if (isHost(client)) { this.reveal = !!on; this.syncFull(); } });
-    this.onMessage("debug:pause", (client, on: boolean) => { if (isHost(client)) { this.game.paused = !!on; this.syncFull(); } });
+    this.onMessage("debug:event", (client, type: string) => { if (debugOk(client)) emitSync(this.game.forceStartEvent(String(type))); });
+    this.onMessage("debug:hazard", (client, kind: string) => { if (debugOk(client)) emitSync(this.game.debugHazard(kind === "slimed" ? "slimed" : "broken")); });
+    this.onMessage("debug:clearHazards", (client) => { if (debugOk(client)) { this.game.debugClearHazards(); this.syncFull(); } });
+    this.onMessage("debug:health", (client, delta: number) => { if (debugOk(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
+    this.onMessage("debug:nextLevel", (client) => { if (debugOk(client)) emitSync(this.game.debugNextLevel()); });
+    this.onMessage("debug:gameOver", (client) => { if (debugOk(client)) emitSync(this.game.debugGameOver()); });
+    this.onMessage("debug:solve", (client, all: boolean) => { if (debugOk(client)) emitSync(this.game.debugSolve(client.sessionId, !!all)); });
+    this.onMessage("debug:forceStart", (client) => { if (debugOk(client) && this.game.start(true)) { this.lock(); this.syncFull(); } });
+    this.onMessage("debug:reveal", (client, on: boolean) => { if (debugOk(client)) { this.reveal = !!on; this.syncFull(); } });
+    this.onMessage("debug:pause", (client, on: boolean) => { if (debugOk(client)) { this.game.paused = !!on; this.syncFull(); } });
     this.onMessage("debug:stats", async (client) => {
-      if (!isHost(client)) return;
+      if (!debugOk(client)) return;
       try {
         const rooms = await matchMaker.query({ name: "spaceteam" });
         const players = rooms.reduce((n: number, r: any) => n + (r.clients || 0), 0);
@@ -179,6 +182,7 @@ export class SpaceteamRoom extends Room {
     const name = String(options?.name || "Player").slice(0, 20) || "Player";
     const maxTiles = Number(options?.maxTiles) || 6;
     this.game.addPlayer(client.sessionId, name, maxTiles);
+    if (this.debugKey && String(options?.debugKey || "") === this.debugKey) this.debugAuthed.add(client.sessionId);
     this.syncFull();
   }
 

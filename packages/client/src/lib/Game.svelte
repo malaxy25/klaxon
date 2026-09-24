@@ -36,6 +36,7 @@
 
 <style>
   .game {
+    position: relative;
     height: 100vh; height: 100dvh;
     max-width: 720px; margin: 0 auto;
     display: flex; flex-direction: column; gap: 6px;
@@ -43,9 +44,12 @@
   }
   .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
   .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
+  .game::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:5;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 3px), radial-gradient(120% 80% at 50% 28%, transparent 62%, rgba(0,0,0,0.34) 100%); }
 
   .hud { flex: none; display: flex; align-items: center; gap: 10px; }
-  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: 0.8rem; letter-spacing: 1px; white-space: nowrap; }
+  .sector { font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 0.78rem; letter-spacing: 1px; white-space: nowrap;
+    background: #0a1615; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; box-shadow: inset 0 0 6px rgba(0,0,0,0.5); text-shadow: 0 0 5px rgba(245,166,35,0.4); }
   .bar { position: relative; flex: 1; height: 16px; border-radius: 8px; background: #0a1615; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6); }
   .health { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg,#6fe0a8,#3f9e6f); transition: width 0.25s ease; }
   .bar.danger .health { background: linear-gradient(180deg,#ff7a7f,#d13a3a); }

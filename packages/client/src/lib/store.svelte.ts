@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.20";
+export const VERSION = "0.8.21";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 
 export type ControlView = {
@@ -378,7 +378,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles() })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -408,7 +408,7 @@ export async function joinByCode(code: string) {
   try {
     client ??= new Client(SERVER_URL);
     try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles() })));
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
     } catch {
       S.error = "No game found for code " + cc + ".";
     }
@@ -425,12 +425,15 @@ export function clearHazard(controlId: string) { room?.send("clearHazard", contr
 export function sendEventAction() { room?.send("eventAction"); }
 export function kick(id: string) { room?.send("kick", id); }
 export function dbg(msg: string, payload?: any) { room?.send(msg, payload); }
+function currentDebugKey(): string { try { return localStorage.getItem("klaxon_debug_key") || ""; } catch { return ""; } }
 export function initDebug() {
   try {
-    const url = new URLSearchParams(location.search).has("debug");
+    const p = new URLSearchParams(location.search);
+    const val = p.get("debug"); // null = fehlt, "" = ?debug, "x" = ?debug=x
     const saved = localStorage.getItem("klaxon_debug") === "1";
-    S.debug = url || saved;
-    if (url) localStorage.setItem("klaxon_debug", "1");
+    S.debug = p.has("debug") || saved;
+    if (p.has("debug")) localStorage.setItem("klaxon_debug", "1");
+    if (val) localStorage.setItem("klaxon_debug_key", val);
   } catch { /* ignore */ }
 }
 export function setDebug(on: boolean) {

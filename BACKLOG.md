@@ -108,6 +108,7 @@ Statt CSS-`dense` ein echtes Bin-Packing ohne Luecken. Seit "wenige Kacheln" kau
 noetig - nur falls Luecken stoeren.
 
 ### P6 — Debug-Panel absichern   (Prio: niedrig, jetzt; hoch vor oeffentlichem Launch)
+> ✅ **Mechanismus da (v0.8.21):** optionaler Server-Env `DEBUG_KEY`; ist er gesetzt, schaltet nur `?debug=<KEY>` frei. Fuer den oeffentlichen Launch einmal setzen.
 Das Debug-Panel (`?debug` / Version 5x tippen) ist nur host-geprueft, nicht passwort-/
 serverseitig gesperrt. Fuer den Freundeskreis ok. Vor einem echten oeffentlichen Launch:
 serverseitig nur bei gesetztem Debug-Flag erlauben (z. B. Env `ALLOW_DEBUG=1`), sonst
