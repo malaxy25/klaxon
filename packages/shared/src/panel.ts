@@ -2,7 +2,7 @@ import { Control, ControlType } from "./types";
 import { Rng, pick, randInt } from "./rng";
 import { makeControlLabel, makeSelectorOptions } from "./technobabble";
 
-const TYPES: ControlType[] = ["button", "toggle", "slider", "selector"];
+const TYPES: ControlType[] = ["button", "toggle", "slider", "selector", "dial"];
 
 let counter = 0;
 function nextId(prefix: string): string {
@@ -21,7 +21,7 @@ export function makeControl(ownerId: string, rng: Rng): Control {
   };
   if (type === "toggle") {
     base.value = rng() < 0.5 ? "true" : "false";
-  } else if (type === "slider") {
+  } else if (type === "slider" || type === "dial") {
     base.min = 0;
     base.max = randInt(3, 6, rng);
     base.value = String(randInt(base.min, base.max, rng));
@@ -31,6 +31,7 @@ export function makeControl(ownerId: string, rng: Rng): Control {
   }
   // Footprint fuers Panel-Layout (dichtes Raster im Client)
   if (type === "slider") { base.w = 2; base.h = rng() < 0.25 ? 2 : 1; }
+  else if (type === "dial") { base.w = 1; base.h = 1; }
   else if (type === "selector") { base.w = (base.options?.length ?? 0) >= 3 ? 2 : 1; base.h = 1; }
   else { base.w = 1; base.h = 1; }
 

@@ -114,7 +114,7 @@ export class SpaceteamRoom extends Room {
     const debugOk = (client: Client) => isHost(client) && (!this.debugKey || this.debugAuthed.has(client.sessionId));
     const emitSync = (events: GameEvent[]) => { events.forEach((e) => this.emitEvent(e)); this.syncFull(); };
     this.onMessage("debug:event", (client, type: string) => { if (debugOk(client)) emitSync(this.game.forceStartEvent(String(type))); });
-    this.onMessage("debug:hazard", (client, kind: string) => { if (debugOk(client)) emitSync(this.game.debugHazard(kind === "slimed" ? "slimed" : "broken")); });
+    this.onMessage("debug:hazard", (client, kind: string) => { if (debugOk(client)) emitSync(this.game.debugHazard(String(kind || "broken"))); });
     this.onMessage("debug:clearHazards", (client) => { if (debugOk(client)) { this.game.debugClearHazards(); this.syncFull(); } });
     this.onMessage("debug:health", (client, delta: number) => { if (debugOk(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
     this.onMessage("debug:nextLevel", (client) => { if (debugOk(client)) emitSync(this.game.debugNextLevel()); });

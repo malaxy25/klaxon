@@ -12,6 +12,7 @@ export function canTarget(c: Control): boolean {
   switch (c.type) {
     case "button": return true;
     case "toggle": return true;
+    case "dial":
     case "slider": return (c.max ?? 0) > (c.min ?? 0);
     case "selector": return (c.options?.length ?? 0) > 1;
   }
@@ -24,6 +25,7 @@ export function pickTargetValue(c: Control, rng: Rng): string {
       return "";
     case "toggle":
       return c.value === "true" ? "false" : "true";
+    case "dial":
     case "slider": {
       const min = c.min ?? 0;
       const max = c.max ?? 0;
@@ -57,6 +59,13 @@ export function instructionText(c: Control, targetValue: string): string {
       else if (v === (c.min ?? v)) opts.push(`Set ${c.label} to min`, `Zero out ${c.label}`);
       else if (v > cur) opts.push(`Increase ${c.label} to ${v}`);
       else opts.push(`Decrease ${c.label} to ${v}`, `Reduce ${c.label} to ${v}`);
+      return pick(opts, rng0);
+    }
+    case "dial": {
+      const v = Number(targetValue);
+      const opts: string[] = [`Turn ${c.label} to ${v}`, `Dial ${c.label} to ${v}`, `Set ${c.label} to ${v}`];
+      if (v === (c.max ?? v)) opts.push(`Turn ${c.label} to max`);
+      else if (v === (c.min ?? v)) opts.push(`Turn ${c.label} to zero`);
       return pick(opts, rng0);
     }
     case "selector":

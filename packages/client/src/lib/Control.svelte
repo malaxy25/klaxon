@@ -29,7 +29,7 @@
     window.removeEventListener("touchend", endHold);
   }
   function holdStart(e: Event) {
-    if (control.hazard !== "broken") return; e.preventDefault();
+    if (control.hazard !== "broken" && control.hazard !== "electro") return; e.preventDefault();
     holding = true; holdProg = 0;
     window.addEventListener("pointerup", endHold);
     window.addEventListener("touchend", endHold);
@@ -98,7 +98,48 @@
     window.removeEventListener("pointerup", wMouseEnd);
     cancelDecay();
   }
-  onDestroy(() => { endHold(); wipeCleanup(); });
+  // Dial: vertikales Ziehen aendert den Wert (window-basiert = iOS-zuverlaessig)
+  let dialY = 0, dialV0 = 0, dialing = false;
+  const DIAL_STEP_PX = 26;
+  let dialAngle = $derived.by(() => {
+    const min = control.min ?? 0, max = control.max ?? 0;
+    const f = max > min ? (Number(control.value) - min) / (max - min) : 0;
+    return -135 + f * 270;
+  });
+  function dialSet(y: number) {
+    const steps = Math.round((dialY - y) / DIAL_STEP_PX);
+    const min = control.min ?? 0, max = control.max ?? 0;
+    const v = Math.max(min, Math.min(max, dialV0 + steps));
+    if (String(v) !== control.value) setControl(control.id, String(v));
+  }
+  function dialMove(e: PointerEvent) { if (dialing) dialSet(e.clientY); }
+  function dialTouchMove(e: TouchEvent) { if (!dialing) return; if (e.cancelable) e.preventDefault(); const t = e.touches[0]; if (t) dialSet(t.clientY); }
+  function dialEnd() {
+    dialing = false;
+    window.removeEventListener("pointermove", dialMove);
+    window.removeEventListener("pointerup", dialEnd);
+    window.removeEventListener("touchmove", dialTouchMove);
+    window.removeEventListener("touchend", dialEnd);
+    window.removeEventListener("touchcancel", dialEnd);
+  }
+  function dialTouchStart(e: TouchEvent) {
+    dialing = true; dialV0 = Number(control.value) || 0; dialY = e.touches[0].clientY;
+    window.addEventListener("touchmove", dialTouchMove, { passive: false });
+    window.addEventListener("touchend", dialEnd);
+    window.addEventListener("touchcancel", dialEnd);
+  }
+  function dialPointerStart(e: PointerEvent) {
+    if (e.pointerType === "touch") return;
+    dialing = true; dialV0 = Number(control.value) || 0; dialY = e.clientY;
+    window.addEventListener("pointermove", dialMove);
+    window.addEventListener("pointerup", dialEnd);
+  }
+
+  // frozen: mehrfach tippen
+  let frozenTaps = $state(0);
+  function frozenTap() { if (control.hazard !== "frozen") return; frozenTaps += 1; if (frozenTaps >= 4) { frozenTaps = 0; clearHazard(control.id); } }
+
+  onDestroy(() => { endHold(); wipeCleanup(); dialEnd(); });
 </script>
 
 <div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
@@ -118,6 +159,11 @@
           <button class="hw opt" class:on={control.value === opt} onclick={() => choose(opt)}>{opt}</button>
         {/each}
       </div>
+    {:else if control.kind === "dial"}
+      <div class="dial" ontouchstart={dialTouchStart} onpointerdown={dialPointerStart}>
+        <div class="dial-knob" style="transform: rotate({dialAngle}deg)"><span class="dial-tick"></span></div>
+        <div class="readout">{control.value}</div>
+      </div>
     {/if}
   </div>
   <div class="name">{control.label}</div>
@@ -131,6 +177,16 @@
     <div class="hz hz-slimed" ontouchstart={wTouchStart} onpointerdown={wMouseStart}>
       <div class="hz-label">WIPE<br />IT OFF</div>
       <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
+    </div>
+  {:else if control.hazard === "frozen"}
+    <div class="hz hz-frozen" onpointerdown={frozenTap}>
+      <div class="hz-label">FROZEN<br />tap ({frozenTaps}/4)</div>
+      <div class="hz-bar"><div class="hz-fill ice" style="width:{frozenTaps / 4 * 100}%"></div></div>
+    </div>
+  {:else if control.hazard === "electro"}
+    <div class="hz hz-electro" onpointerdown={holdStart}>
+      <div class="hz-label">SHORT!<br />HOLD</div>
+      <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
   {/if}
 </div>
@@ -206,6 +262,17 @@
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
+  .dial { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; touch-action: none; cursor: ns-resize; }
+  .dial-knob { position: relative; width: 42px; height: 42px; border-radius: 50%; transition: transform 0.05s linear;
+    background: radial-gradient(circle at 50% 34%, #2c5a53, #10302a); border: 1px solid var(--line);
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), inset 0 -5px 9px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5); }
+  .dial-tick { position: absolute; left: 50%; top: 4px; width: 3px; height: 12px; margin-left: -1.5px; border-radius: 2px;
+    background: var(--amber); box-shadow: 0 0 6px rgba(245,166,35,0.75); }
+  .hz-frozen { border: 2px solid #7cc4e8; touch-action: manipulation;
+    background: radial-gradient(circle at 30% 30%, rgba(160,215,240,0.5), transparent 45%), rgba(40,90,120,0.5); }
+  .hz-frozen .hz-fill.ice { background: #afe0ff; }
+  .hz-electro { border: 2px solid #f5d23a;
+    background: repeating-linear-gradient(60deg, rgba(245,210,58,0.22), rgba(245,210,58,0.22) 6px, rgba(0,0,0,0.4) 6px, rgba(0,0,0,0.4) 12px); }
   .hz-slimed { border: 2px solid #6fae3f;
     background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
 

@@ -2,10 +2,9 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.33
+## Neu in v0.8.34
 
-- Sektor-Intermission (SectorOverlay.svelte): Warp-Pause zwischen Sektoren, Tap-to-continue.
-- Schleim per Touch-Swipe (kumulativ), Debug-Freeze, Leave-Buttons, Device-Log (orient/pwa).
+- Dial-Control (Drehknopf, vertikales Ziehen), Hazards frozen/electro, lustige Sektor-Hinweise.
 
 
 ## Dateibaum

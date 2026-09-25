@@ -95,6 +95,8 @@
         <div class="dbg-row">
           <button class="dbg-b" onclick={() => dbg("debug:hazard", "broken")}>Break</button>
           <button class="dbg-b" onclick={() => dbg("debug:hazard", "slimed")}>Slime</button>
+          <button class="dbg-b" onclick={() => dbg("debug:hazard", "frozen")}>Freeze-ctl</button>
+          <button class="dbg-b" onclick={() => dbg("debug:hazard", "electro")}>Electro</button>
           <button class="dbg-b" onclick={() => dbg("debug:clearHazards")}>Clear</button>
         </div>
       </div>

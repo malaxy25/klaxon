@@ -3,6 +3,17 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.34] - 2026-09-25
+### Added
+- **New control type: Dial** - a knob you set by dragging up/down ("Turn X to N").
+- **Two new hazards:** **Frozen** (tap 4x to free) and **Electro / short-circuit** (hold to
+  stabilize), each with its own look and sound.
+- The **sector-cleared** screen shows a fun line using player names/stats
+  (e.g. "X is carrying the crew").
+- Debug: Freeze-ctl / Electro hazard buttons; `debug:hazard` honours the kind.
+### Note
+- **Overheat** (self-cooldown) and **Rewire** (drag A->B) hazards are coming next.
+
 ## [0.8.33] - 2026-09-25
 ### Added
 - **Sector intermission:** between sectors the game now pauses (~8 s, no drain / events /

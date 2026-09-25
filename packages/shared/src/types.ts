@@ -1,4 +1,4 @@
-export type ControlType = "button" | "toggle" | "slider" | "selector";
+export type ControlType = "button" | "toggle" | "slider" | "selector" | "dial";
 
 export interface Control {
   id: string;
@@ -10,7 +10,7 @@ export interface Control {
   options?: string[];   // selector
   w?: number;           // Grid-Breite in Zellen (Panel-Layout)
   h?: number;           // Grid-Hoehe in Zellen (Panel-Layout)
-  hazard?: "broken" | "slimed" | ""; // Panne: kaputt (halten) / verschleimt (wischen)
+  hazard?: "broken" | "slimed" | "frozen" | "electro" | ""; // Panne: kaputt (halten) / verschleimt (wischen)
   ownerId: string;      // Spieler, dem das Control gehört
 }
 
@@ -34,7 +34,7 @@ export interface Difficulty {
 }
 
 export interface GameEvent {
-  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared";
+  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared";
   playerId?: string;
   controlId?: string;
 }

@@ -244,14 +244,15 @@ export class SpaceteamGame {
     this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
     return [{ type: "eventStart" }];
   }
-  debugHazard(kind: "broken" | "slimed"): GameEvent[] {
+  debugHazard(kind: string): GameEvent[] {
     if (this.phase !== "playing") return [];
     const taken = this.takenControlIds();
     const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
     if (pool.length === 0) return [];
     const c = pick(pool, this.rng);
-    c.hazard = kind;
-    return [{ type: kind === "broken" ? "broke" : "slimed", controlId: c.id }];
+    c.hazard = kind as any;
+    const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro" };
+    return [{ type: evName[kind] ?? "broke", controlId: c.id }];
   }
   debugClearHazards(): void {
     for (const p of this.players.values()) for (const c of p.panel) c.hazard = "";
@@ -407,9 +408,11 @@ export class SpaceteamGame {
         const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
         if (pool.length > 0) {
           const c = pick(pool, this.rng);
-          const kind = this.rng() < 0.5 ? "broken" : "slimed";
+          const kinds = ["broken", "slimed", "frozen", "electro"] as const;
+          const kind = pick(kinds as unknown as string[], this.rng);
           c.hazard = kind as any;
-          events.push({ type: kind === "broken" ? "broke" : "slimed", controlId: c.id });
+          const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro" };
+          events.push({ type: evName[kind], controlId: c.id });
         }
       }
     }
