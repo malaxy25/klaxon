@@ -1,7 +1,8 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.23";
+export const VERSION = "0.8.25";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
+export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
@@ -341,6 +342,7 @@ async function bind(r: any) {
   });
   r.onLeave((code: number) => { handleLeave(code); });
   snapshot();
+  room?.send("motion", S.motionOk);
 }
 
 async function handleLeave(code: number) {
@@ -454,6 +456,7 @@ export async function enableMotion() {
     if (DM && typeof DM.requestPermission === "function") ok = (await DM.requestPermission()) === "granted";
     if (DO && typeof DO.requestPermission === "function") { try { await DO.requestPermission(); } catch {} }
     S.motionOk = ok;
+    room?.send("motion", S.motionOk);
   } catch { S.motionOk = false; }
 }
 export function setControl(controlId: string, value: string) {

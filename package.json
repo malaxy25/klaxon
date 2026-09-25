@@ -1,7 +1,7 @@
 {
   "name": "spaceteam",
   "private": true,
-  "version": "0.8.23",
+  "version": "0.8.25",
   "workspaces": [
     "packages/*"
   ],

@@ -6,7 +6,7 @@ each other before the ship falls apart. An independent, original clone inspired 
 Spaceteam.
 
 **Play:** https://klaxon-2dnv.onrender.com
-**Current version:** 0.8.23 — see [CHANGELOG.md](CHANGELOG.md)
+**Current version:** 0.8.25 — see [CHANGELOG.md](CHANGELOG.md)
 
 ## What it is
 

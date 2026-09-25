@@ -3,19 +3,25 @@
 Optionales Nutzungs-Log ueber einen Webhook (z. B. Google Sheet via Apps Script).
 Nicht gesetzt -> kein Log. Es werden **keine Spielernamen** geloggt, nur Zahlen.
 
-## Was wird geloggt (eine Zeile je Ereignis)
-- **start** - wenn ein Spiel startet: `room` (4-Zeichen-Code als ID), `players`, `startLevel`.
-- **end** - wenn ein Raum geschlossen wird: `room`, `peakPlayers`, `durationSec`.
+## Ereignisse (eine Zeile je Ereignis)
+- **start** - beim Spielstart: `room` (4-Zeichen-Code als ID), `players`,
+  `startSector` (Start-Schwierigkeit), `motion` (wie viele der Crew Gyro/Tilt aktiv hatten).
+- **end** - beim **Game-Over**: `room`, `players`, `peakPlayers`, `startSector`,
+  `endSector` (erreichter Sektor), `durationSec`.
 
-Kein periodischer Snapshot (bewusst, um die Tabelle nicht zuzumuellen). "Wie viele Raeume
-gleichzeitig" laesst sich aus den start/end-Zeitstempeln rekonstruieren/charten.
+Mehrere Spiele im selben Raum -> mehrere start/end-Paare (gleicher `room`-Code).
+
+## Spalten im Tab "Usage"
+`timestamp | event | room | players | peak | startSector | endSector | motion | durationSec`
+
+- **peak** = hoechste Zahl gleichzeitig anwesender Spieler waehrend des Spiels
+  (kleiner als `players` am Ende ist unmoeglich; groesser heisst: jemand ging waehrenddessen).
+- **motion** = Anzahl Spieler mit aktiviertem Gyro/Tilt beim Start (Rest nutzt Tap-Fallback).
 
 ## Einrichten
-1. Google-Sheet oeffnen -> Erweiterungen -> Apps Script.
-2. Das `doPost` unten einsetzen (routet Usage in den Tab "Usage", Feedback ins 1. Blatt).
-3. Bereitstellen (Web-App), `/exec`-URL kopieren.
-4. Auf `klaxon-backend` die Env-Variable **`STATS_WEBHOOK`** auf diese URL setzen.
-   (Darf dieselbe Apps-Script-URL sein wie fuers Sheet-Feedback - das Script trennt nach Inhalt.)
+1. Google-Sheet -> Erweiterungen -> Apps Script -> `doPost` unten einsetzen.
+2. Bereitstellen (Web-App), `/exec`-URL kopieren, nach jeder Aenderung **neu deployen**.
+3. Auf `klaxon-backend` **`STATS_WEBHOOK`** auf diese URL setzen (darf dieselbe sein wie fuers Feedback-Sheet).
 
 ```javascript
 function doPost(e) {
@@ -26,8 +32,8 @@ function doPost(e) {
   if (j && j.event) {
     var u = ss.getSheetByName("Usage");
     if (!u) { u = ss.insertSheet("Usage");
-      u.appendRow(["timestamp","event","room","players","peak","durationSec","startLevel"]); }
-    u.appendRow([new Date(), j.event, j.room||"", j.players||"", j.peakPlayers||"", j.durationSec||"", j.startLevel||""]);
+      u.appendRow(["timestamp","event","room","players","peak","startSector","endSector","motion","durationSec"]); }
+    u.appendRow([new Date(), j.event, j.room||"", j.players||"", j.peakPlayers||"", j.startSector||"", j.endSector||"", j.motion||"", j.durationSec||""]);
     return ContentService.createTextOutput("ok");
   }
   var sheet = ss.getSheets()[0];
@@ -37,5 +43,5 @@ function doPost(e) {
 }
 ```
 
-Nach jeder Script-Aenderung im Apps-Script-Editor **neu deployen** (neue Version); die
-`/exec`-URL bleibt gleich.
+Hinweis: Bei bereits vorhandenem "Usage"-Tab mit alten Spalten diesen loeschen -
+das Script legt ihn beim naechsten Event korrekt neu an.

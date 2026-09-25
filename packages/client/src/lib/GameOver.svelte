@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { S, me, playAgain, sendFeedback } from "./store.svelte";
+  import { S, me, playAgain, sendFeedback , DONATE_URL} from "./store.svelte";
   let mine = $derived(me());
 
   const DIFF_NAMES: Record<number, string> = { 1: "Casual", 3: "Normal", 5: "Hard", 8: "Insane" };
@@ -57,6 +57,7 @@
     <p class="hint">Waiting for the host to start a new round...</p>
   {/if}
   <button class="btn wide" onclick={() => (location.href = location.pathname)}>Leave</button>
+  {#if DONATE_URL}<a class="coffee" href={DONATE_URL} target="_blank" rel="noopener">☕ Enjoying Klaxon? Buy me a coffee</a>{/if}
 </div>
 
 <style>
@@ -75,4 +76,6 @@
   .feedback { display: flex; flex-direction: column; gap: 8px; }
   .input.fb { letter-spacing: 0; font-size: 0.95rem; resize: vertical; font-family: inherit; }
   .thanks { color: var(--ok); text-align: center; font-weight: 600; }
+  .coffee { display:block; text-align:center; margin-top:14px; color: var(--muted); font-size:0.8rem; text-decoration:none; }
+  .coffee:hover { color: var(--amber); }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL } from "./store.svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL, DONATE_URL } from "./store.svelte";
   let code = $state("");
 
   let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
@@ -34,7 +34,7 @@
 
   <button class="btn wide" onclick={openHelp}>How to play</button>
 
-  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
+  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>
 <style>
   .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }

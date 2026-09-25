@@ -61,7 +61,10 @@ export class SpaceteamRoom extends Room {
   private reveal = false;
   private debugKey = process.env.DEBUG_KEY || "";
   private createdAt = 0;
+  private startedAt = 0;
+  private endLogged = false;
   private peak = 0;
+  private motionPlayers = new Set<string>();
   private debugAuthed = new Set<string>();
 
   onCreate(options: any) {
@@ -83,7 +86,7 @@ export class SpaceteamRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); postStat({ event: "start", room: this.state.code, players: this.game.players.size, startLevel: this.game.startLevel }); }
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; postStat({ event: "start", room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
@@ -92,6 +95,9 @@ export class SpaceteamRoom extends Room {
     this.onMessage("clearHazard", (client, controlId: string) => {
       const events = this.game.clearHazard(client.sessionId, String(controlId));
       if (events.length) { events.forEach((e) => this.emitEvent(e)); this.syncFull(); }
+    });
+    this.onMessage("motion", (client, on: boolean) => {
+      if (on) this.motionPlayers.add(client.sessionId); else this.motionPlayers.delete(client.sessionId);
     });
     this.onMessage("eventAction", (client) => {
       const events = this.game.markEventDone(client.sessionId);
@@ -191,10 +197,6 @@ export class SpaceteamRoom extends Room {
     this.syncFull();
   }
 
-  onDispose() {
-    postStat({ event: "end", room: this.state.code, peakPlayers: this.peak, durationSec: Math.round((Date.now() - this.createdAt) / 1000) });
-  }
-
   async onLeave(client: Client, code?: number) {
     if (this.kicked.has(client.sessionId)) { this.kicked.delete(client.sessionId); return; }
     const p = this.game.players.get(client.sessionId);
@@ -212,6 +214,10 @@ export class SpaceteamRoom extends Room {
 
   private emitEvent(e: GameEvent) {
     this.broadcast("evt", e);
+    if (e.type === "gameOver" && !this.endLogged) {
+      this.endLogged = true;
+      postStat({ event: "end", room: this.state.code, players: this.game.players.size, peakPlayers: this.peak, startSector: this.game.startLevel, endSector: this.game.level, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
+    }
   }
 
   private syncDynamic() {

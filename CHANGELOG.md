@@ -3,6 +3,19 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.25] - 2026-09-24
+### Added
+- Usage log now records **start sector** and **end sector** separately, plus **motion** -
+  how many of the crew had gyro/tilt enabled at start. (Update the Apps Script - see docs/STATS.md.)
+- **Buy-me-a-coffee link** (discreet) in the home footer and on the game-over screen.
+
+## [0.8.24] - 2026-09-24
+### Fixed
+- Usage log: the **end** row now fires reliably at **game over** (not at room disposal),
+  with `players`, `peak`, `sector` reached and `durationSec`. **start** carries `players`
+  and the starting `sector`. Columns unified: timestamp, event, room, players, peak,
+  sector, durationSec (update the Apps Script - see docs/STATS.md).
+
 ## [0.8.23] - 2026-09-24
 ### Added
 - **Persistent usage log (optional):** if the server env `STATS_WEBHOOK` is set, the server
