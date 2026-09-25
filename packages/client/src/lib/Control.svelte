@@ -14,50 +14,91 @@
       : []
   );
 
-  // Hazard-Gesten an window haengen -> erfassen den ganzen Screen (Kachel darf am Rand liegen).
   let holdProg = $state(0);
   let wipeProg = $state(0);
-  let raf = 0;
-  let lx = 0, ly = 0;
-  let mode: "" | "hold" | "wipe" = "";
+  let raf = 0, holding = false;
+  let lx = 0, ly = 0, moved = 0;
+  let decayTimer: any = 0, decayRaf = 0;
   const REPAIR_MS = 1500;
-  const WIPE_PX = 160;
+  const WIPE_PX = 150;
 
-  function onMove(e: PointerEvent) {
-    if (mode !== "wipe") return;
-    e.preventDefault();
-    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
-    lx = e.clientX; ly = e.clientY;
-    if (wipeProg >= 1) { clearHazard(control.id); endGesture(); }
+  // broken: gedrueckt halten
+  function endHold() {
+    holding = false; holdProg = 0; cancelAnimationFrame(raf);
+    window.removeEventListener("pointerup", endHold);
+    window.removeEventListener("touchend", endHold);
   }
-  function endGesture() {
-    mode = ""; holdProg = 0; wipeProg = 0; cancelAnimationFrame(raf);
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", endGesture);
-    window.removeEventListener("pointercancel", endGesture);
-  }
-  function holdStart(e: PointerEvent) {
+  function holdStart(e: Event) {
     if (control.hazard !== "broken") return; e.preventDefault();
-    mode = "hold"; holdProg = 0;
-    window.addEventListener("pointerup", endGesture);
-    window.addEventListener("pointercancel", endGesture);
+    holding = true; holdProg = 0;
+    window.addEventListener("pointerup", endHold);
+    window.addEventListener("touchend", endHold);
     const t0 = performance.now();
     const step = () => {
-      if (mode !== "hold") return;
+      if (!holding) return;
       holdProg = Math.min(1, (performance.now() - t0) / REPAIR_MS);
-      if (holdProg >= 1) { clearHazard(control.id); endGesture(); return; }
+      if (holdProg >= 1) { clearHazard(control.id); endHold(); return; }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   }
-  function wipeStart(e: PointerEvent) {
-    if (control.hazard !== "slimed") return; e.preventDefault();
-    mode = "wipe"; wipeProg = 0; lx = e.clientX; ly = e.clientY;
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", endGesture);
-    window.addEventListener("pointercancel", endGesture);
+
+  // slimed: wischen (native Touch-Events = iOS-zuverlaessig), kumulativ mit langsamem Zerfall; Tap zaehlt auch
+  function bumpDone() { if (wipeProg >= 1) { wipeProg = 0; clearHazard(control.id); wipeCleanup(); } }
+  function cancelDecay() { clearTimeout(decayTimer); cancelAnimationFrame(decayRaf); }
+  function scheduleDecay() {
+    cancelDecay();
+    decayTimer = setTimeout(function dec() {
+      decayRaf = requestAnimationFrame(() => { wipeProg = Math.max(0, wipeProg - 0.05); if (wipeProg > 0) dec(); });
+    }, 1500);
   }
-  onDestroy(endGesture);
+  function moveBy(x: number, y: number) {
+    const d = Math.hypot(x - lx, y - ly);
+    moved += d; wipeProg = Math.min(1, wipeProg + d / WIPE_PX);
+    lx = x; ly = y; bumpDone();
+  }
+  function wTouchMove(e: TouchEvent) {
+    if (control.hazard !== "slimed") return;
+    if (e.cancelable) e.preventDefault();
+    const t = e.touches[0]; if (t) moveBy(t.clientX, t.clientY);
+  }
+  function wTouchEnd() {
+    window.removeEventListener("touchmove", wTouchMove);
+    window.removeEventListener("touchend", wTouchEnd);
+    window.removeEventListener("touchcancel", wTouchEnd);
+    if (moved < 12) { wipeProg = Math.min(1, wipeProg + 0.34); bumpDone(); }
+    scheduleDecay();
+  }
+  function wTouchStart(e: TouchEvent) {
+    if (control.hazard !== "slimed") return;
+    cancelDecay(); moved = 0;
+    const t = e.touches[0]; if (!t) return; lx = t.clientX; ly = t.clientY;
+    window.addEventListener("touchmove", wTouchMove, { passive: false });
+    window.addEventListener("touchend", wTouchEnd);
+    window.addEventListener("touchcancel", wTouchEnd);
+  }
+  function wMouseMove(e: PointerEvent) { if (control.hazard === "slimed") moveBy(e.clientX, e.clientY); }
+  function wMouseEnd() {
+    window.removeEventListener("pointermove", wMouseMove);
+    window.removeEventListener("pointerup", wMouseEnd);
+    if (moved < 12) { wipeProg = Math.min(1, wipeProg + 0.34); bumpDone(); }
+    scheduleDecay();
+  }
+  function wMouseStart(e: PointerEvent) {
+    if (control.hazard !== "slimed" || e.pointerType === "touch") return;
+    cancelDecay(); moved = 0; lx = e.clientX; ly = e.clientY;
+    window.addEventListener("pointermove", wMouseMove);
+    window.addEventListener("pointerup", wMouseEnd);
+  }
+  function wipeCleanup() {
+    window.removeEventListener("touchmove", wTouchMove);
+    window.removeEventListener("touchend", wTouchEnd);
+    window.removeEventListener("touchcancel", wTouchEnd);
+    window.removeEventListener("pointermove", wMouseMove);
+    window.removeEventListener("pointerup", wMouseEnd);
+    cancelDecay();
+  }
+  onDestroy(() => { endHold(); wipeCleanup(); });
 </script>
 
 <div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
@@ -87,7 +128,7 @@
       <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
   {:else if control.hazard === "slimed"}
-    <div class="hz hz-slimed" onpointerdown={wipeStart}>
+    <div class="hz hz-slimed" ontouchstart={wTouchStart} onpointerdown={wMouseStart}>
       <div class="hz-label">WIPE<br />IT OFF</div>
       <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
     </div>

@@ -3,6 +3,20 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.31] - 2026-09-25
+### Added
+- Device log now also records **orientation** (portrait/landscape) and **pwa** (launched
+  from the home screen as an installed app, yes/no). Update the Apps Script - see docs/STATS.md.
+- (Includes the reliable cumulative slime-wipe from 0.8.30.)
+
+## [0.8.30] - 2026-09-25
+### Fixed
+- **Wiping alien slime now works reliably on iOS.** Rebuilt with native touch events
+  (pointer events were flaky on iOS) and made **cumulative**: keep swiping/scrubbing
+  anywhere - progress adds up and only fades after ~1.5 s idle, so edge tiles and short
+  strokes work. A tap also counts as a small wipe (fallback). "Hold to fix" only cancels
+  on release (not on finger movement).
+
 ## [0.8.29] - 2026-09-25
 ### Fixed
 - **Wiping slime / holding to fix on edge tiles:** the gestures now attach to the window,

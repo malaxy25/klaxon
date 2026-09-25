@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.29";
+export const VERSION = "0.8.31";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
@@ -242,13 +242,18 @@ export function me(): PlayerView | undefined {
 }
 
 function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
-function currentDevice(): { os: string; sw: number; sh: number; dpr: number } {
+function currentDevice(): { os: string; sw: number; sh: number; dpr: number; orient: string; pwa: number } {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
   const os = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : "desktop";
   const w = typeof window !== "undefined" ? window.innerWidth : 0;
   const h = typeof window !== "undefined" ? window.innerHeight : 0;
   const dpr = typeof window !== "undefined" ? Math.round((window.devicePixelRatio || 1) * 100) / 100 : 1;
-  return { os, sw: w, sh: h, dpr };
+  const orient = w >= h ? "landscape" : "portrait";
+  let pwa = false;
+  try {
+    pwa = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || (navigator as any).standalone === true;
+  } catch { pwa = false; }
+  return { os, sw: w, sh: h, dpr, orient, pwa: pwa ? 1 : 0 };
 }
 function currentMaxTiles(): number {
   const h = typeof window !== "undefined" ? window.innerHeight : 900;

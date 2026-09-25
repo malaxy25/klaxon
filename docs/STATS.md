@@ -15,8 +15,9 @@ So joinbar: `Devices.rid = Usage.rid` (welche Geraete in welchem Spiel),
 ## Tabs & Spalten
 - **Usage** (start/end je Spiel): `timestamp | event | rid | room | players | peak | startSector | endSector | motion | durationSec`
   - `peak` = max. gleichzeitige Spieler; `motion` = Anzahl mit Gyro/Tilt beim Start.
-- **Devices** (pro Beitritt): `timestamp | rid | room | pid | os | w | h | dpr`
-  - `os` = ios/android/desktop; `w/h` = Fenstergroesse (CSS-Pixel); `dpr` = Pixelverhaeltnis. Kein Modell/UA.
+- **Devices** (pro Beitritt): `timestamp | rid | room | pid | os | w | h | dpr | orient | pwa`
+  - `os` = ios/android/desktop; `w/h` = Fenstergroesse; `dpr` = Pixelverhaeltnis; `orient` = portrait/landscape;
+    `pwa` = yes/no (vom Homescreen als App gestartet). Kein Modell/UA.
 - **Feedback**: `timestamp | rid | room | pid | msg`
 
 ## Einrichten
@@ -31,8 +32,8 @@ function doPost(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (j && j.event) {
     if (j.event === "device") {
-      sheetWithHeader(ss, "Devices", ["timestamp","rid","room","pid","os","w","h","dpr"])
-        .appendRow([new Date(), j.rid||"", j.room||"", j.pid||"", j.os||"", j.w||"", j.h||"", j.dpr||""]);
+      sheetWithHeader(ss, "Devices", ["timestamp","rid","room","pid","os","w","h","dpr","orient","pwa"])
+        .appendRow([new Date(), j.rid||"", j.room||"", j.pid||"", j.os||"", j.w||"", j.h||"", j.dpr||"", j.orient||"", j.pwa ? "yes" : "no"]);
     } else if (j.event === "feedback") {
       sheetWithHeader(ss, "Feedback", ["timestamp","rid","room","pid","msg"])
         .appendRow([new Date(), j.rid||"", j.room||"", j.pid||"", j.msg||""]);

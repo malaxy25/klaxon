@@ -195,7 +195,8 @@ export class SpaceteamRoom extends Room {
     if (this.debugKey && String(options?.debugKey || "") === this.debugKey) this.debugAuthed.add(client.sessionId);
     this.peak = Math.max(this.peak, this.game.players.size);
     postStat({ event: "device", rid: this.roomId, room: this.state.code, pid: client.sessionId,
-      os: String(options?.os || ""), w: Number(options?.sw) || "", h: Number(options?.sh) || "", dpr: Number(options?.dpr) || "" });
+      os: String(options?.os || ""), w: Number(options?.sw) || "", h: Number(options?.sh) || "", dpr: Number(options?.dpr) || "",
+      orient: String(options?.orient || ""), pwa: Number(options?.pwa) || 0 });
     this.syncFull();
   }
 
