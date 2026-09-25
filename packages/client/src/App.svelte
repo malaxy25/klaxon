@@ -9,6 +9,7 @@
   import Help from "./lib/Help.svelte";
   import EventOverlay from "./lib/EventOverlay.svelte";
   import Debug from "./lib/Debug.svelte";
+  import SectorOverlay from "./lib/SectorOverlay.svelte";
 
   onMount(() => {
     initMotion();
@@ -41,6 +42,7 @@
 {/if}
 
 {#if S.screen !== "game"}<button class="mute-fab" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>{/if}
+{#if S.intermission}<SectorOverlay />{/if}
 {#if S.eventType}<EventOverlay />{/if}
 {#if S.eventResult}
   <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>

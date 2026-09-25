@@ -46,6 +46,8 @@ export class SpaceteamGame {
   private lastTick: number;
   private nextBreakAt = 0;
   event: { type: string; endsAt: number; done: Set<string> } | null = null;
+  intermission: { endsAt: number } | null = null;
+  private readonly INTERMISSION_MS = 8000;
   paused = false;
   private nextEventAt = 0;
   forceEvent = "";
@@ -148,15 +150,28 @@ export class SpaceteamGame {
     for (const p of this.players.values()) this.generateInstructionFor(p);
   }
 
-  private nextLevel(): GameEvent {
+  private doNextLevel(): GameEvent {
+    this.intermission = null;
+    this.event = null;
     this.level += 1;
     this.difficulty = difficultyForLevel(this.level);
     this.health = STARTING_HEALTH;
     this.deathLimit = 0;
     this.assignPanels();
     this.assignInstructions();
-    this.lastTick = this.now();
+    const t = this.now();
+    this.lastTick = t;
+    this.nextBreakAt = t + this.breakInterval();
+    this.nextEventAt = t + 18000;
     return { type: "nextLevel" };
+  }
+  private beginIntermission(): GameEvent {
+    this.intermission = { endsAt: this.now() + this.INTERMISSION_MS };
+    return { type: "sectorCleared" };
+  }
+  continueSector(): GameEvent[] {
+    if (this.phase !== "playing" || !this.intermission) return [];
+    return [this.doNextLevel()];
   }
 
   // ---------- Instruktionsgenerierung ----------
@@ -246,7 +261,7 @@ export class SpaceteamGame {
   }
   debugNextLevel(): GameEvent[] {
     if (this.phase !== "playing") return [];
-    return [this.nextLevel()];
+    return [this.doNextLevel()];
   }
   debugGameOver(): GameEvent[] {
     if (this.phase !== "playing") return [];
@@ -263,7 +278,7 @@ export class SpaceteamGame {
       p.statCompleted++;
       this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
       events.push({ type: "completed", playerId: p.id });
-      if (this.health >= MAX_HEALTH) events.push(this.nextLevel());
+      if (this.health >= MAX_HEALTH && !this.intermission) events.push(this.beginIntermission());
       else this.generateInstructionFor(p);
     }
     return events;
@@ -334,8 +349,8 @@ export class SpaceteamGame {
         player.statCompleted++;
         this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
         events.push({ type: "completed", playerId: p.id });
-        if (this.health >= MAX_HEALTH) {
-          events.push(this.nextLevel());
+        if (this.health >= MAX_HEALTH && !this.intermission) {
+          events.push(this.beginIntermission());
         } else {
           this.generateInstructionFor(p);
         }
@@ -354,6 +369,12 @@ export class SpaceteamGame {
     const dtMs = Math.max(0, now - this.lastTick);
     const dt = dtMs / 1000;
     this.lastTick = now;
+
+    if (this.intermission) {
+      for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
+      if (now >= this.intermission.endsAt) events.push(this.doNextLevel());
+      return events;
+    }
 
     this.health -= this.difficulty.healthDrainPerSec * dt;
     this.deathLimit = Math.min(MAX_DEATH_LIMIT, this.deathLimit + this.difficulty.deathLimitRisePerSec * dt);

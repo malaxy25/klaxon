@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.33] - 2026-09-25
+### Added
+- **Sector intermission:** between sectors the game now pauses (~8 s, no drain / events /
+  breaks) and plays a short **WARP** screen ("SECTOR N CLEARED -> WARP TO N+1") with a
+  fanfare + vibration. **Tap to continue** any time; it auto-advances otherwise.
+
 ## [0.8.32] - 2026-09-25
 ### Added
 - Debug: a **Freeze** button next to the health/flow controls (pauses drain, events and

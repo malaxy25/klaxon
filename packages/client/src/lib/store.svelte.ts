@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.32";
+export const VERSION = "0.8.33";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
@@ -42,6 +42,8 @@ export const S = $state({
   startLevel: 3,
   eventType: "",
   eventMs: 0,
+  intermission: false,
+  intermissionMs: 0,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
@@ -208,10 +210,11 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
+  else if (kind === "sectorCleared") { beep(523, 110, "triangle", 0.06); setTimeout(() => beep(659, 110, "triangle", 0.06), 120); setTimeout(() => beep(784, 110, "triangle", 0.06), 240); setTimeout(() => beep(1047, 260, "triangle", 0.06), 360); }
   else if (kind === "broke") { sweep(320, 110, 180, "sawtooth", 0.07); noiseBurst(70, 0.05); }
   else if (kind === "slimed") { sweep(520, 150, 260, "sine", 0.06); setTimeout(() => noiseBurst(130, 0.035), 60); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
@@ -298,6 +301,8 @@ function snapshot() {
   S.code = st.code ?? "";
   S.eventType = st.eventType ?? "";
   S.eventMs = st.eventMs ?? 0;
+  S.intermission = st.intermission ?? false;
+  S.intermissionMs = st.intermissionMs ?? 0;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -450,6 +455,7 @@ export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function sendContinue() { room?.send("continueSector"); }
 export function kick(id: string) { room?.send("kick", id); }
 export function dbg(msg: string, payload?: any) { room?.send(msg, payload); }
 function currentDebugKey(): string { try { return localStorage.getItem("klaxon_debug_key") || ""; } catch { return ""; } }

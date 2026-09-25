@@ -34,7 +34,7 @@ export interface Difficulty {
 }
 
 export interface GameEvent {
-  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "repaired" | "eventStart" | "eventPassed" | "eventFailed";
+  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared";
   playerId?: string;
   controlId?: string;
 }

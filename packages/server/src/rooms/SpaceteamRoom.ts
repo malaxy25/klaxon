@@ -49,6 +49,8 @@ class GameState extends Schema {
   @type("string") code = "";
   @type("string") eventType = "";
   @type("number") eventMs = 0;
+  @type("boolean") intermission = false;
+  @type("number") intermissionMs = 0;
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -103,6 +105,10 @@ export class SpaceteamRoom extends Room {
       const events = this.game.markEventDone(client.sessionId);
       events.forEach((e) => this.emitEvent(e));
       this.syncFull();
+    });
+    this.onMessage("continueSector", () => {
+      const events = this.game.continueSector();
+      if (events.length) { events.forEach((e) => this.emitEvent(e)); this.syncFull(); }
     });
     const isHost = (client: Client) => !!this.game.players.get(client.sessionId)?.host;
     const debugOk = (client: Client) => isHost(client) && (!this.debugKey || this.debugAuthed.has(client.sessionId));
@@ -231,6 +237,8 @@ export class SpaceteamRoom extends Room {
     this.state.startLevel = this.game.startLevel;
     this.state.eventType = this.game.event?.type ?? "";
     this.state.eventMs = this.game.event ? 6000 : 0;
+    this.state.intermission = !!this.game.intermission;
+    this.state.intermissionMs = this.game.intermission ? 8000 : 0;
   }
 
   private syncFull() {

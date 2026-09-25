@@ -2,10 +2,11 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.15
+## Neu in v0.8.33
 
-- Mute-Button oben rechts auch auf Home/Lobby/Game-Over (App.svelte, .mute-fab). Im Spiel
-  bleibt der Mute im HUD.
+- Sektor-Intermission (SectorOverlay.svelte): Warp-Pause zwischen Sektoren, Tap-to-continue.
+- Schleim per Touch-Swipe (kumulativ), Debug-Freeze, Leave-Buttons, Device-Log (orient/pwa).
+
 
 ## Dateibaum
 
@@ -36,6 +37,7 @@ packages/client/
   import Help from "./lib/Help.svelte";
   import EventOverlay from "./lib/EventOverlay.svelte";
   import Debug from "./lib/Debug.svelte";
+  import SectorOverlay from "./lib/SectorOverlay.svelte";
 
   onMount(() => {
     initMotion();
@@ -68,6 +70,7 @@ packages/client/
 {/if}
 
 {#if S.screen !== "game"}<button class="mute-fab" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>{/if}
+{#if S.intermission}<SectorOverlay />{/if}
 {#if S.eventType}<EventOverlay />{/if}
 {#if S.eventResult}
   <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
@@ -76,6 +79,7 @@ packages/client/
 {#if S.connecting}<Connecting />{/if}
 {#if S.showHelp}<Help />{/if}
 {#if S.debug}<Debug />{/if}
+
 ```
 
 ## Datei: `spaceteam/packages/client/src/app.css`
@@ -237,8 +241,9 @@ button, .btn, .tapbtn { touch-action: manipulation; }
 ```ts
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.22";
+export const VERSION = "0.8.33";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
+export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
@@ -278,6 +283,8 @@ export const S = $state({
   startLevel: 3,
   eventType: "",
   eventMs: 0,
+  intermission: false,
+  intermissionMs: 0,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
@@ -444,10 +451,11 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
+  else if (kind === "sectorCleared") { beep(523, 110, "triangle", 0.06); setTimeout(() => beep(659, 110, "triangle", 0.06), 120); setTimeout(() => beep(784, 110, "triangle", 0.06), 240); setTimeout(() => beep(1047, 260, "triangle", 0.06), 360); }
   else if (kind === "broke") { sweep(320, 110, 180, "sawtooth", 0.07); noiseBurst(70, 0.05); }
   else if (kind === "slimed") { sweep(520, 150, 260, "sine", 0.06); setTimeout(() => noiseBurst(130, 0.035), 60); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
@@ -478,6 +486,19 @@ export function me(): PlayerView | undefined {
 }
 
 function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
+function currentDevice(): { os: string; sw: number; sh: number; dpr: number; orient: string; pwa: number } {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  const os = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : "desktop";
+  const w = typeof window !== "undefined" ? window.innerWidth : 0;
+  const h = typeof window !== "undefined" ? window.innerHeight : 0;
+  const dpr = typeof window !== "undefined" ? Math.round((window.devicePixelRatio || 1) * 100) / 100 : 1;
+  const orient = w >= h ? "landscape" : "portrait";
+  let pwa = false;
+  try {
+    pwa = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || (navigator as any).standalone === true;
+  } catch { pwa = false; }
+  return { os, sw: w, sh: h, dpr, orient, pwa: pwa ? 1 : 0 };
+}
 function currentMaxTiles(): number {
   const h = typeof window !== "undefined" ? window.innerHeight : 900;
   if (h < 680) return 4;
@@ -521,6 +542,8 @@ function snapshot() {
   S.code = st.code ?? "";
   S.eventType = st.eventType ?? "";
   S.eventMs = st.eventMs ?? 0;
+  S.intermission = st.intermission ?? false;
+  S.intermissionMs = st.intermissionMs ?? 0;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -578,6 +601,7 @@ async function bind(r: any) {
   });
   r.onLeave((code: number) => { handleLeave(code); });
   snapshot();
+  room?.send("motion", S.motionOk);
 }
 
 async function handleLeave(code: number) {
@@ -615,7 +639,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -644,11 +668,23 @@ export async function joinByCode(code: string) {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
-    } catch {
-      S.error = "No game found for code " + cc + ".";
+    const deadline = Date.now() + 20000; // nur fuer echte Verbindungsprobleme kurz retryen
+    let room: any = null;
+    for (;;) {
+      try {
+        room = await client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() });
+        break;
+      } catch (e: any) {
+        const c = e?.code;
+        const msg = String(e?.message ?? e ?? "");
+        // Matchmaking "kein Raum gefunden" / gesperrt -> sofort abbrechen (nicht 70s warten)
+        const notFound = (typeof c === "number" && c >= 4210 && c <= 4299) || /no rooms|not found|criteria|locked/i.test(msg);
+        if (notFound) { S.error = "No game found for code " + cc + ". Is the room still open on the host?"; return; }
+        if (Date.now() > deadline) { S.error = "Could not reach the server - try again in a moment."; return; }
+        await sleep(2500);
+      }
     }
+    await bind(room);
   } catch (e: any) {
     S.error = "Join failed: " + (e?.message ?? "");
   } finally {
@@ -660,6 +696,7 @@ export function start() { room?.send("start"); }
 export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }
+export function sendContinue() { room?.send("continueSector"); }
 export function kick(id: string) { room?.send("kick", id); }
 export function dbg(msg: string, payload?: any) { room?.send(msg, payload); }
 function currentDebugKey(): string { try { return localStorage.getItem("klaxon_debug_key") || ""; } catch { return ""; } }
@@ -691,6 +728,7 @@ export async function enableMotion() {
     if (DM && typeof DM.requestPermission === "function") ok = (await DM.requestPermission()) === "granted";
     if (DO && typeof DO.requestPermission === "function") { try { await DO.requestPermission(); } catch {} }
     S.motionOk = ok;
+    room?.send("motion", S.motionOk);
   } catch { S.motionOk = false; }
 }
 export function setControl(controlId: string, value: string) {
@@ -1114,6 +1152,7 @@ export function setControl(controlId: string, value: string) {
 
 ```svelte
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { setControl, clearHazard, type ControlView } from "./store.svelte";
   let { control }: { control: ControlView } = $props();
 
@@ -1128,41 +1167,91 @@ export function setControl(controlId: string, value: string) {
       : []
   );
 
-  // Hazard "broken": halten zum Reparieren
   let holdProg = $state(0);
-  let holding = false; let raf = 0;
+  let wipeProg = $state(0);
+  let raf = 0, holding = false;
+  let lx = 0, ly = 0, moved = 0;
+  let decayTimer: any = 0, decayRaf = 0;
   const REPAIR_MS = 1500;
-  function holdStart(e: PointerEvent) {
+  const WIPE_PX = 150;
+
+  // broken: gedrueckt halten
+  function endHold() {
+    holding = false; holdProg = 0; cancelAnimationFrame(raf);
+    window.removeEventListener("pointerup", endHold);
+    window.removeEventListener("touchend", endHold);
+  }
+  function holdStart(e: Event) {
     if (control.hazard !== "broken") return; e.preventDefault();
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    holding = true;
+    holding = true; holdProg = 0;
+    window.addEventListener("pointerup", endHold);
+    window.addEventListener("touchend", endHold);
     const t0 = performance.now();
     const step = () => {
       if (!holding) return;
       holdProg = Math.min(1, (performance.now() - t0) / REPAIR_MS);
-      if (holdProg >= 1) { holding = false; holdProg = 0; clearHazard(control.id); return; }
+      if (holdProg >= 1) { clearHazard(control.id); endHold(); return; }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   }
-  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(raf); }
 
-  // Hazard "slimed": wegwischen (Swipe)
-  let wipeProg = $state(0);
-  let wiping = false; let lx = 0, ly = 0;
-  const WIPE_PX = 200;
-  function wipeStart(e: PointerEvent) {
-    if (control.hazard !== "slimed") return; e.preventDefault();
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    wiping = true; lx = e.clientX; ly = e.clientY;
+  // slimed: wischen (native Touch-Events = iOS-zuverlaessig), kumulativ mit langsamem Zerfall; Tap zaehlt auch
+  function bumpDone() { if (wipeProg >= 1) { wipeProg = 0; clearHazard(control.id); wipeCleanup(); } }
+  function cancelDecay() { clearTimeout(decayTimer); cancelAnimationFrame(decayRaf); }
+  function scheduleDecay() {
+    cancelDecay();
+    decayTimer = setTimeout(function dec() {
+      decayRaf = requestAnimationFrame(() => { wipeProg = Math.max(0, wipeProg - 0.05); if (wipeProg > 0) dec(); });
+    }, 1500);
   }
-  function wipeMove(e: PointerEvent) {
-    if (!wiping) return;
-    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
-    lx = e.clientX; ly = e.clientY;
-    if (wipeProg >= 1) { wiping = false; wipeProg = 0; clearHazard(control.id); }
+  function moveBy(x: number, y: number) {
+    const d = Math.hypot(x - lx, y - ly);
+    moved += d; wipeProg = Math.min(1, wipeProg + d / WIPE_PX);
+    lx = x; ly = y; bumpDone();
   }
-  function wipeEnd() { wiping = false; wipeProg = 0; }
+  function wTouchMove(e: TouchEvent) {
+    if (control.hazard !== "slimed") return;
+    if (e.cancelable) e.preventDefault();
+    const t = e.touches[0]; if (t) moveBy(t.clientX, t.clientY);
+  }
+  function wTouchEnd() {
+    window.removeEventListener("touchmove", wTouchMove);
+    window.removeEventListener("touchend", wTouchEnd);
+    window.removeEventListener("touchcancel", wTouchEnd);
+    if (moved < 12) { wipeProg = Math.min(1, wipeProg + 0.34); bumpDone(); }
+    scheduleDecay();
+  }
+  function wTouchStart(e: TouchEvent) {
+    if (control.hazard !== "slimed") return;
+    cancelDecay(); moved = 0;
+    const t = e.touches[0]; if (!t) return; lx = t.clientX; ly = t.clientY;
+    window.addEventListener("touchmove", wTouchMove, { passive: false });
+    window.addEventListener("touchend", wTouchEnd);
+    window.addEventListener("touchcancel", wTouchEnd);
+  }
+  function wMouseMove(e: PointerEvent) { if (control.hazard === "slimed") moveBy(e.clientX, e.clientY); }
+  function wMouseEnd() {
+    window.removeEventListener("pointermove", wMouseMove);
+    window.removeEventListener("pointerup", wMouseEnd);
+    if (moved < 12) { wipeProg = Math.min(1, wipeProg + 0.34); bumpDone(); }
+    scheduleDecay();
+  }
+  function wMouseStart(e: PointerEvent) {
+    if (control.hazard !== "slimed" || e.pointerType === "touch") return;
+    cancelDecay(); moved = 0; lx = e.clientX; ly = e.clientY;
+    window.addEventListener("pointermove", wMouseMove);
+    window.addEventListener("pointerup", wMouseEnd);
+  }
+  function wipeCleanup() {
+    window.removeEventListener("touchmove", wTouchMove);
+    window.removeEventListener("touchend", wTouchEnd);
+    window.removeEventListener("touchcancel", wTouchEnd);
+    window.removeEventListener("pointermove", wMouseMove);
+    window.removeEventListener("pointerup", wMouseEnd);
+    cancelDecay();
+  }
+  onDestroy(() => { endHold(); wipeCleanup(); });
 </script>
 
 <div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
@@ -1187,12 +1276,12 @@ export function setControl(controlId: string, value: string) {
   <div class="name">{control.label}</div>
 
   {#if control.hazard === "broken"}
-    <div class="hz hz-broken" onpointerdown={holdStart} onpointerup={holdEnd} onpointercancel={holdEnd}>
+    <div class="hz hz-broken" onpointerdown={holdStart}>
       <div class="hz-label">HOLD<br />TO FIX</div>
       <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
   {:else if control.hazard === "slimed"}
-    <div class="hz hz-slimed" onpointerdown={wipeStart} onpointermove={wipeMove} onpointerup={wipeEnd} onpointercancel={wipeEnd}>
+    <div class="hz hz-slimed" ontouchstart={wTouchStart} onpointerdown={wMouseStart}>
       <div class="hz-label">WIPE<br />IT OFF</div>
       <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
     </div>
