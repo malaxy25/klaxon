@@ -3,6 +3,13 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.29] - 2026-09-25
+### Fixed
+- **Wiping slime / holding to fix on edge tiles:** the gestures now attach to the window,
+  so they capture movement across the whole screen no matter where the tile sits (pointer
+  capture was unreliable on iOS). You can also just scrub back and forth in place; the
+  needed distance was lowered.
+
 ## [0.8.28] - 2026-09-25
 ### Fixed
 - Device and feedback rows logged an empty **room** column (the field was named `code`

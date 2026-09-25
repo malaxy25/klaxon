@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { setControl, clearHazard, type ControlView } from "./store.svelte";
   let { control }: { control: ControlView } = $props();
 
@@ -13,41 +14,50 @@
       : []
   );
 
-  // Hazard "broken": halten zum Reparieren
+  // Hazard-Gesten an window haengen -> erfassen den ganzen Screen (Kachel darf am Rand liegen).
   let holdProg = $state(0);
-  let holding = false; let raf = 0;
+  let wipeProg = $state(0);
+  let raf = 0;
+  let lx = 0, ly = 0;
+  let mode: "" | "hold" | "wipe" = "";
   const REPAIR_MS = 1500;
+  const WIPE_PX = 160;
+
+  function onMove(e: PointerEvent) {
+    if (mode !== "wipe") return;
+    e.preventDefault();
+    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
+    lx = e.clientX; ly = e.clientY;
+    if (wipeProg >= 1) { clearHazard(control.id); endGesture(); }
+  }
+  function endGesture() {
+    mode = ""; holdProg = 0; wipeProg = 0; cancelAnimationFrame(raf);
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", endGesture);
+    window.removeEventListener("pointercancel", endGesture);
+  }
   function holdStart(e: PointerEvent) {
     if (control.hazard !== "broken") return; e.preventDefault();
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    holding = true;
+    mode = "hold"; holdProg = 0;
+    window.addEventListener("pointerup", endGesture);
+    window.addEventListener("pointercancel", endGesture);
     const t0 = performance.now();
     const step = () => {
-      if (!holding) return;
+      if (mode !== "hold") return;
       holdProg = Math.min(1, (performance.now() - t0) / REPAIR_MS);
-      if (holdProg >= 1) { holding = false; holdProg = 0; clearHazard(control.id); return; }
+      if (holdProg >= 1) { clearHazard(control.id); endGesture(); return; }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
   }
-  function holdEnd() { holding = false; holdProg = 0; cancelAnimationFrame(raf); }
-
-  // Hazard "slimed": wegwischen (Swipe)
-  let wipeProg = $state(0);
-  let wiping = false; let lx = 0, ly = 0;
-  const WIPE_PX = 200;
   function wipeStart(e: PointerEvent) {
     if (control.hazard !== "slimed") return; e.preventDefault();
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    wiping = true; lx = e.clientX; ly = e.clientY;
+    mode = "wipe"; wipeProg = 0; lx = e.clientX; ly = e.clientY;
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", endGesture);
+    window.addEventListener("pointercancel", endGesture);
   }
-  function wipeMove(e: PointerEvent) {
-    if (!wiping) return;
-    wipeProg = Math.min(1, wipeProg + Math.hypot(e.clientX - lx, e.clientY - ly) / WIPE_PX);
-    lx = e.clientX; ly = e.clientY;
-    if (wipeProg >= 1) { wiping = false; wipeProg = 0; clearHazard(control.id); }
-  }
-  function wipeEnd() { wiping = false; wipeProg = 0; }
+  onDestroy(endGesture);
 </script>
 
 <div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
@@ -72,12 +82,12 @@
   <div class="name">{control.label}</div>
 
   {#if control.hazard === "broken"}
-    <div class="hz hz-broken" onpointerdown={holdStart} onpointerup={holdEnd} onpointercancel={holdEnd}>
+    <div class="hz hz-broken" onpointerdown={holdStart}>
       <div class="hz-label">HOLD<br />TO FIX</div>
       <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
   {:else if control.hazard === "slimed"}
-    <div class="hz hz-slimed" onpointerdown={wipeStart} onpointermove={wipeMove} onpointerup={wipeEnd} onpointercancel={wipeEnd}>
+    <div class="hz hz-slimed" onpointerdown={wipeStart}>
       <div class="hz-label">WIPE<br />IT OFF</div>
       <div class="hz-bar"><div class="hz-fill green" style="width:{wipeProg * 100}%"></div></div>
     </div>
