@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.28] - 2026-09-25
+### Fixed
+- Device and feedback rows logged an empty **room** column (the field was named `code`
+  while the sheet reads `room`). Unified to `room` - the code now appears. `rid` was always
+  present, so nothing was lost.
+
 ## [0.8.27] - 2026-09-24
 ### Fixed
 - **Joining by code/QR no longer waits ~70 s before failing.** If the room is not found

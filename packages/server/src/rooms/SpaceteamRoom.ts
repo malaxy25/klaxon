@@ -160,7 +160,7 @@ export class SpaceteamRoom extends Room {
         const isText = /ntfy\.sh/i.test(hook);
         const init = isText
           ? { method: "POST", headers: { "Content-Type": "text/plain" }, body: line }
-          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line, event: "feedback", rid: this.roomId, code: this.state.code, pid: client.sessionId, msg: clean }) };
+          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line, event: "feedback", rid: this.roomId, room: this.state.code, pid: client.sessionId, msg: clean }) };
         fetch(hook, init).catch((e) => console.error("feedback webhook failed:", e));
       };
       const hooks = [process.env.FEEDBACK_WEBHOOK, process.env.FEEDBACK_WEBHOOK_2]
@@ -194,7 +194,7 @@ export class SpaceteamRoom extends Room {
     this.game.addPlayer(client.sessionId, name, maxTiles);
     if (this.debugKey && String(options?.debugKey || "") === this.debugKey) this.debugAuthed.add(client.sessionId);
     this.peak = Math.max(this.peak, this.game.players.size);
-    postStat({ event: "device", rid: this.roomId, code: this.state.code, pid: client.sessionId,
+    postStat({ event: "device", rid: this.roomId, room: this.state.code, pid: client.sessionId,
       os: String(options?.os || ""), w: Number(options?.sw) || "", h: Number(options?.sh) || "", dpr: Number(options?.dpr) || "" });
     this.syncFull();
   }
