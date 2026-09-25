@@ -16,6 +16,7 @@
       <div class="health" style="width:{marginPct}%"></div>
     </div>
     <button class="mute" onclick={toggleMute} aria-label="Toggle sound">{S.muted ? "unmute" : "mute"}</button>
+    <button class="mute" onclick={() => (location.href = location.pathname)} aria-label="Leave game">leave</button>
   </header>
 
   <section class="command">

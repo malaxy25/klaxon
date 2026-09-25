@@ -1,6 +1,6 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL, DONATE_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -100,5 +100,6 @@
     <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
     {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
   {/if}
-  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a></footer>
+  <button class="helplink" onclick={() => (location.href = location.pathname)}>Leave room</button>
+  <footer class="version">Klaxon v{VERSION} &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}</footer>
 </div>

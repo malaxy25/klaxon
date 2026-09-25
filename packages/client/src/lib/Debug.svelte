@@ -106,6 +106,7 @@
           <button class="dbg-b" onclick={() => dbg("debug:health", 20)}>+20 hp</button>
           <button class="dbg-b" onclick={() => dbg("debug:nextLevel")}>Next sector</button>
           <button class="dbg-b" onclick={() => dbg("debug:gameOver")}>Game over</button>
+          <button class="dbg-b" class:on={paused} onclick={togglePause}>{paused ? "Unfreeze" : "Freeze"}</button>
         </div>
       </div>
 
@@ -122,7 +123,6 @@
         <div class="dbg-t">Toggles</div>
         <div class="dbg-row">
           <button class="dbg-b" class:on={reveal} onclick={toggleReveal}>Reveal answers</button>
-          <button class="dbg-b" class:on={paused} onclick={togglePause}>Pause</button>
         </div>
         {#if reveal && answer}<div class="dbg-answer">Your command: {answer}</div>{/if}
       </div>

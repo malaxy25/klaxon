@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.32] - 2026-09-25
+### Added
+- Debug: a **Freeze** button next to the health/flow controls (pauses drain, events and
+  breaks) so you can inspect actions and effects in peace.
+- **Buy-me-a-coffee** link in the lobby footer too.
+- A small **leave** button in the game HUD and a **Leave room** link in the lobby to get
+  back to the start screen.
+
 ## [0.8.31] - 2026-09-25
 ### Added
 - Device log now also records **orientation** (portrait/landscape) and **pwa** (launched
