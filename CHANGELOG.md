@@ -3,6 +3,13 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.27] - 2026-09-24
+### Fixed
+- **Joining by code/QR no longer waits ~70 s before failing.** If the room is not found
+  (host closed it, server restarted, or wrong code) it now fails fast with a clearer
+  message ("... is the room still open on the host?"). Only genuine connection problems
+  get a short (~20 s) retry.
+
 ## [0.8.26] - 2026-09-24
 ### Added
 - **Device log** (Devices tab): OS class (ios/android/desktop) + screen size (w/h/dpr) per

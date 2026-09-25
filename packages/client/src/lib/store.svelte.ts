@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.26";
+export const VERSION = "0.8.27";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
@@ -417,11 +417,23 @@ export async function joinByCode(code: string) {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
-    } catch {
-      S.error = "No game found for code " + cc + ".";
+    const deadline = Date.now() + 20000; // nur fuer echte Verbindungsprobleme kurz retryen
+    let room: any = null;
+    for (;;) {
+      try {
+        room = await client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() });
+        break;
+      } catch (e: any) {
+        const c = e?.code;
+        const msg = String(e?.message ?? e ?? "");
+        // Matchmaking "kein Raum gefunden" / gesperrt -> sofort abbrechen (nicht 70s warten)
+        const notFound = (typeof c === "number" && c >= 4210 && c <= 4299) || /no rooms|not found|criteria|locked/i.test(msg);
+        if (notFound) { S.error = "No game found for code " + cc + ". Is the room still open on the host?"; return; }
+        if (Date.now() > deadline) { S.error = "Could not reach the server - try again in a moment."; return; }
+        await sleep(2500);
+      }
     }
+    await bind(room);
   } catch (e: any) {
     S.error = "Join failed: " + (e?.message ?? "");
   } finally {
