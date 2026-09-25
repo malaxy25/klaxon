@@ -86,7 +86,7 @@ export class SpaceteamRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; postStat({ event: "start", room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; postStat({ event: "start", rid: this.roomId, room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
@@ -160,7 +160,7 @@ export class SpaceteamRoom extends Room {
         const isText = /ntfy\.sh/i.test(hook);
         const init = isText
           ? { method: "POST", headers: { "Content-Type": "text/plain" }, body: line }
-          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line }) };
+          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line, event: "feedback", rid: this.roomId, code: this.state.code, pid: client.sessionId, msg: clean }) };
         fetch(hook, init).catch((e) => console.error("feedback webhook failed:", e));
       };
       const hooks = [process.env.FEEDBACK_WEBHOOK, process.env.FEEDBACK_WEBHOOK_2]
@@ -194,6 +194,8 @@ export class SpaceteamRoom extends Room {
     this.game.addPlayer(client.sessionId, name, maxTiles);
     if (this.debugKey && String(options?.debugKey || "") === this.debugKey) this.debugAuthed.add(client.sessionId);
     this.peak = Math.max(this.peak, this.game.players.size);
+    postStat({ event: "device", rid: this.roomId, code: this.state.code, pid: client.sessionId,
+      os: String(options?.os || ""), w: Number(options?.sw) || "", h: Number(options?.sh) || "", dpr: Number(options?.dpr) || "" });
     this.syncFull();
   }
 
@@ -216,7 +218,7 @@ export class SpaceteamRoom extends Room {
     this.broadcast("evt", e);
     if (e.type === "gameOver" && !this.endLogged) {
       this.endLogged = true;
-      postStat({ event: "end", room: this.state.code, players: this.game.players.size, peakPlayers: this.peak, startSector: this.game.startLevel, endSector: this.game.level, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
+      postStat({ event: "end", rid: this.roomId, room: this.state.code, players: this.game.players.size, peakPlayers: this.peak, startSector: this.game.startLevel, endSector: this.game.level, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
     }
   }
 

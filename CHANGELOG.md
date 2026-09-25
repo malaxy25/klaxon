@@ -3,6 +3,18 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.26] - 2026-09-24
+### Added
+- **Device log** (Devices tab): OS class (ios/android/desktop) + screen size (w/h/dpr) per
+  join. No model/UA.
+- **Join key across all logs:** unique `rid` (roomId) in usage, device and feedback; a
+  per-player `pid` in device and feedback - so Feedback/Usage/Device can be linked
+  (rid = same game, pid = same device).
+### Changed
+- Feedback sent to a webhook now carries structured fields (rid/pid/msg). Update the Apps
+  Script to route into Usage / Devices / Feedback tabs (see docs/STATS.md). ntfy push text
+  is unchanged.
+
 ## [0.8.25] - 2026-09-24
 ### Added
 - Usage log now records **start sector** and **end sector** separately, plus **motion** -

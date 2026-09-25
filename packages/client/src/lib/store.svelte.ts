@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.25";
+export const VERSION = "0.8.26";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
@@ -242,6 +242,14 @@ export function me(): PlayerView | undefined {
 }
 
 function currentName(): string { return S.name.trim().slice(0, 20) || "Player"; }
+function currentDevice(): { os: string; sw: number; sh: number; dpr: number } {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  const os = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : "desktop";
+  const w = typeof window !== "undefined" ? window.innerWidth : 0;
+  const h = typeof window !== "undefined" ? window.innerHeight : 0;
+  const dpr = typeof window !== "undefined" ? Math.round((window.devicePixelRatio || 1) * 100) / 100 : 1;
+  return { os, sw: w, sh: h, dpr };
+}
 function currentMaxTiles(): number {
   const h = typeof window !== "undefined" ? window.innerHeight : 900;
   if (h < 680) return 4;
@@ -380,7 +388,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
+    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -410,7 +418,7 @@ export async function joinByCode(code: string) {
   try {
     client ??= new Client(SERVER_URL);
     try {
-      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey() })));
+      await bind(await connectWithRetry(() => client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
     } catch {
       S.error = "No game found for code " + cc + ".";
     }

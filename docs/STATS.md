@@ -1,27 +1,27 @@
-# Klaxon — Usage-Log (persistent, ohne Datenbank)
+# Klaxon — Usage/Device/Feedback-Log (persistent, ohne Datenbank)
 
-Optionales Nutzungs-Log ueber einen Webhook (z. B. Google Sheet via Apps Script).
-Nicht gesetzt -> kein Log. Es werden **keine Spielernamen** geloggt, nur Zahlen.
+Optionale Logs ueber Webhook(s) -> Google Sheet (Apps Script). Keine Spielernamen, nur Zahlen/Text.
+- Usage/Device: Env **`STATS_WEBHOOK`** (Apps-Script-URL).
+- Feedback in die Tabelle: **`FEEDBACK_WEBHOOK_2`** = dieselbe Apps-Script-URL (ntfy bleibt Text).
 
-## Ereignisse (eine Zeile je Ereignis)
-- **start** - beim Spielstart: `room` (4-Zeichen-Code als ID), `players`,
-  `startSector` (Start-Schwierigkeit), `motion` (wie viele der Crew Gyro/Tilt aktiv hatten).
-- **end** - beim **Game-Over**: `room`, `players`, `peakPlayers`, `startSector`,
-  `endSector` (erreichter Sektor), `durationSec`.
+## Gemeinsamer Join-Key
+- **`rid`** = eindeutige Colyseus-roomId -> **der** Schluessel ueber alle Tabellen
+  (der 4-Zeichen-`room`-Code ist menschenlesbar, wiederholt sich aber ueber die Zeit).
+- **`pid`** = Session-ID des Spielers (nur device + feedback) -> Geraet <-> Feedback verbinden.
 
-Mehrere Spiele im selben Raum -> mehrere start/end-Paare (gleicher `room`-Code).
+So joinbar: `Devices.rid = Usage.rid` (welche Geraete in welchem Spiel),
+`Feedback.pid = Devices.pid` (welches Geraet gab das Feedback).
 
-## Spalten im Tab "Usage"
-`timestamp | event | room | players | peak | startSector | endSector | motion | durationSec`
-
-- **peak** = hoechste Zahl gleichzeitig anwesender Spieler waehrend des Spiels
-  (kleiner als `players` am Ende ist unmoeglich; groesser heisst: jemand ging waehrenddessen).
-- **motion** = Anzahl Spieler mit aktiviertem Gyro/Tilt beim Start (Rest nutzt Tap-Fallback).
+## Tabs & Spalten
+- **Usage** (start/end je Spiel): `timestamp | event | rid | room | players | peak | startSector | endSector | motion | durationSec`
+  - `peak` = max. gleichzeitige Spieler; `motion` = Anzahl mit Gyro/Tilt beim Start.
+- **Devices** (pro Beitritt): `timestamp | rid | room | pid | os | w | h | dpr`
+  - `os` = ios/android/desktop; `w/h` = Fenstergroesse (CSS-Pixel); `dpr` = Pixelverhaeltnis. Kein Modell/UA.
+- **Feedback**: `timestamp | rid | room | pid | msg`
 
 ## Einrichten
-1. Google-Sheet -> Erweiterungen -> Apps Script -> `doPost` unten einsetzen.
-2. Bereitstellen (Web-App), `/exec`-URL kopieren, nach jeder Aenderung **neu deployen**.
-3. Auf `klaxon-backend` **`STATS_WEBHOOK`** auf diese URL setzen (darf dieselbe sein wie fuers Feedback-Sheet).
+1. Google-Sheet -> Erweiterungen -> Apps Script -> `doPost` unten einsetzen -> neu deployen.
+2. `STATS_WEBHOOK` (Usage+Device) und ggf. `FEEDBACK_WEBHOOK_2` (Feedback) auf die `/exec`-URL setzen.
 
 ```javascript
 function doPost(e) {
@@ -30,10 +30,16 @@ function doPost(e) {
   try { j = JSON.parse(body); } catch (err) {}
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (j && j.event) {
-    var u = ss.getSheetByName("Usage");
-    if (!u) { u = ss.insertSheet("Usage");
-      u.appendRow(["timestamp","event","room","players","peak","startSector","endSector","motion","durationSec"]); }
-    u.appendRow([new Date(), j.event, j.room||"", j.players||"", j.peakPlayers||"", j.startSector||"", j.endSector||"", j.motion||"", j.durationSec||""]);
+    if (j.event === "device") {
+      sheetWithHeader(ss, "Devices", ["timestamp","rid","room","pid","os","w","h","dpr"])
+        .appendRow([new Date(), j.rid||"", j.room||"", j.pid||"", j.os||"", j.w||"", j.h||"", j.dpr||""]);
+    } else if (j.event === "feedback") {
+      sheetWithHeader(ss, "Feedback", ["timestamp","rid","room","pid","msg"])
+        .appendRow([new Date(), j.rid||"", j.room||"", j.pid||"", j.msg||""]);
+    } else {
+      sheetWithHeader(ss, "Usage", ["timestamp","event","rid","room","players","peak","startSector","endSector","motion","durationSec"])
+        .appendRow([new Date(), j.event, j.rid||"", j.room||"", j.players||"", j.peakPlayers||"", j.startSector||"", j.endSector||"", j.motion||"", j.durationSec||""]);
+    }
     return ContentService.createTextOutput("ok");
   }
   var sheet = ss.getSheets()[0];
@@ -41,7 +47,11 @@ function doPost(e) {
   sheet.appendRow([new Date(), msg]);
   return ContentService.createTextOutput("ok");
 }
+function sheetWithHeader(ss, name, header) {
+  var sh = ss.getSheetByName(name);
+  if (!sh) { sh = ss.insertSheet(name); sh.appendRow(header); }
+  return sh;
+}
 ```
 
-Hinweis: Bei bereits vorhandenem "Usage"-Tab mit alten Spalten diesen loeschen -
-das Script legt ihn beim naechsten Event korrekt neu an.
+Hinweis: Bei vorhandenen Tabs mit alten Spalten diese loeschen - das Script legt sie korrekt neu an.
