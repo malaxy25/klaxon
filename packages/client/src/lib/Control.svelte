@@ -268,7 +268,7 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.1; letter-spacing: 0.2px;
+    font-size: 0.8rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .hw {
@@ -314,7 +314,7 @@
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .dial { position: relative; width: 100%; height: 100%; min-height: 0; touch-action: none; cursor: pointer; }
+  .dial { position: relative; width: 100%; height: 100%; min-height: 76px; touch-action: none; cursor: pointer; }
   .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
   .dial-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
@@ -348,7 +348,7 @@
 
   @media (max-height: 720px) {
     .control { gap: 2px; padding: 3px 5px 2px; }
-    .name { font-size: 0.55rem; }
+    .name { font-size: 0.72rem; }
     .readout { font-size: 0.74rem; }
     .ticks { font-size: 0.48rem; }
     .switch { height: 30px; width: 50px; }

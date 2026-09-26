@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.40] - 2026-09-26
+### Fixed
+- **Dial tile was blank:** its ring/hub/pointer are absolutely positioned (no intrinsic
+  height) and `min-height:0` collapsed the tile to nothing. Gave the dial a real min-height
+  so it renders on a 1x1 tile.
+### Changed
+- **Control (tile) labels are larger** and easier to read.
+
 ## [0.8.39] - 2026-09-26
 ### Changed
 - **Dial uses the full circle** now (numbers evenly spaced all around) and a wider range
