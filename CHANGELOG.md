@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.42] - 2026-09-26
+### Fixed
+- **Dial numbers/pointer vanished on iOS** (v0.8.41's `aspect-ratio` square collapsed there,
+  leaving only the hub). The ring is now sized to a **measured square** (min of the tile's
+  width/height), so it renders reliably *and* is a true circle.
+
 ## [0.8.41] - 2026-09-26
 ### Fixed
 - **Dial numbers now sit on a true circle** (they were on an ellipse on non-square tiles) -

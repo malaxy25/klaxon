@@ -100,6 +100,7 @@
   }
   // Dial: Zahlen im Ring - tippen ODER drehen (window-basiert, iOS-zuverlaessig)
   let dialCx = 0, dialCy = 0, dialing = false;
+  let dw = $state(0), dh = $state(0);
   let dialVals = $derived.by(() => { const min = control.min ?? 0, max = control.max ?? 0; const a: number[] = []; for (let v = min; v <= max; v++) a.push(v); return a; });
   function angleFor(v: number) { const min = control.min ?? 0, max = control.max ?? 0; const n = max - min + 1; return n > 0 ? ((v - min) / n) * 360 : 0; }
   function posFor(v: number) { const r = (angleFor(v) * Math.PI) / 180; const R = 37; return { x: 50 + R * Math.sin(r), y: 50 - R * Math.cos(r) }; }
@@ -197,8 +198,8 @@
         {/each}
       </div>
     {:else if control.kind === "dial"}
-      <div class="dial" ontouchstart={dialTStart} onpointerdown={dialPStart}>
-        <div class="dial-ring">
+      <div class="dial" bind:clientWidth={dw} bind:clientHeight={dh} ontouchstart={dialTStart} onpointerdown={dialPStart}>
+        <div class="dial-ring" style="width:{Math.min(dw, dh)}px; height:{Math.min(dw, dh)}px">
           {#each dialVals as v}
             {@const p = posFor(v)}
             <span class="dial-num" class:on={Number(control.value) === v} style="left:{p.x}%; top:{p.y}%">{v}</span>
@@ -317,7 +318,7 @@
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
   .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .dial-ring { position: relative; height: 100%; aspect-ratio: 1; max-width: 100%; margin: 0 auto; }
+  .dial-ring { position: relative; flex: none; margin: 0 auto; }
   .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
   .dial-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
