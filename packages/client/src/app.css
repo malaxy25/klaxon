@@ -146,3 +146,8 @@ button, .btn, .tapbtn { touch-action: manipulation; }
   appearance: none; border: 1px solid var(--line); background: #14302c; color: var(--muted);
   border-radius: 8px; padding: 0.35em 0.75em; font-size: 0.75rem; cursor: pointer; touch-action: manipulation; opacity: 0.9; }
 .mute-fab:active { transform: translateY(1px); }
+
+/* How-to-play: Alerts as a clean block list (not the flex legend) */
+ul.alerts { list-style: none; padding: 0; margin: 6px 0 0; }
+ul.alerts li { display: block; margin: 8px 0; line-height: 1.35; color: var(--ink); }
+ul.alerts li b { color: var(--amber); }

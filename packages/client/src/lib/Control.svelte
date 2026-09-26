@@ -144,7 +144,7 @@
   let rwRect: DOMRect | null = null, rwDrag = false, wasRewire = false;
   let plugX = $state(16), plugY = $state(82);
   function hashId(id: string) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return h; }
-  let socket = $derived.by(() => { const h = hashId(control.id); return { x: 28 + (h % 45), y: 22 + ((h >> 8) % 40) }; });
+  let socket = $derived.by(() => { const h = hashId(control.id); return { x: 32 + (h % 37), y: 32 + ((h >> 8) % 37) }; });
   $effect(() => { if (control.hazard === "rewire" && !wasRewire) { plugX = 16; plugY = 82; } wasRewire = control.hazard === "rewire"; });
   function rwRel(cx: number, cy: number) {
     if (!rwRect || !rwRect.width) return;
@@ -188,9 +188,8 @@
     {:else if control.kind === "toggle"}
       <button class="switch" class:on={control.value === "true"} onclick={flip} aria-label="toggle"><span class="knob"></span></button>
     {:else if control.kind === "slider"}
-      <div class="ticks">{#each ticks as t}<span>{t}</span>{/each}</div>
+      <div class="ticks">{#each ticks as t}<span class:on={Number(control.value) === t}>{t}</span>{/each}</div>
       <input class="range" type="range" min={control.min} max={control.max} step="1" value={control.value} oninput={onSlide} />
-      <div class="readout">{control.value}</div>
     {:else if control.kind === "selector"}
       <div class="opts">
         {#each control.options as opt}
@@ -282,7 +281,7 @@
   }
   .hw:active { transform: translateY(1px); }
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 54px; margin: 0 auto; font-size: 0.72rem;
+  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 74px; margin: 0 auto; font-size: 0.85rem;
     background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
     box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
   .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
@@ -296,7 +295,8 @@
   .switch.on .knob { top: 3px; background: linear-gradient(180deg,#ffd98a,#f5a623); }
 
   /* Slider mit Ticks */
-  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.52rem; color: var(--muted); }
+  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.62rem; color: var(--muted); }
+  .ticks span.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 6px rgba(245,166,35,0.7); }
   .range { width: 100%; accent-color: var(--amber); }
   .readout {
     align-self: center; font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 0.82rem;
@@ -336,7 +336,7 @@
   @keyframes coolbar { from { width: 100%; } to { width: 0%; } }
   .hz-rewire { border: 2px solid #7cc4e8; touch-action: none; background: rgba(18,48,66,0.55); }
   /* Buchse: dunkles Loch mit leuchtendem Rand + zwei Kontaktloecher */
-  .rw-socket { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+  .rw-socket { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
     background: radial-gradient(circle, #0a1116 58%, #16303a 100%); border: 3px solid #7cc4e8;
     box-shadow: 0 0 12px rgba(124,196,232,0.9); animation: sockpulse 1s ease-in-out infinite; }
   .rw-socket::before, .rw-socket::after { content: ""; position: absolute; top: 50%; width: 4px; height: 9px; margin-top: -4.5px; background: #05090c; border: 1px solid #4a90ab; border-radius: 1px; }

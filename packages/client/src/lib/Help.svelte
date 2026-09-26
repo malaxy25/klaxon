@@ -26,11 +26,13 @@
       <li><span class="dot x"></span> <b>Selector</b> - pick the option</li>
     </ul>
     <h3>Alerts</h3>
-    <ul class="legend">
+    <ul class="alerts">
       <li><b>Jammed / short-circuit</b> - hold to fix / stabilize.</li>
-      <li><b>Slime</b> - swipe off. <b>Frozen</b> - tap to free. <b>Loose wire</b> - drag the plug into the glowing socket.</li>
+      <li><b>Slime</b> - swipe it off.</li>
+      <li><b>Frozen</b> - tap to free.</li>
+      <li><b>Loose wire</b> - drag the plug into the glowing socket.</li>
       <li><b>Overheat</b> - don't touch, it cools itself.</li>
-      <li><b>Full-screen alert</b> - react before the timer: shake, flip, hold or tap - or DON'T touch.</li>
+      <li><b>Full-screen alert</b> - react before the timer: shake, flip, hold or tap, or DON'T touch.</li>
     </ul>
     <p class="tip">It gets loud and chaotic. That is the point.</p>
     <button class="btn wide primary" onclick={closeHelp}>Got it</button>

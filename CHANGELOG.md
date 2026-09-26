@@ -3,6 +3,16 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.43] - 2026-09-26
+### Changed
+- **Slider:** removed the value box - the **active tick is highlighted** (amber) instead;
+  sliders are always **1 row tall** now (less empty space).
+- **PRESS** button is larger.
+- **How-to-play "Alerts"** is now a clean, readable list (was mangled on iOS).
+### Fixed
+- **Rewire socket** spawns with a safe margin so it is always fully inside the tile (it was
+  clipping at the edge).
+
 ## [0.8.42] - 2026-09-26
 ### Fixed
 - **Dial numbers/pointer vanished on iOS** (v0.8.41's `aspect-ratio` square collapsed there,
