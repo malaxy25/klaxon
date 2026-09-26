@@ -198,12 +198,14 @@
       </div>
     {:else if control.kind === "dial"}
       <div class="dial" ontouchstart={dialTStart} onpointerdown={dialPStart}>
-        {#each dialVals as v}
-          {@const p = posFor(v)}
-          <span class="dial-num" class:on={Number(control.value) === v} style="left:{p.x}%; top:{p.y}%">{v}</span>
-        {/each}
-        <div class="dial-hub"></div>
-        <span class="dial-ptr" style="transform: rotate({angleFor(Number(control.value))}deg)"></span>
+        <div class="dial-ring">
+          {#each dialVals as v}
+            {@const p = posFor(v)}
+            <span class="dial-num" class:on={Number(control.value) === v} style="left:{p.x}%; top:{p.y}%">{v}</span>
+          {/each}
+          <div class="dial-hub"></div>
+          <span class="dial-ptr" style="transform: rotate({angleFor(Number(control.value))}deg)"></span>
+        </div>
       </div>
     {/if}
   </div>
@@ -268,8 +270,8 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: 0.8rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
-    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    font-size: 0.86rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
   }
   .hw {
     appearance: none; cursor: pointer; width: 100%;
@@ -314,7 +316,8 @@
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .dial { position: relative; width: 100%; height: 100%; min-height: 76px; touch-action: none; cursor: pointer; }
+  .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .dial-ring { position: relative; height: 100%; aspect-ratio: 1; max-width: 100%; margin: 0 auto; }
   .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
   .dial-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;

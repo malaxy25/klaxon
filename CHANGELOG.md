@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.41] - 2026-09-26
+### Fixed
+- **Dial numbers now sit on a true circle** (they were on an ellipse on non-square tiles) -
+  the ring uses a centered square area.
+### Changed
+- **Control labels a bit larger**, capped at 2 lines with clean word-wrapping so long names
+  never overflow.
+
 ## [0.8.40] - 2026-09-26
 ### Fixed
 - **Dial tile was blank:** its ring/hub/pointer are absolutely positioned (no intrinsic
