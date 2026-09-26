@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.39] - 2026-09-26
+### Changed
+- **Dial uses the full circle** now (numbers evenly spaced all around) and a wider range
+  (up to 0-6), still a compact 1x1 tile. The highlighted active number is enough, so no
+  separate value readout. Turning wraps around (no dead zone).
+
 ## [0.8.38] - 2026-09-26
 ### Changed
 - Sector intermission is now **10 s** (still skippable).

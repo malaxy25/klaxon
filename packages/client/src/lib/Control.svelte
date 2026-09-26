@@ -101,13 +101,13 @@
   // Dial: Zahlen im Ring - tippen ODER drehen (window-basiert, iOS-zuverlaessig)
   let dialCx = 0, dialCy = 0, dialing = false;
   let dialVals = $derived.by(() => { const min = control.min ?? 0, max = control.max ?? 0; const a: number[] = []; for (let v = min; v <= max; v++) a.push(v); return a; });
-  function angleFor(v: number) { const min = control.min ?? 0, max = control.max ?? 0; const f = max > min ? (v - min) / (max - min) : 0; return -135 + f * 270; }
-  function posFor(v: number) { const r = (angleFor(v) * Math.PI) / 180; const R = 36; return { x: 50 + R * Math.sin(r), y: 50 - R * Math.cos(r) }; }
+  function angleFor(v: number) { const min = control.min ?? 0, max = control.max ?? 0; const n = max - min + 1; return n > 0 ? ((v - min) / n) * 360 : 0; }
+  function posFor(v: number) { const r = (angleFor(v) * Math.PI) / 180; const R = 37; return { x: 50 + R * Math.sin(r), y: 50 - R * Math.cos(r) }; }
   function dialAt(x: number, y: number) {
-    const th = (Math.atan2(x - dialCx, -(y - dialCy)) * 180) / Math.PI;
-    const c = Math.max(-135, Math.min(135, th));
-    const min = control.min ?? 0, max = control.max ?? 0;
-    const v = Math.max(min, Math.min(max, Math.round(min + ((c + 135) / 270) * (max - min))));
+    const min = control.min ?? 0, max = control.max ?? 0; const n = max - min + 1; if (n <= 0) return;
+    let a = (Math.atan2(x - dialCx, -(y - dialCy)) * 180) / Math.PI; if (a < 0) a += 360;
+    const idx = Math.round((a / 360) * n) % n;
+    const v = min + idx;
     if (String(v) !== control.value) setControl(control.id, String(v));
   }
   function setCenter(el: HTMLElement) { const r = el.getBoundingClientRect(); dialCx = r.left + r.width / 2; dialCy = r.top + r.height / 2; }

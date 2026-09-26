@@ -23,7 +23,7 @@ export function makeControl(ownerId: string, rng: Rng): Control {
     base.value = rng() < 0.5 ? "true" : "false";
   } else if (type === "slider" || type === "dial") {
     base.min = 0;
-    base.max = type === "dial" ? randInt(2, 3, rng) : randInt(3, 6, rng);
+    base.max = type === "dial" ? randInt(4, 6, rng) : randInt(3, 6, rng);
     base.value = String(randInt(base.min, base.max, rng));
   } else if (type === "selector") {
     base.options = makeSelectorOptions(rng, randInt(2, 4, rng));
