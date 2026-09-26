@@ -102,7 +102,7 @@
   let dialCx = 0, dialCy = 0, dialing = false;
   let dialVals = $derived.by(() => { const min = control.min ?? 0, max = control.max ?? 0; const a: number[] = []; for (let v = min; v <= max; v++) a.push(v); return a; });
   function angleFor(v: number) { const min = control.min ?? 0, max = control.max ?? 0; const f = max > min ? (v - min) / (max - min) : 0; return -135 + f * 270; }
-  function posFor(v: number) { const r = (angleFor(v) * Math.PI) / 180; const R = 38; return { x: 50 + R * Math.sin(r), y: 50 - R * Math.cos(r) }; }
+  function posFor(v: number) { const r = (angleFor(v) * Math.PI) / 180; const R = 36; return { x: 50 + R * Math.sin(r), y: 50 - R * Math.cos(r) }; }
   function dialAt(x: number, y: number) {
     const th = (Math.atan2(x - dialCx, -(y - dialCy)) * 180) / Math.PI;
     const c = Math.max(-135, Math.min(135, th));
@@ -204,7 +204,6 @@
         {/each}
         <div class="dial-hub"></div>
         <span class="dial-ptr" style="transform: rotate({angleFor(Number(control.value))}deg)"></span>
-        <div class="dial-val">{control.value}</div>
       </div>
     {/if}
   </div>
@@ -315,14 +314,13 @@
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; }
-  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 1rem; color: var(--muted); pointer-events: none; }
-  .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 8px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.25); }
-  .dial-hub { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
+  .dial { position: relative; width: 100%; height: 100%; min-height: 0; touch-action: none; cursor: pointer; }
+  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
+  .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
+  .dial-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
     background: radial-gradient(circle at 50% 35%, #2c5a53, #10302a); border: 1px solid var(--line); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5); }
-  .dial-ptr { position: absolute; left: 50%; bottom: 50%; width: 4px; height: 34%; margin-left: -2px; transform-origin: 50% 100%; transition: transform 0.06s linear;
+  .dial-ptr { position: absolute; left: 50%; bottom: 50%; width: 3.5px; height: 30%; margin-left: -1.75px; transform-origin: 50% 100%; transition: transform 0.06s linear;
     background: linear-gradient(to top, var(--amber), rgba(245,166,35,0.35)); border-radius: 2px; box-shadow: 0 0 6px rgba(245,166,35,0.6); pointer-events: none; }
-  .dial-val { position: absolute; left: 50%; top: 63%; transform: translate(-50%,0); font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 0.82rem; pointer-events: none; }
   .hz-frozen { border: 2px solid #7cc4e8; touch-action: manipulation;
     background: radial-gradient(circle at 30% 30%, rgba(160,215,240,0.5), transparent 45%), rgba(40,90,120,0.5); }
   .hz-frozen .hz-fill.ice { background: #afe0ff; }
@@ -333,11 +331,18 @@
   .hz-overheat .hz-fill.oh { background: #ff8a4d; animation: coolbar 4s linear forwards; }
   @keyframes coolbar { from { width: 100%; } to { width: 0%; } }
   .hz-rewire { border: 2px solid #7cc4e8; touch-action: none; background: rgba(18,48,66,0.55); }
-  .rw-socket { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 3px solid #7cc4e8;
-    box-shadow: 0 0 12px rgba(124,196,232,0.95), inset 0 0 7px rgba(124,196,232,0.7); animation: sockpulse 1s ease-in-out infinite; }
-  @keyframes sockpulse { 0%,100% { box-shadow: 0 0 10px rgba(124,196,232,0.7), inset 0 0 6px rgba(124,196,232,0.5); } 50% { box-shadow: 0 0 16px rgba(124,196,232,1), inset 0 0 9px rgba(124,196,232,0.85); } }
-  .rw-plug { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 5px; background: linear-gradient(180deg,#ffc24d,#b06f10); border: 1px solid #6b4a10; box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
-  .rw-plug::after { content: ""; position: absolute; left: 50%; top: -8px; width: 4px; height: 8px; margin-left: -2px; background: #7cc4e8; border-radius: 2px; }
+  /* Buchse: dunkles Loch mit leuchtendem Rand + zwei Kontaktloecher */
+  .rw-socket { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+    background: radial-gradient(circle, #0a1116 58%, #16303a 100%); border: 3px solid #7cc4e8;
+    box-shadow: 0 0 12px rgba(124,196,232,0.9); animation: sockpulse 1s ease-in-out infinite; }
+  .rw-socket::before, .rw-socket::after { content: ""; position: absolute; top: 50%; width: 4px; height: 9px; margin-top: -4.5px; background: #05090c; border: 1px solid #4a90ab; border-radius: 1px; }
+  .rw-socket::before { left: 8px; } .rw-socket::after { right: 8px; }
+  @keyframes sockpulse { 0%,100% { box-shadow: 0 0 9px rgba(124,196,232,0.7); } 50% { box-shadow: 0 0 16px rgba(124,196,232,1); } }
+  /* Stecker: Griff mit zwei Stiften oben */
+  .rw-plug { position: absolute; width: 26px; height: 20px; margin: -10px 0 0 -13px; border-radius: 4px;
+    background: linear-gradient(180deg,#3b3b45,#1b1b22); border: 1px solid #565661; box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
+  .rw-plug::before, .rw-plug::after { content: ""; position: absolute; top: -7px; width: 4px; height: 8px; background: #e8c15a; border-radius: 1px; box-shadow: 0 0 4px rgba(232,193,90,0.6); }
+  .rw-plug::before { left: 6px; } .rw-plug::after { right: 6px; }
   .hz-slimed { border: 2px solid #6fae3f;
     background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
 

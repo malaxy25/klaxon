@@ -53,7 +53,7 @@ export class SpaceteamGame {
   private nextBreakAt = 0;
   event: { type: string; endsAt: number; done: Set<string> } | null = null;
   intermission: { endsAt: number } | null = null;
-  private readonly INTERMISSION_MS = 8000;
+  private readonly INTERMISSION_MS = 10000;
   paused = false;
   private nextEventAt = 0;
   forceEvent = "";

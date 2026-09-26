@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.38] - 2026-09-26
+### Changed
+- Sector intermission is now **10 s** (still skippable).
+- **Dial** is back to a compact **1x1** tile with a small range (0-3) so the ring of numbers
+  fits nicely.
+- **Rewire plug/socket redesigned** to actually look like a plug (body + two prongs) and a
+  socket (dark hole with glowing rim + contact holes).
+
 ## [0.8.37] - 2026-09-25
 ### Changed
 - **Rewire reworked:** instead of a swipe (too similar to slime), a **loose plug** dangles

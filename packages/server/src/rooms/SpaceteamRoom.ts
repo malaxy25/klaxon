@@ -238,7 +238,7 @@ export class SpaceteamRoom extends Room {
     this.state.eventType = this.game.event?.type ?? "";
     this.state.eventMs = this.game.event ? 6000 : 0;
     this.state.intermission = !!this.game.intermission;
-    this.state.intermissionMs = this.game.intermission ? 8000 : 0;
+    this.state.intermissionMs = this.game.intermission ? 10000 : 0;
   }
 
   private syncFull() {
