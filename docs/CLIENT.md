@@ -2,9 +2,9 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.34
+## Neu in v0.8.37
 
-- Dial-Control (Drehknopf, vertikales Ziehen), Hazards frozen/electro, lustige Sektor-Hinweise.
+- Rewire = Stecker in leuchtende Buchse ziehen (Pick-and-Drop); Hazard-Groessen-Mapping in der Engine.
 
 
 ## Dateibaum

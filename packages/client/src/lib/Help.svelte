@@ -27,8 +27,9 @@
     </ul>
     <h3>Alerts</h3>
     <ul class="legend">
-      <li><b>Jammed control</b> - hold it down to fix it.</li>
-      <li><b>Alien slime</b> - swipe (or tap) it to clean it off.</li>
+      <li><b>Jammed / short-circuit</b> - hold to fix / stabilize.</li>
+      <li><b>Slime</b> - swipe off. <b>Frozen</b> - tap to free. <b>Loose wire</b> - drag the plug into the glowing socket.</li>
+      <li><b>Overheat</b> - don't touch, it cools itself.</li>
       <li><b>Full-screen alert</b> - react before the timer: shake, flip, hold or tap - or DON'T touch.</li>
     </ul>
     <p class="tip">It gets loud and chaotic. That is the point.</p>

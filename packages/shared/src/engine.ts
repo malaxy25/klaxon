@@ -7,6 +7,12 @@ import {
   STARTING_HEALTH, MAX_HEALTH, MAX_DEATH_LIMIT,
 } from "./difficulty";
 
+// Welche Panne braucht welche Mindest-Kachelgroesse (Footprint w x h)
+export const HAZARD_KINDS = ["broken", "slimed", "frozen", "electro", "overheat", "rewire"] as const;
+export const HAZARD_MIN: Record<string, { w: number; h: number }> = {
+  broken: { w: 1, h: 1 }, slimed: { w: 1, h: 1 }, frozen: { w: 1, h: 1 },
+  electro: { w: 1, h: 1 }, overheat: { w: 1, h: 1 }, rewire: { w: 2, h: 1 },
+};
 export interface EnginePlayer {
   id: string;
   name: string;
@@ -233,7 +239,7 @@ export class SpaceteamGame {
   clearHazard(playerId: string, controlId: string): GameEvent[] {
     const p = this.players.get(playerId);
     const c = p?.panel.find((x) => x.id === controlId);
-    if (c && c.hazard) { c.hazard = ""; return [{ type: "repaired", playerId, controlId }]; }
+    if (c && c.hazard) { c.hazard = ""; c.hazardUntil = undefined; return [{ type: "repaired", playerId, controlId }]; }
     return [];
   }
 
@@ -247,11 +253,14 @@ export class SpaceteamGame {
   debugHazard(kind: string): GameEvent[] {
     if (this.phase !== "playing") return [];
     const taken = this.takenControlIds();
-    const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
+    const min = HAZARD_MIN[kind] ?? { w: 1, h: 1 };
+    let pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id) && (c.w ?? 1) >= min.w && (c.h ?? 1) >= min.h);
+    if (pool.length === 0) pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
     if (pool.length === 0) return [];
     const c = pick(pool, this.rng);
     c.hazard = kind as any;
-    const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro" };
+    if (kind === "overheat") c.hazardUntil = this.now() + 4000;
+    const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro", overheat: "overheat", rewire: "rewire" };
     return [{ type: evName[kind] ?? "broke", controlId: c.id }];
   }
   debugClearHazards(): void {
@@ -400,6 +409,14 @@ export class SpaceteamGame {
       return events;
     }
 
+    // Ueberhitzte Controls kuehlen von selbst ab
+    for (const p of this.players.values()) for (const c of p.panel) {
+      if (c.hazard === "overheat" && c.hazardUntil && now >= c.hazardUntil) {
+        c.hazard = ""; c.hazardUntil = undefined;
+        events.push({ type: "repaired", controlId: c.id });
+      }
+    }
+
     // Panels koennen brechen (max. so viele gleichzeitig wie Spieler)
     if (now >= this.nextBreakAt) {
       this.nextBreakAt = now + this.breakInterval();
@@ -407,11 +424,14 @@ export class SpaceteamGame {
         const taken = this.takenControlIds();
         const pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
         if (pool.length > 0) {
-          const c = pick(pool, this.rng);
-          const kinds = ["broken", "slimed", "frozen", "electro"] as const;
-          const kind = pick(kinds as unknown as string[], this.rng);
+          // erst die Panne (gleichverteilt), dann eine dazu passende Kachel
+          const avail = HAZARD_KINDS.filter((k) => pool.some((c) => (c.w ?? 1) >= HAZARD_MIN[k].w && (c.h ?? 1) >= HAZARD_MIN[k].h));
+          const kind = pick(avail as unknown as string[], this.rng);
+          const fit = pool.filter((c) => (c.w ?? 1) >= HAZARD_MIN[kind].w && (c.h ?? 1) >= HAZARD_MIN[kind].h);
+          const c = pick(fit, this.rng);
           c.hazard = kind as any;
-          const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro" };
+          if (kind === "overheat") c.hazardUntil = now + 4000;
+          const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro", overheat: "overheat", rewire: "rewire" };
           events.push({ type: evName[kind], controlId: c.id });
         }
       }

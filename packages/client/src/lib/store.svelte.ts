@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.34";
+export const VERSION = "0.8.37";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 
@@ -210,7 +210,7 @@ function klaxon() { beep(740, 150, "square", 0.045); setTimeout(() => beep(560, 
 function startAlarm() { if (alarmTimer) return; klaxon(); alarmTimer = setInterval(klaxon, 950); }
 function stopAlarm() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = undefined; } }
 
-function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared") {
+function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "overheat" | "rewire" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared") {
   if (kind === "completed") beep(660, 90, "square");
   else if (kind === "expired") beep(150, 220, "sawtooth");
   else if (kind === "nextLevel") { beep(523, 90); setTimeout(() => beep(784, 160), 110); }
@@ -219,6 +219,8 @@ function playSound(kind: "completed" | "expired" | "nextLevel" | "gameOver" | "b
   else if (kind === "slimed") { sweep(520, 150, 260, "sine", 0.06); setTimeout(() => noiseBurst(130, 0.035), 60); }
   else if (kind === "frozen") { beep(1200, 60, "sine", 0.05); setTimeout(() => beep(1650, 90, "sine", 0.05), 70); }
   else if (kind === "electro") { beep(150, 70, "sawtooth", 0.06); noiseBurst(50, 0.05); setTimeout(() => beep(95, 90, "sawtooth", 0.06), 70); }
+  else if (kind === "overheat") { noiseBurst(220, 0.05); beep(320, 150, "sawtooth", 0.04); }
+  else if (kind === "rewire") { beep(420, 55, "square", 0.05); setTimeout(() => beep(660, 90, "square", 0.05), 65); }
   else if (kind === "eventStart") { beep(420, 130, "square", 0.05); setTimeout(() => beep(560, 150, "square", 0.05), 150); setTimeout(() => beep(700, 170, "square", 0.05), 320); }
   else if (kind === "eventPassed") { beep(523, 120, "triangle", 0.07); setTimeout(() => beep(659, 120, "triangle", 0.07), 110); setTimeout(() => beep(784, 240, "triangle", 0.07), 230); }
   else if (kind === "eventFailed") { noiseBurst(320, 0.1); beep(170, 320, "sawtooth", 0.07); }
@@ -361,6 +363,8 @@ async function bind(r: any) {
     else if (e.type === "slimed") { pulse("bad"); playSound("slimed"); }
     else if (e.type === "frozen") { pulse("bad"); playSound("frozen"); }
     else if (e.type === "electro") { pulse("bad"); playSound("electro"); }
+    else if (e.type === "overheat") { pulse("bad"); playSound("overheat"); }
+    else if (e.type === "rewire") { pulse("bad"); playSound("rewire"); }
   });
   r.onLeave((code: number) => { handleLeave(code); });
   snapshot();

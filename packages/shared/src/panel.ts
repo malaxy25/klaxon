@@ -31,7 +31,7 @@ export function makeControl(ownerId: string, rng: Rng): Control {
   }
   // Footprint fuers Panel-Layout (dichtes Raster im Client)
   if (type === "slider") { base.w = 2; base.h = rng() < 0.25 ? 2 : 1; }
-  else if (type === "dial") { base.w = 1; base.h = 1; }
+  else if (type === "dial") { base.w = 2; base.h = 2; }
   else if (type === "selector") { base.w = (base.options?.length ?? 0) >= 3 ? 2 : 1; base.h = 1; }
   else { base.w = 1; base.h = 1; }
 

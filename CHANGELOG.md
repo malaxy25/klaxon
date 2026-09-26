@@ -3,6 +3,31 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.37] - 2026-09-25
+### Changed
+- **Rewire reworked:** instead of a swipe (too similar to slime), a **loose plug** dangles
+  and you **drag it into the glowing socket** (socket position varies per tile). Miss =
+  snaps back, no penalty.
+- **Hazard/size mapping:** each hazard has a minimum tile size; **rewire only appears on
+  tiles >= 2x1** (room for plug + socket). Hazards are now picked fairly (pick the hazard,
+  then a fitting tile), so rewire shows up regularly.
+
+## [0.8.36] - 2026-09-25
+### Added
+- Two more hazards complete the set: **Overheat** (glows red - **don't touch**, it cools
+  down on its own after ~4 s) and **Loose wiring / Rewire** (**drag across** the tile to
+  reconnect). Each with its own look and sound. How-to-play updated.
+- Full hazard set now: jammed (hold), slime (swipe), frozen (tap), short-circuit (hold),
+  overheat (wait), rewire (drag).
+
+## [0.8.35] - 2026-09-25
+### Changed
+- **Dial redesign:** numbers sit **around a ring** - **tap a number or turn** to set it; a
+  long pointer so your finger does not cover the value; bigger **2x2** tile.
+- **Zoom disabled** (viewport) so rapid tapping (e.g. clearing a frozen panel) no longer
+  zooms the page in.
+- Control labels a touch larger; the sector **warp animation** made bolder/robust on mobile.
+
 ## [0.8.34] - 2026-09-25
 ### Added
 - **New control type: Dial** - a knob you set by dragging up/down ("Turn X to N").
