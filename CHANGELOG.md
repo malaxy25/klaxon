@@ -3,6 +3,24 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.46] - 2026-09-27
+### Changed
+- **Runtime upgraded to Node 26** (enters Active LTS on 2026-10-28): `Dockerfile` ->
+  `node:26-alpine`, new root `.node-version` (26) for the Render static site + local + CI,
+  CI now reads `node-version-file`.
+- **@types/node -> v26** to match the runtime; build + typecheck green.
+- Dependabot: `@types/node` major-ignore now pins to the Node-26 line.
+
+## [0.8.45] - 2026-09-27
+### Changed
+- **Dependencies:** applied safe minor/patch updates (colyseus/@colyseus/sdk, vite,
+  @sveltejs/vite-plugin-svelte, tsx, @types/node within v24). Build + typecheck green.
+- **CI:** `actions/checkout` and `actions/setup-node` bumped to v7.
+### Added
+- **Dependabot ignore rules:** hold `typescript` majors (TS 7 is the Go-native compiler;
+  Svelte/Vite tooling needs the TS API, landing in 7.1+) and keep `@types/node` on the
+  Node-24 line (matches the Docker runtime).
+
 ## [0.8.44] - 2026-09-26
 ### Changed
 - **Slider tick numbers larger** (easier to read, matches the dial).
