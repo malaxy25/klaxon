@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@spaceteam/shared": "*",
-    "colyseus": "^0.18.0"
+    "colyseus": "^0.18.8"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
