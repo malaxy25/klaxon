@@ -41,7 +41,8 @@
     height: 100vh; height: 100dvh;
     max-width: 720px; margin: 0 auto;
     display: flex; flex-direction: column; gap: 6px;
-    padding: 6px 8px 8px; overflow: hidden;
+    padding: calc(6px + env(safe-area-inset-top, 0px)) calc(8px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(8px + env(safe-area-inset-left, 0px));
+    overflow: hidden;
   }
   .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
   .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }

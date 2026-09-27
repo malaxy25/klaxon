@@ -270,7 +270,7 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: 0.95rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    font-size: 1.1rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
   }
   .hw {
@@ -352,7 +352,7 @@
 
   @media (max-height: 720px) {
     .control { gap: 2px; padding: 3px 5px 2px; }
-    .name { font-size: 0.72rem; }
+    .name { font-size: 0.9rem; }
     .readout { font-size: 0.74rem; }
     .ticks { font-size: 0.66rem; }
     .switch { height: 30px; width: 50px; }

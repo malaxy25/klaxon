@@ -3,6 +3,16 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.47] - 2026-09-27
+### Fixed
+- **In-game HUD collided with the status bar / Dynamic Island** on devices with larger safe
+  areas (e.g. iPhone 17e). The game container now respects `env(safe-area-inset-*)` on all
+  four sides (top/bottom/left/right), so the SECTOR bar and mute/leave clear the notch.
+### Changed
+- **Control labels larger:** base 1.1rem; the short-screen override was raised from 0.72 to
+  0.9rem (that override was shrinking labels on the 13 mini). Still capped at 2 lines with
+  word-wrapping.
+
 ## [0.8.46] - 2026-09-27
 ### Changed
 - **Runtime upgraded to Node 26** (enters Active LTS on 2026-10-28): `Dockerfile` ->
