@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # npm-Abhaengigkeiten (Monorepo-Root deckt die Workspaces mit ab)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    groups:
+      # kleine Updates zu EINEM PR buendeln (wenig Rauschen); Majors kommen einzeln
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+  # GitHub-Actions in .github/workflows aktuell halten
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

@@ -3,6 +3,15 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.44] - 2026-09-26
+### Changed
+- **Slider tick numbers larger** (easier to read, matches the dial).
+- **PRESS label smaller** so it fits the (now bigger) button nicely.
+- **Control labels larger** (0.95rem), still capped at 2 lines with word-wrapping.
+### Added
+- **Dependabot** config (`.github/dependabot.yml`): monthly, grouped minor/patch npm
+  updates + monthly GitHub-Actions updates - low-noise dependency/security PRs.
+
 ## [0.8.43] - 2026-09-26
 ### Changed
 - **Slider:** removed the value box - the **active tick is highlighted** (amber) instead;

@@ -270,7 +270,7 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: 0.86rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    font-size: 0.95rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
   }
   .hw {
@@ -281,7 +281,7 @@
   }
   .hw:active { transform: translateY(1px); }
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 74px; margin: 0 auto; font-size: 0.85rem;
+  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 74px; margin: 0 auto; font-size: 0.7rem;
     background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
     box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
   .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
@@ -295,7 +295,7 @@
   .switch.on .knob { top: 3px; background: linear-gradient(180deg,#ffd98a,#f5a623); }
 
   /* Slider mit Ticks */
-  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.62rem; color: var(--muted); }
+  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; color: var(--muted); }
   .ticks span.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 6px rgba(245,166,35,0.7); }
   .range { width: 100%; accent-color: var(--amber); }
   .readout {
@@ -354,7 +354,7 @@
     .control { gap: 2px; padding: 3px 5px 2px; }
     .name { font-size: 0.72rem; }
     .readout { font-size: 0.74rem; }
-    .ticks { font-size: 0.48rem; }
+    .ticks { font-size: 0.66rem; }
     .switch { height: 30px; width: 50px; }
     .switch .knob { height: 13px; top: 14px; }
     .switch.on .knob { top: 3px; }
