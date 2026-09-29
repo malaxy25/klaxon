@@ -37,7 +37,7 @@ export interface ChangeResult {
   events: GameEvent[];
 }
 
-export class SpaceteamGame {
+export class KlaxonGame {
   phase: Phase = "lobby";
   level = 0;
   startLevel = 3; // gewaehlte Schwierigkeit = Start-Sektor

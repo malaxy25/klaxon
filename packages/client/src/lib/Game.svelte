@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { difficultyForLevel } from "@spaceteam/shared";
+  import { difficultyForLevel } from "@klaxon/shared";
   import { S, me, toggleMute } from "./store.svelte";
   import Control from "./Control.svelte";
 

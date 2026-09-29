@@ -1,16 +1,17 @@
 {
-  "name": "spaceteam",
+  "name": "klaxon",
   "private": true,
-  "version": "0.8.47",
+  "version": "0.8.48",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "dev:shared": "npm run dev -w @spaceteam/shared",
-    "dev:server": "npm run dev -w @spaceteam/server",
-    "dev:client": "npm run dev -w @spaceteam/client",
-    "build:shared": "npm run build -w @spaceteam/shared",
-    "build:server": "npm run build -w @spaceteam/server",
-    "start:debug": "npm run start:debug -w @spaceteam/server"
-  }
+    "dev:shared": "npm run dev -w @klaxon/shared",
+    "dev:server": "npm run dev -w @klaxon/server",
+    "dev:client": "npm run dev -w @klaxon/client",
+    "build:shared": "npm run build -w @klaxon/shared",
+    "build:server": "npm run build -w @klaxon/server",
+    "start:debug": "npm run start:debug -w @klaxon/server"
+  },
+  "license": "MIT"
 }

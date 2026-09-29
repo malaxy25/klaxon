@@ -1,5 +1,5 @@
 {
-  "name": "@spaceteam/server",
+  "name": "@klaxon/server",
   "version": "0.0.0",
   "private": true,
   "main": "dist/main.js",
@@ -11,7 +11,7 @@
     "start:debug": "cross-env DEBUG_TARGETS=1 node dist/main.js"
   },
   "dependencies": {
-    "@spaceteam/shared": "*",
+    "@klaxon/shared": "*",
     "colyseus": "^0.18.0"
   },
   "devDependencies": {

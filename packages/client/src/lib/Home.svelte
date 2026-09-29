@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL, DONATE_URL } from "./store.svelte";
-  let code = $state("");
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL, DONATE_URL, VIDEO_URL } from "./store.svelte";
+  let code = $state((new URLSearchParams(location.search).get("r") || "").toUpperCase().slice(0, 6));
 
   let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
   function tapVersion() {
@@ -33,6 +33,7 @@
   {#if S.error}<p class="error">{S.error}</p>{/if}
 
   <button class="btn wide" onclick={openHelp}>How to play</button>
+  {#if VIDEO_URL}<a class="btn wide" href={VIDEO_URL} target="_blank" rel="noopener">&#9654; Watch how it works</a>{/if}
 
   <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>

@@ -1,5 +1,5 @@
 {
-  "name": "@spaceteam/client",
+  "name": "@klaxon/client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@colyseus/sdk": "^0.18.2",
-    "@spaceteam/shared": "^0.0.0",
+    "@klaxon/shared": "^0.0.0",
     "qrcode": "^1.5.4"
   }
 }

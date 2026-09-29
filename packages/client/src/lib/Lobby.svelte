@@ -38,6 +38,11 @@
     }
     copied = true; clearTimeout(copyT); copyT = setTimeout(() => (copied = false), 1500);
   }
+  async function shareLink() {
+    const url = joinUrl();
+    if (navigator.share) { try { await navigator.share({ title: "Klaxon", text: "Join my Klaxon room:", url }); return; } catch { /* cancelled */ } }
+    copyLink();
+  }
 </script>
 
 <div class="lobby">
@@ -50,6 +55,7 @@
     {#if qr}<img class="qr" src={qr} alt="Scan to join" width="220" height="220" />{/if}
     <button class="url" onclick={copyLink}>{copied ? "Link copied!" : joinUrl()}</button>
     <div class="urlhint">{copied ? "" : "tap link to copy"}</div>
+    <button class="btn wide share" onclick={shareLink}>Share invite</button>
   </div>
 
   <label class="field">

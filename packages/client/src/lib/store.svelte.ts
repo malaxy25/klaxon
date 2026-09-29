@@ -1,8 +1,9 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.47";
+export const VERSION = "0.8.48";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
+export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
 
 export type ControlView = {
   id: string; kind: string; label: string; value: string;
@@ -406,7 +407,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("spaceteam", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
+    await bind(await connectWithRetry(() => client!.create("klaxon", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -439,7 +440,7 @@ export async function joinByCode(code: string) {
     let room: any = null;
     for (;;) {
       try {
-        room = await client!.join("spaceteam", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() });
+        room = await client!.join("klaxon", { code: cc, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() });
         break;
       } catch (e: any) {
         const c = e?.code;

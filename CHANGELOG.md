@@ -3,6 +3,19 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.48] - 2026-09-27
+### Changed
+- **Rebrand to Klaxon across the code:** npm packages `@spaceteam/*` -> `@klaxon/*`, room name,
+  classes (`KlaxonGame` / `KlaxonRoom`), CSS/comments. Attribution to Spaceteam and the
+  OpenSpaceTeam project is kept in the README and source comments.
+### Added
+- **Open Graph / Twitter link preview** (title, description, `og.png` 1200x630) + canonical
+  URL -> shared links look good in WhatsApp/Discord/etc.
+- **Native Share button** in the lobby (uses the OS share sheet; falls back to copy).
+- **Scan-to-join prefills the code:** the home screen now reads `?r=CODE` from the QR/link.
+- **LICENSE (MIT)** + README Credits and a friendly "let me know if you use it" note.
+- **`VIDEO_URL` hook:** set it to show a "Watch how it works" button on the home screen.
+
 ## [0.8.47] - 2026-09-27
 ### Fixed
 - **In-game HUD collided with the status bar / Dynamic Island** on devices with larger safe
