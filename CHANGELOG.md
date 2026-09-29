@@ -3,6 +3,11 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.49] - 2026-09-29
+### Added
+- **Animated trailer on the home screen** (muted, looping autoplay): a 13s vertical explainer
+  of the game loop - `packages/client/public/klaxon-trailer.mp4` (+ poster image).
+
 ## [0.8.48] - 2026-09-27
 ### Changed
 - **Rebrand to Klaxon across the code:** npm packages `@spaceteam/*` -> `@klaxon/*`, room name,
