@@ -13,7 +13,6 @@
 <div class="home">
   <h1>Klaxon</h1>
   <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
-  <video class="trailer" src="/klaxon-trailer.mp4" poster="/klaxon-trailer-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
 
   <label class="field">
     <span>Your name</span>
@@ -36,10 +35,14 @@
   <button class="btn wide" onclick={openHelp}>How to play</button>
   {#if VIDEO_URL}<a class="btn wide" href={VIDEO_URL} target="_blank" rel="noopener">&#9654; Watch how it works</a>{/if}
 
+  <p class="seeit">See it in action</p>
+  <video class="trailer" src="/klaxon-trailer.mp4" poster="/klaxon-trailer-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+
   <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>
 <style>
   .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
   .dbgon { color: #c98fe0; }
+  .seeit { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 22px 0 8px; letter-spacing: 0.5px; }
   .trailer { display: block; width: auto; max-width: 100%; max-height: 320px; margin: 2px auto 12px; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 8px 26px rgba(0,0,0,0.35); background: #0b1615; }
 </style>

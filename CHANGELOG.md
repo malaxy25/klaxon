@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.50] - 2026-09-29
+### Changed
+- **Home screen: trailer moved to the bottom** ("See it in action") so the entry
+  (name + Start a new game + join) is visible without scrolling.
+- **Trailer polished:** persistent `klaxon.frehner.tech` footer + co-op caption, and a
+  **Klaxon-style soundtrack** baked in (A-minor drive, alarm sweep, solve blips). On the
+  site it autoplays muted (browser rule); the sound is there for uploads / tap-to-unmute.
+
 ## [0.8.49] - 2026-09-29
 ### Added
 - **Animated trailer on the home screen** (muted, looping autoplay): a 13s vertical explainer
