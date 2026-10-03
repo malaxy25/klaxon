@@ -155,3 +155,8 @@ ul.alerts li b { color: var(--amber); }
 /* v0.8.51 */
 .waking { color: var(--amber); font-size: 0.9rem; text-align: center; margin: 8px 0 0; }
 .motion-hint { color: var(--muted); font-size: 0.78rem; text-align: center; margin: 4px 0 10px; }
+
+/* v0.8.53 live badge */
+.live { display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--ok); font-size: 0.85rem; margin: 6px 0 0; }
+.live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px rgba(111,224,168,0.8); animation: livepulse 1.6s ease-in-out infinite; }
+@keyframes livepulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, VERSION, REPO_URL, DONATE_URL, VIDEO_URL } from "./store.svelte";
+  import { onMount } from "svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, fetchStats, VERSION, REPO_URL, DONATE_URL, VIDEO_URL } from "./store.svelte";
   let code = $state((new URLSearchParams(location.search).get("r") || "").toUpperCase().slice(0, 6));
 
   let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
@@ -8,11 +9,13 @@
     verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => (verTaps = 0), 1500);
     if (verTaps >= 5) { verTaps = 0; setDebug(true); alert("Debug ON"); }
   }
+  onMount(() => { fetchStats(); const t = setInterval(fetchStats, 30000); return () => clearInterval(t); });
 </script>
 
 <div class="home">
   <h1>Klaxon</h1>
   <p class="tagline">A cooperative shouting game for the same room. Open the page, no download.</p>
+  {#if S.liveRooms > 0}<p class="live"><span class="dot"></span>{S.liveRooms} {S.liveRooms === 1 ? "crew" : "crews"} playing right now</p>{/if}
 
   <label class="field">
     <span>Your name</span>

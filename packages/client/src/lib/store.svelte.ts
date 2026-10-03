@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.52";
+export const VERSION = "0.8.53";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -27,6 +27,8 @@ export const S = $state({
   connecting: false,
   waking: false,
   error: "",
+  liveRooms: 0,
+  livePlayers: 0,
   roomId: "",
   code: "",
   sessionId: "",
@@ -55,6 +57,7 @@ export const S = $state({
 });
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? "ws://localhost:2567";
+const HTTP_URL = SERVER_URL.replace(/^ws/, "http"); // ws->http, wss->https
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Cold-Start-sicher: der erste Versuch kann ins Timeout laufen, waehrend der
@@ -508,4 +511,14 @@ export function toggleMotion() {
 }
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
+}
+
+export async function fetchStats() {
+  try {
+    const r = await fetch(HTTP_URL + "/stats", { cache: "no-store" });
+    if (!r.ok) return;
+    const j = await r.json();
+    S.liveRooms = j.rooms ?? 0;
+    S.livePlayers = j.players ?? 0;
+  } catch { /* server asleep / unreachable - just skip */ }
 }

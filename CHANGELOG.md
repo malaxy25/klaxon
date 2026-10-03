@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.53] - 2026-09-29
+### Added
+- **`/stats` endpoint** (JSON: rooms, players, uptimeSec) with CORS, plus a **discreet live
+  badge** on the home screen ("N crews playing right now"); refreshes every 30s, silently
+  skips when the server is asleep.
+### Changed
+- Release ZIP is now a **complete snapshot** (all source + build config), not only changed files.
+
 ## [0.8.52] - 2026-09-29
 ### Changed
 - **Fairer crew rank:** now = *sector reached + cold-start bonus* (start sector - 1), instead of
