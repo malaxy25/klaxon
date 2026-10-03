@@ -30,6 +30,7 @@
     <button class="btn" disabled={!code || S.connecting} onclick={() => joinByCode(code)}>Join</button>
   </div>
 
+  {#if S.connecting && S.waking}<p class="waking">Server is waking up&hellip; (free hosting naps after a while)</p>{/if}
   {#if S.error}<p class="error">{S.error}</p>{/if}
 
   <button class="btn wide" onclick={openHelp}>How to play</button>

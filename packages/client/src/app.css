@@ -151,3 +151,7 @@ button, .btn, .tapbtn { touch-action: manipulation; }
 ul.alerts { list-style: none; padding: 0; margin: 6px 0 0; }
 ul.alerts li { display: block; margin: 8px 0; line-height: 1.35; color: var(--ink); }
 ul.alerts li b { color: var(--amber); }
+
+/* v0.8.51 */
+.waking { color: var(--amber); font-size: 0.9rem; text-align: center; margin: 8px 0 0; }
+.motion-hint { color: var(--muted); font-size: 0.78rem; text-align: center; margin: 4px 0 10px; }

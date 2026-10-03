@@ -3,6 +3,20 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.51] - 2026-09-29
+### Added
+- **Server `/health` endpoint** for an external keep-warm ping (counters Render free-tier sleep).
+- **Game-over crew rank** (Rookie - Solid - Ace - Elite - Legendary), scaled by sector x difficulty,
+  plus a **local best** per difficulty ("New best!") - gives a reference for "is this good?".
+- **Quick feedback chips** (Too easy / Just right / Too hard) on top of the free-text box.
+### Changed
+- **Server wake-up UX:** join now waits up to ~70s with a friendly "Server is waking up..." note
+  instead of a quick red error (Render free cold starts can take ~60s).
+- **Scoreboard clarity:** legend "Done = orders you completed - Missed = orders that ran out of
+  time"; the big number is now labelled "orders completed together".
+- **Motion controls** in the lobby are now a real On/Off toggle (was a one-way, non-selectable
+  button) and labelled as a per-phone setting.
+
 ## [0.8.50] - 2026-09-29
 ### Changed
 - **Home screen: trailer moved to the bottom** ("See it in action") so the entry

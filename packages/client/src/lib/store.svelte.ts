@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.50";
+export const VERSION = "0.8.51";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -25,6 +25,7 @@ function lsSet(key: string, val: string) {
 export const S = $state({
   screen: "home" as "home" | "lobby" | "game" | "over",
   connecting: false,
+  waking: false,
   error: "",
   roomId: "",
   code: "",
@@ -68,9 +69,10 @@ function genCode(): string {
 async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   const deadline = Date.now() + 70000;
   for (;;) {
-    try { return await fn(); }
+    try { const r = await fn(); S.waking = false; return r; }
     catch (e) {
-      if (Date.now() > deadline) throw e;
+      if (Date.now() > deadline) { S.waking = false; throw e; }
+      S.waking = true;
       await sleep(2500);
     }
   }
@@ -411,7 +413,7 @@ export async function createGame() {
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
-    S.connecting = false;
+    S.connecting = false; S.waking = false;
   }
 }
 
@@ -424,7 +426,7 @@ export async function joinGame(id: string) {
   } catch (e: any) {
     S.error = "Join failed: " + (e?.message ?? "room not found.");
   } finally {
-    S.connecting = false;
+    S.connecting = false; S.waking = false;
   }
 }
 
@@ -436,7 +438,7 @@ export async function joinByCode(code: string) {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    const deadline = Date.now() + 20000; // nur fuer echte Verbindungsprobleme kurz retryen
+    const deadline = Date.now() + 70000; // Render-Free-Kaltstart kann ~60s dauern
     let room: any = null;
     for (;;) {
       try {
@@ -448,7 +450,8 @@ export async function joinByCode(code: string) {
         // Matchmaking "kein Raum gefunden" / gesperrt -> sofort abbrechen (nicht 70s warten)
         const notFound = (typeof c === "number" && c >= 4210 && c <= 4299) || /no rooms|not found|criteria|locked/i.test(msg);
         if (notFound) { S.error = "No game found for code " + cc + ". Is the room still open on the host?"; return; }
-        if (Date.now() > deadline) { S.error = "Could not reach the server - try again in a moment."; return; }
+        if (Date.now() > deadline) { S.error = "The server is waking up and took too long. Give it a few seconds and tap Join again."; return; }
+        S.waking = true;
         await sleep(2500);
       }
     }
@@ -456,7 +459,7 @@ export async function joinByCode(code: string) {
   } catch (e: any) {
     S.error = "Join failed: " + (e?.message ?? "");
   } finally {
-    S.connecting = false;
+    S.connecting = false; S.waking = false;
   }
 }
 export function ready(v: boolean) { room?.send("ready", v); if (v && !S.motionOk) enableMotion(); }
@@ -498,6 +501,10 @@ export async function enableMotion() {
     S.motionOk = ok;
     room?.send("motion", S.motionOk);
   } catch { S.motionOk = false; }
+}
+export function toggleMotion() {
+  if (S.motionOk) { S.motionOk = false; room?.send("motion", false); }
+  else { enableMotion(); }
 }
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });

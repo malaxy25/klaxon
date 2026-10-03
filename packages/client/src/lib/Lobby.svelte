@@ -1,6 +1,6 @@
 <script lang="ts">
   import QRCode from "qrcode";
-  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, enableMotion, kick, VERSION, REPO_URL, DONATE_URL } from "./store.svelte";
+  import { S, me, ready, start, setDifficulty, joinUrl, updateName, commitName, openHelp, toggleMotion, kick, VERSION, REPO_URL, DONATE_URL } from "./store.svelte";
 
   let qr = $state("");
   let mine = $derived(me());
@@ -92,11 +92,12 @@
   </div>
 
   <div class="difficulty">
-    <span class="diff-label">Motion controls (shake / tilt)</span>
-    <button class="btn diff" class:on={S.motionOk} onclick={enableMotion} disabled={S.motionOk}>
-      {S.motionOk ? "On" : "Enable"}
+    <span class="diff-label">Shake controls &mdash; this phone</span>
+    <button class="btn diff" class:on={S.motionOk} onclick={toggleMotion}>
+      {S.motionOk ? "On" : "Off"}
     </button>
   </div>
+  <p class="motion-hint">Each player turns this on for their own phone (needed for meteor / flip events).</p>
 
   <button class="btn wide" onclick={() => ready(!mine?.ready)}>
     {mine?.ready ? "Not ready" : "I am ready"}
