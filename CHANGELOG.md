@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.56] - 2026-10-03
+### Changed
+- **"Boarding / server waking up" card only shows on a real cold start now** (after ~4s of
+  retrying), not on a quick transient first-connect blip - so a warm server connects without
+  flashing the wake-up screen.
+
 ## [0.8.55] - 2026-10-03
 ### Changed
 - **Motion events focus on the gesture:** the tap fallback is now a tiny link that only appears

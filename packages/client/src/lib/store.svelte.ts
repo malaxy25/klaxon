@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.55";
+export const VERSION = "0.8.56";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -71,12 +71,13 @@ function genCode(): string {
 }
 
 async function connectWithRetry<T>(fn: () => Promise<T>): Promise<T> {
-  const deadline = Date.now() + 70000;
+  const start = Date.now();
+  const deadline = start + 70000;
   for (;;) {
     try { const r = await fn(); S.waking = false; return r; }
     catch (e) {
       if (Date.now() > deadline) { S.waking = false; throw e; }
-      S.waking = true;
+      if (Date.now() - start > 4000) S.waking = true; // nur bei echtem Kaltstart die Boarding-Karte zeigen
       await sleep(2500);
     }
   }
@@ -460,7 +461,8 @@ export async function joinByCode(code: string) {
   S.connecting = true; S.error = "";
   try {
     client ??= new Client(SERVER_URL);
-    const deadline = Date.now() + 70000; // Render-Free-Kaltstart kann ~60s dauern
+    const start = Date.now();
+    const deadline = start + 70000; // Render-Free-Kaltstart kann ~60s dauern
     let room: any = null;
     for (;;) {
       try {
@@ -473,7 +475,7 @@ export async function joinByCode(code: string) {
         const notFound = (typeof c === "number" && c >= 4210 && c <= 4299) || /no rooms|not found|criteria|locked/i.test(msg);
         if (notFound) { S.error = "No game found for code " + cc + ". Is the room still open on the host?"; return; }
         if (Date.now() > deadline) { S.error = "The server is waking up and took too long. Give it a few seconds and tap Join again."; return; }
-        S.waking = true;
+        if (Date.now() - start > 4000) S.waking = true;
         await sleep(2500);
       }
     }
