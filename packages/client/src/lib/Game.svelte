@@ -35,6 +35,8 @@
   {#if S.banner}<div class="banner"><span>{S.banner}</span></div>{/if}
 </div>
 
+{#if S.toast}<div class="toast">{S.toast}</div>{/if}
+
 <style>
   .game {
     position: relative;
@@ -46,6 +48,8 @@
   }
   .game.flash-good { box-shadow: inset 0 0 40px rgba(87,192,138,0.35); }
   .game.flash-bad { box-shadow: inset 0 0 70px rgba(229,72,77,0.55); }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 46; background: rgba(20,32,30,0.96); border: 1px solid var(--line); color: var(--ink); padding: 10px 16px; border-radius: 999px; font-size: 0.9rem; max-width: 92%; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,0.45); animation: toastin 0.2s ease-out; }
+  @keyframes toastin { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   .game::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:5;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 3px), radial-gradient(120% 80% at 50% 28%, transparent 62%, rgba(0,0,0,0.34) 100%); }
 

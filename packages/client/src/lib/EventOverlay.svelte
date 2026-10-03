@@ -12,16 +12,19 @@
     wormhole:  { title: "WORMHOLE", action: "STABILIZE", hint: "Panels swapped - you now control someone else s board!", mode: "tap" },
   };
   let info = $derived(INFO[S.eventType] ?? { title: S.eventType, action: "GO!", hint: "", mode: "tap" as Mode });
+  // Gesten-Events: Schuetteln/Kippen ist leicht; Tippen bleibt als Notnagel, aber teurer.
+  let TAP_TARGET = $derived(info.gesture ? 10 : 3);
 
   let didIt = $state(false);
+  let showTapHelp = $state(false);
   let taps = $state(0);
   let holdProg = $state(0);
   let secs = $state(Math.ceil((S.eventMs || 6000) / 1000));
   let timer: ReturnType<typeof setInterval>;
-  let shakeCount = 0, holding = false, holdRaf = 0;
+  let shakeCount = $state(0); let holding = false, holdRaf = 0;
 
   function complete() { if (didIt) return; didIt = true; sendEventAction(); }
-  function onTap() { if (didIt) return; taps++; if (taps >= 3) complete(); }
+  function onTap() { if (didIt) return; taps++; if (taps >= TAP_TARGET) complete(); }
   function holdStart(e: PointerEvent) {
     if (didIt) return; e.preventDefault(); holding = true; const t0 = performance.now();
     const step = () => { if (!holding) return; holdProg = Math.min(1, (performance.now() - t0) / 2000);
@@ -42,6 +45,7 @@
     timer = setInterval(() => { secs = Math.max(0, secs - 1); }, 1000);
     if (info.gesture === "shake") window.addEventListener("devicemotion", onMotion);
     if (info.gesture === "orient") window.addEventListener("deviceorientation", onOrient);
+    if (info.gesture && S.motionOk) setTimeout(() => (showTapHelp = true), 3500);
   });
   onDestroy(() => {
     clearInterval(timer);
@@ -64,12 +68,20 @@
     {:else if info.mode === "hold"}
       <button class="btn wide primary" onpointerdown={holdStart} onpointerup={holdEnd} onpointerleave={holdEnd} onpointercancel={holdEnd}>HOLD</button>
       <div class="ev-bar"><div class="ev-fill" style="width:{holdProg * 100}%"></div></div>
-    {:else}
-      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>
-        {S.eventType === "brace" || S.eventType === "wormhole" ? "TAP! (" + taps + "/3)" : "Can't move? TAP (" + taps + "/3)"}
-      </button>
+    {:else if info.gesture}
       {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
-      {#if !S.motionOk && info.gesture}<button class="helplink" onclick={enableMotion}>Enable shake &amp; tilt</button>{/if}
+      {#if S.motionOk}
+        {#if info.gesture === "shake"}<div class="ev-hint">shakes {shakeCount}/3</div>{/if}
+        {#if showTapHelp}
+          <button class="taptiny" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>can't shake? tap ({taps}/{TAP_TARGET})</button>
+        {/if}
+      {:else}
+        <button class="helplink big" onclick={enableMotion}>Enable shake &amp; tilt - much easier!</button>
+        <button class="btn wide tapbtn ghost" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>Can't move? TAP ({taps}/{TAP_TARGET})</button>
+      {/if}
+    {:else}
+      <button class="btn wide primary tapbtn" onpointerdown={(e) => { e.preventDefault(); onTap(); }}>TAP! ({taps}/{TAP_TARGET})</button>
+      {#if info.hint}<div class="ev-hint">{info.hint}</div>{/if}
     {/if}
 
     <div class="ev-count">{secs}s</div>
@@ -87,6 +99,10 @@
   .ev-bar { height: 8px; margin-top: 12px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
   .ev-fill { height: 100%; background: var(--amber); }
   .ev-hint { color: var(--muted); margin-top: 10px; font-size: 0.85rem; }
+  .tapbtn.ghost { opacity: 0.75; }
+  .helplink { background: none; border: none; color: var(--amber); text-decoration: underline; cursor: pointer; margin: 8px 0; font-size: 0.85rem; }
+  .helplink.big { font-size: 0.98rem; font-weight: 600; }
+  .taptiny { background: none; border: none; color: var(--muted); font-size: 0.72rem; text-decoration: underline; cursor: pointer; margin-top: 16px; opacity: 0.7; }
   .ev-waiting { color: var(--ok); font-weight: 600; }
   .ev-count { margin-top: 18px; font-family: ui-monospace, Menlo, monospace; font-size: 1.6rem; color: var(--amber); }
   @media (prefers-reduced-motion: no-preference) { .ev-action { animation: evpulse 0.6s ease-in-out infinite alternate; } }

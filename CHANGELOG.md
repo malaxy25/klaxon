@@ -3,6 +3,25 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.55] - 2026-10-03
+### Changed
+- **Motion events focus on the gesture:** the tap fallback is now a tiny link that only appears
+  after ~3.5s of trying (when motion is on), so SHAKE! / FLIP! stays the focus. With motion off,
+  the "enable shake & tilt" nudge + tap stay visible (that is their only path).
+### Added
+- **Blame toast on a failed event:** when a meteor / flip / brace / surge / decompression fails,
+  a short toast names who was responsible - everyone who didn't complete it, or the player who
+  moved during decompression (shown as "The whole crew" when all failed).
+
+## [0.8.54] - 2026-10-03
+### Changed
+- **Motion events rebalanced:** for SHAKE (meteor) and FLIP (black hole), the gesture is the
+  easy path (3 shakes / one flip); the tap fallback is now deliberately harder (10 taps) and
+  secondary, so tapping is no longer the lazy shortcut. If motion is off, a prominent
+  "enable shake & tilt - much easier" nudge appears.
+- **Panel variety guaranteed:** panels of 2+ controls always include at least one slider/dial
+  and a second, different control family - no more "only on/off toggles" boards.
+
 ## [0.8.53] - 2026-09-29
 ### Added
 - **`/stats` endpoint** (JSON: rooms, players, uptimeSec) with CORS, plus a **discreet live

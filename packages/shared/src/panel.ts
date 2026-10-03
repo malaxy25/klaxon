@@ -10,8 +10,8 @@ function nextId(prefix: string): string {
   return `${prefix}_${counter}`;
 }
 
-export function makeControl(ownerId: string, rng: Rng): Control {
-  const type = pick(TYPES, rng);
+export function makeControl(ownerId: string, rng: Rng, forcedType?: ControlType): Control {
+  const type = forcedType ?? pick(TYPES, rng);
   const base: Control = {
     id: nextId("ctl"),
     type,
@@ -41,11 +41,21 @@ export function makeControl(ownerId: string, rng: Rng): Control {
 export function generatePanel(ownerId: string, size: number, rng: Rng): Control[] {
   const controls: Control[] = [];
   const usedLabels = new Set<string>();
-  while (controls.length < size) {
-    const c = makeControl(ownerId, rng);
-    if (usedLabels.has(c.label)) continue; // eindeutige Labels pro Panel
-    usedLabels.add(c.label);
-    controls.push(c);
+  const add = (forced?: ControlType) => {
+    for (;;) {
+      const c = makeControl(ownerId, rng, forced);
+      if (usedLabels.has(c.label)) continue; // eindeutige Labels pro Panel
+      usedLabels.add(c.label);
+      controls.push(c);
+      return;
+    }
+  };
+  // Vielfalt garantieren: auf Panels ab 2 Controls mind. ein Wert-Control
+  // (Schieber/Dial) UND ein zweiter, andersartiger Typ -> keine reinen on/off-Panels.
+  if (size >= 2) {
+    add(pick(["slider", "dial"] as ControlType[], rng));
+    add(pick(["button", "toggle", "selector"] as ControlType[], rng));
   }
+  while (controls.length < size) add();
   return controls;
 }

@@ -38,4 +38,6 @@ export interface GameEvent {
   type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "overheat" | "rewire" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared";
   playerId?: string;
   controlId?: string;
+  playerIds?: string[];
+  eventKind?: string;
 }

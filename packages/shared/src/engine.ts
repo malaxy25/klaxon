@@ -211,7 +211,7 @@ export class KlaxonGame {
       this.event = null;
       this.health -= 15;
       this.nextEventAt = this.now() + this.eventInterval();
-      events.push({ type: "eventFailed" });
+      events.push({ type: "eventFailed", playerIds: [playerId], eventKind: "freeze" });
       return events;
     }
     this.event.done.add(playerId);
@@ -393,10 +393,12 @@ export class KlaxonGame {
     if (this.event) {
       for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
       if (now >= this.event.endsAt) {
-        const survived = this.event.type === "freeze";
+        const kind = this.event.type;
+        const survived = kind === "freeze";
+        const culprits = survived ? [] : [...this.players.values()].filter((p) => p.connected && !this.event!.done.has(p.id)).map((p) => p.id);
         this.event = null;
         if (survived) { this.health = Math.min(MAX_HEALTH, this.health + 15); events.push({ type: "eventPassed" }); }
-        else { this.health -= 15; events.push({ type: "eventFailed" }); }
+        else { this.health -= 15; events.push({ type: "eventFailed", playerIds: culprits, eventKind: kind }); }
         this.nextEventAt = now + this.eventInterval();
       }
       if (this.health <= this.deathLimit) { this.phase = "over"; events.push({ type: "gameOver" }); }

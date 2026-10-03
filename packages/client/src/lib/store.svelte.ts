@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.53";
+export const VERSION = "0.8.55";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -42,6 +42,7 @@ export const S = $state({
   flash: "" as "" | "good" | "bad",
   shake: false,
   banner: "",
+  toast: "",
   showHelp: false,
   startLevel: 3,
   eventType: "",
@@ -85,6 +86,24 @@ let client: Client | null = null;
 let room: any = null;
 let reconToken = "";
 let flashTimer: ReturnType<typeof setTimeout> | undefined;
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
+const EV_FAIL: Record<string, { icon: string; verb: string }> = {
+  meteor: { icon: "\u{1F4A5}", verb: "didn't shake" },
+  blackhole: { icon: "\u{1F300}", verb: "didn't flip" },
+  brace: { icon: "\u{1F4A5}", verb: "didn't brace" },
+  surge: { icon: "\u26A1", verb: "didn't hold" },
+  freeze: { icon: "\u2744", verb: "moved during decompression" },
+  wormhole: { icon: "\u{1F300}", verb: "didn't stabilize" },
+};
+function setToast(text: string) { S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => (S.toast = ""), 3500); }
+function showCulprits(e: any) {
+  const ids: string[] = e.playerIds || [];
+  const names = ids.map((id) => S.players.find((p) => p.id === id)?.name).filter(Boolean) as string[];
+  if (names.length === 0) return;
+  const info = EV_FAIL[e.eventKind as string] || { icon: "\u{1F4A5}", verb: "missed it" };
+  const who = names.length >= S.players.length ? "The whole crew" : names.join(" & ");
+  setToast(`${info.icon} ${who} ${info.verb}`);
+}
 let shakeTimer: ReturnType<typeof setTimeout> | undefined;
 let bannerTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -362,7 +381,7 @@ async function bind(r: any) {
   r.onMessage("evt", (e: any) => {
     if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
     else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
-    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); setTimeout(() => (S.eventResult = ""), 1300); }
+    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); showCulprits(e); setTimeout(() => (S.eventResult = ""), 1300); }
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
     else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
