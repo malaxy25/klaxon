@@ -6,14 +6,14 @@
   const DIFF_NAMES: Record<number, string> = { 1: "Casual", 3: "Normal", 5: "Hard", 8: "Insane" };
   let diffName = $derived(DIFF_NAMES[S.startLevel] ?? ("Sector " + S.startLevel));
 
-  const DIFF_WEIGHT: Record<number, number> = { 1: 1, 3: 2, 5: 3, 8: 4 };
-  let weight = $derived(DIFF_WEIGHT[S.startLevel] ?? 2);
-  let rankScore = $derived(S.level * weight);
+  // Difficulty = starting sector; every sector has the same pace for everyone.
+  // Fair score = how far you got + a cold-start bonus for the warm-up sectors you skipped.
+  let rankScore = $derived(S.level + Math.max(0, S.startLevel - 1));
   let rank = $derived(
-    rankScore >= 32 ? "Legendary crew" :
-    rankScore >= 22 ? "Elite crew" :
-    rankScore >= 14 ? "Ace crew" :
-    rankScore >= 8  ? "Solid crew" : "Rookie crew"
+    rankScore >= 16 ? "Legendary crew" :
+    rankScore >= 12 ? "Elite crew" :
+    rankScore >= 9  ? "Ace crew" :
+    rankScore >= 6  ? "Solid crew" : "Rookie crew"
   );
 
   let bestSector = $state(0);

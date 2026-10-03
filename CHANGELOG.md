@@ -3,6 +3,13 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.52] - 2026-09-29
+### Changed
+- **Fairer crew rank:** now = *sector reached + cold-start bonus* (start sector - 1), instead of
+  sector x difficulty. Difficulty = the starting sector and every sector has the same pace for
+  everyone, so getting far counts regardless of difficulty, with a bonus for skipping the warm-up.
+  (e.g. Casual - Sector 9 is now **Ace**, not Solid; Insane - Sector 9 stays **Legendary**.)
+
 ## [0.8.51] - 2026-09-29
 ### Added
 - **Server `/health` endpoint** for an external keep-warm ping (counters Render free-tier sleep).
