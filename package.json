@@ -1,7 +1,7 @@
 {
   "name": "klaxon",
   "private": true,
-  "version": "0.8.57",
+  "version": "0.8.58",
   "workspaces": [
     "packages/*"
   ],
@@ -11,7 +11,8 @@
     "dev:client": "npm run dev -w @klaxon/client",
     "build:shared": "npm run build -w @klaxon/shared",
     "build:server": "npm run build -w @klaxon/server",
-    "start:debug": "npm run start:debug -w @klaxon/server"
+    "start:debug": "npm run start:debug -w @klaxon/server",
+    "build:client": "npm run build -w @klaxon/client"
   },
   "license": "MIT"
 }

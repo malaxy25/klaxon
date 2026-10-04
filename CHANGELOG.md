@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.58] - 2026-10-03
+### Fixed
+- **CI build failed:** the workflow still referenced the old workspace `@spaceteam/client`.
+  Added a root `build:client` script and switched CI to it (now `npm ci` -> build:shared ->
+  build:server -> build:client, all `@klaxon/*`). Render was unaffected (own build command).
+### Changed
+- Synced the version fields in `package-lock.json` to the current version (cosmetic).
+
 ## [0.8.57] - 2026-10-03
 ### Changed
 - **Docs refresh:** AI-CONTEXT / DEPLOY / MAINTENANCE updated to `@klaxon/*` + Node 26;
