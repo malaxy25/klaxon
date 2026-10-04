@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.57] - 2026-10-03
+### Changed
+- **Docs refresh:** AI-CONTEXT / DEPLOY / MAINTENANCE updated to `@klaxon/*` + Node 26;
+  ENV stray line removed; BACKLOG "done" list + open items (P7 playtest tuning, P8 TypeScript 7)
+  brought current; PHASE-1 / GETTING-STARTED marked as historical.
+
 ## [0.8.56] - 2026-10-03
 ### Changed
 - **"Boarding / server waking up" card only shows on a real cold start now** (after ~4s of

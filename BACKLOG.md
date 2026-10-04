@@ -118,6 +118,17 @@ serverseitig nur bei gesetztem Debug-Flag erlauben (z. B. Env `ALLOW_DEBUG=1`), 
 Mehr Technobabble-Vielfalt (Wortlisten erweitern), Feintuning der Schwierigkeitskurve
 nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
 
+### P7 — Feinschliff aus Okt-Playtests   (Prio: niedrig, Aufwand: S)
+- **Insane-Obergrenze:** Schwierigkeit cappt um Sektor ~8-9; falls Insane oben nochmal haerter
+  werden soll, Caps in `difficulty.ts` fuer hohe Level anheben (reine Balance).
+- **Aufraeumen:** unbenutzte `packages/server/src/stats.ts` entfernen (nicht importiert).
+- **Tuning nach echtem Spiel:** Tap-Fallback-Anzahl (aktuell 10) und Schuld-Toast-Texte
+  (Formulierung/Sprache) bei Bedarf anpassen.
+
+### P8 — TypeScript 7   (Prio: niedrig, Aufwand: M, blockiert)
+TS 7 (Go-native) ist da, aber Svelte/Vite-Tooling braucht die TS-API (ab 7.1). Per
+Dependabot-Ignore zurueckgestellt; nachziehen, sobald die Tools TS7 unterstuetzen.
+
 ---
 
 ## Erledigt (Auszug)
@@ -126,3 +137,9 @@ Siehe [CHANGELOG](CHANGELOG.md): Namen, Play-again, Sound (Basis), Screenshake,
 Level-Banner, Countdown, Cold-Start-Overlay + Retry, How-to-play, Schwierigkeits-Presets,
 End-of-game-Stats, In-Game-Feedback (persistent via ntfy/Google Sheet), One-Screen-Fit,
 Cockpit-Pass, Alien-Schleim, 8 Spieler, Kick, Offline-Anzeige, Reconnect, PWA, 6 Events (inkl. echtes Wurmloch), In-Game-Debug-Panel (?debug) mit Server-Stats, responsive/kompakte Kacheln + Pro-Geraet-Kachel-Cap, CI-Build-Gate.
+
+**Neuer (ab v0.8.44):** Dependabot + sichere Dep-Updates, **Node 26**, **Rebrand @klaxon/\***,
+Teilen-Button + OG-Vorschau + Scan-to-Join-Prefill, **MIT-Lizenz**, animierter Trailer (mit Soundtrack),
+Safe-Area-Fix (Notch), groessere Labels, Dial echter Kreis, **Crew-Rang + Bestwert** + Scoreboard-Legende,
+**/health** (Keep-warm-Cron) + **/stats** + Live-"crews playing"-Badge, **Motion-first Events** (Tap teurer/klein),
+garantierte **Panel-Vielfalt**, **Schuld-Toast** bei verpatzten Events, Boarding-Karte nur bei echtem Kaltstart.

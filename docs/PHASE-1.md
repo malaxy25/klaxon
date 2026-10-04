@@ -1,5 +1,8 @@
 # Klaxon — Engine & Server (Phase 1+)
 
+> **Hinweis (historisch):** Paket-Scope heisst inzwischen `@klaxon/*`, die Engine `KlaxonGame`,
+> der Room `KlaxonRoom`, Runtime Node 26. Dieses Dokument zeigt den urspruenglichen Aufbau.
+
 Die host-agnostische Spiel-Engine in `shared` und der Colyseus-Adapter im Server.
 Vollstaendige Dateien mit Pfad - so sehen sie am Ende aus.
 

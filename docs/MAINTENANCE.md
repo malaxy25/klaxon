@@ -6,7 +6,7 @@ lokal bauen + einmal durchspielen, bevor du pushst** (Render deployt sonst kaput
 ## Die goldene Regel
 Nach JEDER Aenderung an Abhaengigkeiten oder Node:
 ```
-npm run build:shared && npm run build:server && npm run build -w @spaceteam/client
+npm run build:shared && npm run build:server && npm run build -w @klaxon/client
 ```
 Dann lokal starten (`npm run dev:server` + `npm run dev:client`) und mit `?debug`
 (Events/Hazards/Solve) einmal durchtesten. Erst danach committen und pushen.
@@ -43,7 +43,7 @@ npm audit fix       # sichere Fixes automatisch
 ## Node-Version
 - Der Server-Container nutzt die Node-Version aus dem **Dockerfile** (Repo-Root):
   ```
-  FROM node:24-alpine
+  FROM node:26-alpine
   ```
   Wenn ein Build ploetzlich streikt, ist die Node-Version der erste Verdacht. Zum
   Aendern nur diese Zeile anpassen (z. B. auf `node:26-alpine`) und lokal mit derselben

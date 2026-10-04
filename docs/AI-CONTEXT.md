@@ -23,7 +23,7 @@ unter Zeitdruck aus. Eigenstaendiger Klon, kein Original-Code.
 
 ## Tech-Stack (gepinnt via package-lock.json)
 Colyseus 0.18 (core 0.18.x, schema 5.x, sdk 0.18.x), Svelte 5, Vite 8, TypeScript 5,
-qrcode. Node im Container: siehe Dockerfile (`FROM node:24-alpine`). Genaue Versionen
+qrcode. Node im Container: siehe Dockerfile (`FROM node:26-alpine`). Genaue Versionen
 und Update-Anleitung: `docs/MAINTENANCE.md`.
 
 ## Lokal starten / bauen / testen
@@ -33,7 +33,7 @@ npm run dev:shared      # Engine im Watch-Modus
 npm run dev:server      # Colyseus lokal (Port 2567)
 npm run dev:client      # Vite Dev-Server
 # Build:
-npm run build:shared && npm run build:server && npm run build -w @spaceteam/client
+npm run build:shared && npm run build:server && npm run build -w @klaxon/client
 ```
 Tests: Die Engine ist deterministisch (seedbar) und wird mit kleinen `tsx`-Skripten
 simuliert; Netzwerk/Room-Verhalten mit einem @colyseus/sdk-Harness gegen einen lokal
@@ -57,12 +57,12 @@ gestarteten Server. (Keine feste Test-Suite im Repo - Skripte werden ad hoc gesc
 Zwei getrennte Render-Dienste, beide deployen automatisch bei `git push` auf `main`:
 
 1. **Server `klaxon-backend`** (Docker Web Service)
-   - Baut aus dem `Dockerfile` (Repo-Root): node:24-alpine, `npm ci`, baut shared+server,
+   - Baut aus dem `Dockerfile` (Repo-Root): node:26-alpine, `npm ci`, baut shared+server,
      startet `node packages/server/dist/main.js`, `EXPOSE 2567`.
    - Env-Variablen (siehe `docs/ENV.md`): optional `FEEDBACK_WEBHOOK`,
      `FEEDBACK_WEBHOOK_2`; Debug `FORCE_EVENT` u. a. `PORT` setzt Render selbst.
 2. **Client `klaxon` / (Suffix-URL)** (Static Site)
-   - Build Command: `npm install --include=dev && npm run build:shared && npm run build -w @spaceteam/client`
+   - Build Command: `npm install --include=dev && npm run build:shared && npm run build -w @klaxon/client`
    - Publish Directory: `packages/client/dist`
    - Env: `VITE_SERVER_URL=wss://klaxon-w8xo.onrender.com` (Build-Zeit!)
 

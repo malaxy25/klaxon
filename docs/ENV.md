@@ -52,4 +52,9 @@ Diese NICHT dauerhaft setzen - sie veraendern das Verhalten fuer alle Raeume:
 # DEBUG_TARGETS=1
 # SINGLE_PLAYER=1
 ```
-  (Node-Pin via .node-version=26; Render Static Site liest .node-version, alternativ ENV NODE_VERSION=26 setzen)
+
+---
+
+## Keep-warm / Health
+Kein Env noetig. Der Server hat `/health` (-> `ok`) und `/stats` (-> JSON). Das Warmhalten
+laeuft ueber einen externen Cron-Ping auf `/health` - Setup siehe **docs/DEPLOY.md -> "Keep-warm"**.

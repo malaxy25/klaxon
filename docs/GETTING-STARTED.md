@@ -1,5 +1,8 @@
 # Spaceteam Web — Getting Started
 
+> **Hinweis (historisch):** Paket-Scope heisst inzwischen `@klaxon/*`, die Engine `KlaxonGame`,
+> der Room `KlaxonRoom`, Runtime Node 26. Dieses Dokument zeigt den urspruenglichen Aufbau.
+
 Präzise Schritt-für-Schritt-Anleitung vom leeren Ordner bis zum ersten Deploy auf
 Render. In **Meilensteinen** (M0–M5); jeder endet mit etwas, das nachweislich läuft.
 

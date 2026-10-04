@@ -1,4 +1,4 @@
-# Spaceteam Web — Deploy auf Render + Smartphone-Test
+# Klaxon — Deploy auf Render + Smartphone-Test
 
 Ziel: Server und Client oeffentlich auf Render (Free), damit echte Handys im selben
 Raum nur eine `https://`-URL oeffnen und per QR beitreten - kein WLAN-/IP-/Firewall-
@@ -19,7 +19,7 @@ Kurzer Sanity-Check lokal, dass der Prod-Weg baut (spiegelt den Docker-Build):
 ```bash
 npm ci
 npm run build:shared && npm run build:server
-npm run start -w @spaceteam/server   # "lauscht auf ..."? dann Ctrl-C
+npm run start -w @klaxon/server   # "lauscht auf ..."? dann Ctrl-C
 ```
 
 ---
@@ -56,7 +56,7 @@ schlaeft nach 15 min ein) - das ist normal.
 2. Einstellungen:
    - **Build Command:**
      ```
-     npm install --include=dev && npm run build:shared && npm run build -w @spaceteam/client
+     npm install --include=dev && npm run build:shared && npm run build -w @klaxon/client
      ```
      (`--include=dev` erzwingt die Build-Tools vite/svelte/typescript, falls Render
      `NODE_ENV=production` setzt; `build:shared` ist Vorsichts-Massnahme.)
@@ -74,7 +74,7 @@ schlaeft nach 15 min ein) - das ist normal.
 > Woran du die beiden Dienste unterscheidest: Der **Server** ist ein *Web Service*
 > und zeigt beim Aufruf nach Leerlauf einen "waking up"-/Render-Bildschirm. Die
 > **Static Site** kommt sofort vom CDN (kein "waking up") und zeigt direkt den
-> Spaceteam-Startbildschirm. Siehst du ein "Service waking up", bist du auf einem
+> Klaxon-Startbildschirm. Siehst du ein "Service waking up", bist du auf einem
 > Web Service (deinem Server oder einer fremden Seite) - nicht auf deiner Static Site.
 5. Du bekommst eine URL wie `https://klaxon.onrender.com` - **das ist die Spiel-URL**,
    die du teilst.
@@ -108,17 +108,53 @@ lokal.
 
 - Der Server **schlaeft nach 15 min Leerlauf** und braucht ~30-50 s zum Aufwachen.
   Fuer einen Spieleabend: einmal aufwecken (Teil 3, Schritt 1), dann laeuft er.
-- Optional wach halten (gratis): ein Cron-Ping (z. B. cron-job.org) alle ~10 min auf
-  die Server-URL. Passt knapp in die 750 Render-Freistunden/Monat.
+- Optional wach halten (gratis) - siehe eigener Abschnitt **"Keep-warm"** unten.
 - Waechst es, ist Fly.io (schnelleres Aufwachen) oder ein bezahlter Render-Plan der
   naechste Schritt - ohne Code-Aenderung, nur anderes Deploy-Ziel.
 
 ---
 
+## Keep-warm (Server wach halten, gratis)
+
+Render-Free schlaeft nach **15 min ohne Anfrage** (Kaltstart dann ~30-60 s). Damit beim
+Spielen niemand warten muss, pingt ein externer Cron-Dienst regelmaessig den
+**Health-Endpoint** des Servers. Das klappt nur mit Intervall **< 15 min** (10 min ist der
+sichere Wert); seltener bringt nichts.
+
+**Health-Endpoint:** `https://klaxon-w8xo.onrender.com/health` -> antwortet `ok` (200).
+(Es gibt auch `/stats` -> JSON mit `rooms`/`players`/`uptimeSec`, das die Startseite fuer
+das "crews playing"-Badge nutzt.)
+
+**Eingerichtet bei [cron-job.org](https://cron-job.org) (gratis):**
+- **URL:** `https://klaxon-w8xo.onrender.com/health` (die **Server**-URL, nicht den Client
+  `klaxon-2dnv...` und nicht die Statusseite).
+- **Zeitplan (Expert/Cron):** `*/10 10-23 * * *` - alle 10 min, taeglich ~10:00-23:50.
+  (UI-Alternative: Minutes `*/10`, Hours `10-23`, Rest `*`.)
+- **Zeitzone** des Kontos auf **Europe/Zurich** stellen, sonst pingt es nach UTC.
+- **Request-Timeout** des Jobs ~60 s (Kaltstart kann so lange dauern).
+
+**Warum ein Zeitfenster statt 24/7?** 10:00-23:30 sind ~13,5 h/Tag ~= 405 h/Monat - gut
+unter den **750 Render-Freistunden/Monat** (24/7 waere ~744 h, zu knapp). Nachts schlaeft
+der Server bewusst; der erste Spieler am Morgen loest einen Kaltstart aus (die "Boarding"-
+Karte faengt das ab; sie erscheint nur bei echten Kaltstarts > 4 s).
+
+**Status-Monitor (optional, privat):** cron-job.org bietet eine Statusseite
+(`stat.klaxon.frehner.tech`, CNAME auf `...status.cron-job.org`). **Nicht** oeffentlich auf
+der Klaxon-Seite verlinken - nachts gibt es planmaessig Mess-Luecken, das saehe nach
+Dauerausfall aus. Fuer die eigene Kontrolle ok.
+
+**Alternativen:** UptimeRobot (5-min-Intervall, gratis) oder die eigene Synology-NAS per
+Aufgabenplaner (`curl https://klaxon-w8xo.onrender.com/health` alle 10 min).
+
+> Hinweis: "Dauer" bei cron-job.org = Antwortzeit (warm ~100 ms-1,4 s). Grosse Werte dort
+> sind meist **Jitter** (verspaetete Ausfuehrung), nicht Kaltstart.
+
+---
+
 ## Troubleshooting
 
-- **"provided room name spaceteam not defined":** Der Server laeuft mit altem Code
-  (ohne `SpaceteamRoom`) oder ein falscher Server. Sicherstellen, dass der aktuelle
+- **"provided room name klaxon not defined":** Der Server laeuft mit altem Code
+  (ohne `KlaxonRoom`) oder ein falscher Server. Sicherstellen, dass der aktuelle
   Stand gepusht und der Server neu deployt ist.
 - **Client verbindet nicht / "Connection failed":** `VITE_SERVER_URL` pruefen -
   `wss://`, korrekte Server-Subdomain, kein Port, kein Slash am Ende. Nach Aenderung
