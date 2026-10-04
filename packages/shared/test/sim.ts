@@ -30,6 +30,7 @@ g.addPlayer("C", "Cara");
 check("Erster Spieler ist Host", g.players.get("A")!.host === true);
 check("canStart() false ohne ready", g.canStart() === false);
 g.setReady("A", true); g.setReady("B", true); g.setReady("C", true);
+g.setStartLevel(1); // Mechanik-Tests auf ruhigem Level 1
 check("canStart() true wenn alle ready", g.canStart() === true);
 check("start() erfolgreich", g.start() === true);
 check("Phase = playing", g.phase === "playing");
@@ -74,6 +75,7 @@ console.log("== Ablauf (expiry): Zeit über Deadline ohne Lösen ==");
 const g2 = new KlaxonGame({ rng: mulberry32(7), now, singlePlayer: false });
 g2.addPlayer("X", "X"); g2.addPlayer("Y", "Y");
 g2.setReady("X", true); g2.setReady("Y", true);
+g2.setStartLevel(15); // kurze Instruktionszeit (7,5s < 18s Event-Schwelle) -> Expiry feuert sauber
 g2.start();
 const hBefore = g2.health;
 const oldIds = new Set(allInstructions(g2).map(i => i.id));

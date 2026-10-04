@@ -3,6 +3,14 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.59] - 2026-10-03
+### Added
+- **CI consistency guard** (`npm run check`): fails on leftover old names (`@spaceteam/*`,
+  `SpaceteamRoom/Game`) and on version/Node desync across package.json, client `VERSION`,
+  CHANGELOG, Dockerfile and `.node-version`.
+- **CI runs the engine simulation test** (`npm test`, deterministic) as a real regression gate;
+  made the expiry/level checks deterministic (fixed levels) and added `tsx` as a devDependency.
+
 ## [0.8.58] - 2026-10-03
 ### Fixed
 - **CI build failed:** the workflow still referenced the old workspace `@spaceteam/client`.

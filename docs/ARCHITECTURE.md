@@ -246,7 +246,7 @@ der Wechsel zwischen diesen Optionen ein Deploy-Ziel, kein Refactoring.
 | 2026-09-19 | Keine Datenbank | Flüchtige Räume; spart Kosten & Komplexität. |
 | 2026-09-19 | Render zuerst, Fly.io beim Wachsen | Gratis-Einstieg, klarer Migrationspfad. |
 | 2026-09-19 | Server als CommonJS + `tsc`-Build; `shared` als kompiliertes CommonJS-Paket | Colyseus 0.18 verlangt `experimentalDecorators`/CommonJS für `@type`-Schemas; offizieller Prod-Weg ist `tsc` → `node dist/main.js`, nicht Bundler. |
-| 2026-09-19 | Gesamte Spiellogik als reine `SpaceteamGame`-Engine in `shared`; Room ist nur Adapter | Testbar ohne Netzwerk (deterministischer PRNG); OpenSpaceTeam hatte die Logik an socket.io geklebt — wir trennen sie. |
+| 2026-09-19 | Gesamte Spiellogik als reine `KlaxonGame`-Engine in `shared`; Room ist nur Adapter | Testbar ohne Netzwerk (deterministischer PRNG); OpenSpaceTeam hatte die Logik an socket.io geklebt — wir trennen sie. |
 | 2026-09-19 | Health-vs-Todesgrenze-Modell + 1/6-Zielverteilung + Werte-als-String | Von OpenSpaceTeam adaptiert (Konzept, eigener Code); im Sandbox-Test bestätigt. |
 | 2026-09-19 | Disconnect im Spiel beendet die Runde (vorerst) | Pragmatisch wie OpenSpaceTeam; echtes Reconnect bleibt Phase 3. |
 | 2026-09-20 | Scope fixiert: gleicher Raum, kein Download, Englisch, Lernprojekt (Spende später) | Klärung mit Nutzer; streicht Voice/Remote, vereinfacht alles. |
@@ -293,12 +293,12 @@ studiert und in eigenem TS-Code neu implementiert (AGPL-sauber).
 - **Disconnect beendet die Runde** (bewusste Vereinfachung).
 
 Besser gemacht: Ihre Logik klebte an socket.io. Bei uns liegt die gesamte Logik in
-`shared` als reine `SpaceteamGame`-Engine; der Colyseus-`SpaceteamRoom` ist nur ein
+`shared` als reine `KlaxonGame`-Engine; der Colyseus-`KlaxonRoom` ist nur ein
 dünner Adapter (Messages rein, Engine-State → Schema raus, `clock`-Tick).
 
 Umgesetzte Dateien (in `packages/shared/src/`): `types.ts`, `rng.ts`,
 `technobabble.ts`, `difficulty.ts`, `panel.ts`, `instructions.ts`, `engine.ts`.
-Server: `packages/server/src/rooms/SpaceteamRoom.ts`, Registrierung in `main.ts`.
+Server: `packages/server/src/rooms/KlaxonRoom.ts`, Registrierung in `main.ts`.
 
 **Validierungsstand (in Node-22-Sandbox durchgespielt):**
 

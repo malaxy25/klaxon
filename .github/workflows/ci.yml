@@ -16,6 +16,8 @@ jobs:
           node-version-file: ".node-version"
           cache: npm
       - run: npm ci
+      - run: npm run check
       - run: npm run build:shared
       - run: npm run build:server
       - run: npm run build:client
+      - run: npm test
