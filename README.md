@@ -5,12 +5,12 @@ Open the page, share a QR code to join, and yell absurd technobabble commands at
 each other before the ship falls apart. An independent, original clone inspired by
 Spaceteam.
 
-**Play:** https://klaxon-2dnv.onrender.com
-**Current version:** 0.8.59 — see [CHANGELOG.md](CHANGELOG.md)
+**Play:** https://klaxon.frehner.tech
+**Current version:** 0.8.60 — see [CHANGELOG.md](CHANGELOG.md)
 
 ## What it is
 
-- Same-room co-op for **2–4 players**, each on their own phone or laptop.
+- Same-room co-op for **2–8 players**, each on their own phone or laptop.
 - Every player sees a cockpit of absurdly named controls. The commands *you* get
   usually target **someone else's** control — so you have to shout.
 - Health vs. a slowly rising "death limit" tug-of-war: fill health to 100 to clear a
@@ -18,8 +18,8 @@ Spaceteam.
 - No installation, no accounts. Create a room, share the code/QR, go.
 - Newcomers get a quick in-app **How to play** (rules + control legend).
 - The host picks a **difficulty** (Casual / Normal / Hard / Insane) in the lobby.
-- **End-of-game stats** (MVP, most-ignored, per-crew scoreboard) and an in-game
-  **feedback** box (no account, no email).
+- **End-of-game stats** (crew rank, personal best, MVP, most-ignored, per-crew
+  scoreboard) and an in-game **feedback** box (no account, no email).
 
 ## Tech
 
@@ -59,5 +59,6 @@ independent and not affiliated with or endorsed by them.
 
 ## License
 
-No license set yet. If you plan to share it, add one (MIT is a common permissive
-choice for a project like this).
+**MIT** — see [LICENSE](LICENSE). You're free to copy, modify, run, and share it.
+If you fork it or run it somewhere, I'd genuinely love to hear about it — open an
+issue on the repo. (Not required, just kind.)

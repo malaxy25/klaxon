@@ -2,7 +2,7 @@
 
 Der Svelte-Client. Vollstaendige Dateien mit Pfad. BOM-frei + ASCII (siehe GETTING-STARTED.md).
 
-## Neu in v0.8.37
+## Client-Referenz (Momentaufnahme, kann hinter dem Code liegen)
 
 - Rewire = Stecker in leuchtende Buchse ziehen (Pick-and-Drop); Hazard-Groessen-Mapping in der Engine.
 

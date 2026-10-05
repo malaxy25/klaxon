@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.60] - 2026-10-04
+### Changed
+- **README updated:** players 2-4 -> **2-8**, play URL -> `klaxon.frehner.tech`, License
+  section now correctly states **MIT** (was "no license set yet"), stats bullet mentions
+  crew rank + personal best. CLIENT.md header marked as a snapshot.
+
 ## [0.8.59] - 2026-10-03
 ### Added
 - **CI consistency guard** (`npm run check`): fails on leftover old names (`@spaceteam/*`,

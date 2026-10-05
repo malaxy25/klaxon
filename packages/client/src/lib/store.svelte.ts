@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.59";
+export const VERSION = "0.8.60";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
