@@ -1,0 +1,86 @@
+name: Release
+# Publishes a GitHub Release for every new version - same idea as Verbalis, without a build
+# (Klaxon is deployed by Render on every push; nothing to download).
+#
+# Runs when CI has finished green for a push to main:
+#   - version in package.json already has a release -> nothing happens
+#   - new version -> CHANGELOG.md must have "## [x.y.z] - date"; the tag vX.Y.Z is created on the
+#     tested commit (an existing tag is reused) and ONE release with that CHANGELOG section is published.
+#   So a release = raise the version (3 places) + CHANGELOG section + push. No manual tagging.
+# frehner.tech reads releases/latest for the version badge on the Klaxon card.
+
+on:
+  workflow_run:
+    workflows: ["CI"]   # must match the name in ci.yml exactly
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create the tag and the release
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}   # exactly the tested commit
+          fetch-depth: 0
+
+      - name: Read version, decide whether to release
+        id: read
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "v$version is already released - nothing to do"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version $version - publishing release"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Release notes from CHANGELOG
+        if: steps.read.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          set -euo pipefail
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+            END { if (!found) exit 1 }
+          ' CHANGELOG.md > release-notes.md || { echo "::error::CHANGELOG.md has no section ## [$VERSION]"; exit 1; }
+          printf '\nPlay: https://klaxon.frehner.tech\n' >> release-notes.md
+          cat release-notes.md
+
+      - name: Create the version tag on the tested commit (if missing)
+        if: steps.read.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "Tag v$VERSION exists - reusing it"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "v$VERSION" "$SHA" -m "Version $VERSION"
+            git push origin "v$VERSION"
+          fi
+
+      - name: Publish GitHub Release
+        if: steps.read.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: gh release create "v$VERSION" --title "Klaxon $VERSION" --notes-file release-notes.md --verify-tag --latest

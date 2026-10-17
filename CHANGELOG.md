@@ -3,6 +3,12 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.61] - 2026-10-17
+### Added
+- **GitHub Releases:** `.github/workflows/release.yml` publishes a release for every new version
+  after green CI on main (tag created automatically, notes = this CHANGELOG section). No game
+  changes. frehner.tech shows the latest release as the version badge on the Klaxon card.
+
 ## [0.8.60] - 2026-10-04
 ### Changed
 - **README updated:** players 2-4 -> **2-8**, play URL -> `klaxon.frehner.tech`, License

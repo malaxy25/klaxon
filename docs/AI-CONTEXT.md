@@ -44,7 +44,8 @@ gestarteten Server. (Keine feste Test-Suite im Repo - Skripte werden ad hoc gesc
   Fehler. Projektordner NICHT in OneDrive.
 - **Release-Workflow:** Aenderungen kommen als ZIP; anwenden mit
   `Expand-Archive -Force` ins Repo, dann `git add -A; git commit; git push`.
-  (Tags optional: `git tag -a vX.Y.Z -m "..."; git push --follow-tags`.)
+  Kein manuelles Taggen: nach gruener CI auf `main` erstellt `.github/workflows/release.yml`
+  Tag und GitHub-Release fuer jede neue Version (Notes = CHANGELOG-Abschnitt).
   Merke: `git push` schiebt den Branch - `git push --tags` allein tut das NICHT.
 - **Versionierung:** Version an drei Stellen synchron halten: `package.json` (root),
   `VERSION` in `packages/client/src/lib/store.svelte.ts` (zeigt im Footer), und ein
