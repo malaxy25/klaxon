@@ -1,6 +1,5 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.62";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -55,7 +54,19 @@ export const S = $state({
   debug: false,
   stats: null as any,
   feedbackSent: false,
+  version: "",
 });
+
+// Version = neuestes GitHub-Release (steht in keiner Datei); offline der letzte bekannte Stand.
+S.version = lsGet("klaxon_version", "");
+fetch("https://api.github.com/repos/malaxy25/klaxon/releases/latest")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((rel) => {
+    if (!rel?.tag_name) return;
+    S.version = String(rel.tag_name).replace(/^v/, "");
+    lsSet("klaxon_version", S.version);
+  })
+  .catch(() => {});
 
 const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? "ws://localhost:2567";
 const HTTP_URL = SERVER_URL.replace(/^ws/, "http"); // ws->http, wss->https

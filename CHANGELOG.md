@@ -3,6 +3,10 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+> **Frozen at 0.8.62.** From 0.8.63 on, versions are created automatically on every push
+> (patch +1, `[minor]`/`[major]` in the commit subject) and the notes live in the
+> [GitHub Releases](https://github.com/malaxy25/klaxon/releases).
+
 ## [0.8.62] - 2026-10-18
 ### Added
 - **Feedback: optional email + contact consent.** Game-over feedback has an optional email field

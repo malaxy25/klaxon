@@ -59,7 +59,7 @@ npm audit fix       # sichere Fixes automatisch
 ## Deploy & Verifikation
 - Push auf `main` -> beide Render-Dienste deployen automatisch (Server aus Dockerfile,
   Client als Static Site). Details: `docs/DEPLOY.md`, Variablen: `docs/ENV.md`.
-- **Nach dem Deploy pruefen:** Footer zeigt die neue Versionsnummer; Server-Logs im
+- **Nach dem Deploy pruefen:** Release auf GitHub erstellt (Footer zeigt es nach ein paar Minuten); Server-Logs im
   Render-Dashboard ohne Fehler; kurz eine Runde mit zwei Geraeten testen.
 - **Cold Start:** Der Free-Tier-Server "schlaeft" nach Leerlauf ein; der erste Zugriff
   dauert ~30-60 s (Client zeigt ein Reconnect/Connecting-Overlay). Fuer eine Party den

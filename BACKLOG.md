@@ -2,7 +2,7 @@
 
 Offene Punkte aus Playtests und Ideen. Wir gehen sie **einzeln** an: pro Punkt steht
 hier ein Loesungsplan; bevor gebaut wird, besprechen wir den Ansatz im Chat und
-verfeinern ihn. Erledigtes wandert ins [CHANGELOG](CHANGELOG.md).
+verfeinern ihn. Erledigtes steht in den [Releases](https://github.com/malaxy25/klaxon/releases).
 
 Legende: **Prio** hoch/mittel/niedrig, **Aufwand** S/M/L.
 

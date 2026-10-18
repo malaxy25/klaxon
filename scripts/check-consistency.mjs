@@ -1,4 +1,5 @@
-// Konsistenz-Guard fuer CI: faengt mechanische Drift ab (alte Namen, Versions-/Node-Desync).
+// Konsistenz-Guard fuer CI: faengt mechanische Drift ab (alte Namen, Node-Desync).
+// Die Version steht in keiner Datei mehr (automatisch aus Git-Tags, siehe release.yml).
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -26,13 +27,6 @@ function walk(dir, rel = "") {
 }
 walk(process.cwd());
 
-const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-const v = pkg.version;
-const storeV = (readFileSync("packages/client/src/lib/store.svelte.ts", "utf8").match(/VERSION\s*=\s*"([^"]+)"/) || [])[1];
-const clV = (readFileSync("CHANGELOG.md", "utf8").match(/##\s*\[([^\]]+)\]/) || [])[1];
-if (storeV !== v) errors.push(`Version: package.json ${v} != store VERSION ${storeV}`);
-if (clV !== v) errors.push(`Version: package.json ${v} != CHANGELOG oben ${clV}`);
-
 const dockerNode = (readFileSync("Dockerfile", "utf8").match(/FROM node:(\d+)/) || [])[1];
 const nodeVer = readFileSync(".node-version", "utf8").trim().split(".")[0];
 if (dockerNode !== nodeVer) errors.push(`Node: Dockerfile node:${dockerNode} != .node-version ${nodeVer}`);
@@ -42,4 +36,4 @@ if (errors.length) {
   for (const e of errors) console.error("  - " + e);
   process.exit(1);
 }
-console.log("Konsistenz-Check ok (Namen, Version synchron, Node synchron).");
+console.log("Konsistenz-Check ok (Namen, Node synchron).");

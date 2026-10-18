@@ -45,11 +45,14 @@ gestarteten Server. (Keine feste Test-Suite im Repo - Skripte werden ad hoc gesc
 - **Release-Workflow:** Aenderungen kommen als ZIP; anwenden mit
   `Expand-Archive -Force` ins Repo, dann `git add -A; git commit; git push`.
   Kein manuelles Taggen: nach gruener CI auf `main` erstellt `.github/workflows/release.yml`
-  Tag und GitHub-Release fuer jede neue Version (Notes = CHANGELOG-Abschnitt).
+  Tag und GitHub-Release, sobald sich die App seit dem letzten Tag geaendert hat.
   Merke: `git push` schiebt den Branch - `git push --tags` allein tut das NICHT.
-- **Versionierung:** Version an drei Stellen synchron halten: `package.json` (root),
-  `VERSION` in `packages/client/src/lib/store.svelte.ts` (zeigt im Footer), und ein
-  Eintrag in `CHANGELOG.md`.
+- **Versionierung (automatisch, ab 0.8.63):** Die Version steht in KEINER Datei. Der
+  Release-Workflow nimmt den letzten Tag und zaehlt Patch +1; `[minor]` bzw. `[major]` im
+  Commit-Betreff zaehlt die entsprechende Stelle hoch. Release-Notes = Commit-Betreffe, also
+  aussagekraeftige Betreffe ohne Versionsnummer schreiben. Der Footer liest `releases/latest`
+  von GitHub (offline: letzter bekannter Stand). `CHANGELOG.md` ist bis 0.8.62 eingefroren.
+  Gleiches Schema wie office-darts.
 - **Debug:** Spiel mit `?debug` oeffnen ODER im Home-Footer die Version 5x tippen ->
   Host-Debug-Panel (Events ausloesen, Hazards, Health/Sektor, Solve, Pause, Sounds,
   Server-Stats). Env `FORCE_EVENT=<typ>` erzwingt serverseitig einen Event-Typ.
@@ -82,8 +85,8 @@ Weitere Deploy-Details, Render-Eigenheiten (globale Namen -> Suffix-URLs, Cold S
 
 ## Einstiegs-Prompt fuer die naechste KI (zum Kopieren)
 > Hier ist mein Projekt "Klaxon" (Repo/ZIP). Lies zuerst docs/AI-CONTEXT.md, README.md,
-> docs/ARCHITECTURE.md, docs/CLIENT.md, docs/DEPLOY.md und CHANGELOG.md. Fasse dann in
+> docs/ARCHITECTURE.md, docs/CLIENT.md, docs/DEPLOY.md und die GitHub-Releases. Fasse dann in
 > wenigen Saetzen die Architektur, den aktuellen Stand und die offenen Punkte (BACKLOG)
 > zusammen und warte auf meine Aufgabe. Arbeitsweise: Aenderungen als anwendbares ZIP
-> (ich mache Expand-Archive + git push), ASCII/BOM-frei, Version an den drei Stellen
-> synchron halten, vor jedem Push lokal bauen und testen.
+> (ich mache Expand-Archive + git push), ASCII/BOM-frei, keine Versionsnummer pflegen
+> (kommt automatisch aus den Releases), vor jedem Push lokal bauen und testen.

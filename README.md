@@ -6,7 +6,7 @@ each other before the ship falls apart. An independent, original clone inspired 
 Spaceteam.
 
 **Play:** https://klaxon.frehner.tech
-**Current version:** 0.8.61 — see [CHANGELOG.md](CHANGELOG.md)
+**Current version:** see [Releases](https://github.com/malaxy25/klaxon/releases) (versioned automatically on every push)
 
 ## What it is
 
@@ -38,7 +38,7 @@ Deployed on Render: server as a Docker web service, client as a static site.
 - Game engine + server internals: [docs/PHASE-1.md](docs/PHASE-1.md)
 - Client (UI): [docs/CLIENT.md](docs/CLIENT.md)
 - Deploy to Render: [docs/DEPLOY.md](docs/DEPLOY.md)
-- Changes: [CHANGELOG.md](CHANGELOG.md)
+- Changes: [Releases](https://github.com/malaxy25/klaxon/releases) (up to 0.8.62: [CHANGELOG.md](CHANGELOG.md))
 - Backlog / known issues & ideas: [BACKLOG.md](BACKLOG.md)
 - Environment variables: [docs/ENV.md](docs/ENV.md)
 - Usage logging: [docs/STATS.md](docs/STATS.md)
@@ -48,7 +48,7 @@ Deployed on Render: server as a Docker web service, client as a static site.
 ## Status
 
 Personal learning project — the journey is the point. Playable and deployed. See the
-changelog for what's done and the architecture doc's roadmap for what's next.
+releases for what's done and the architecture doc's roadmap for what's next.
 
 ## Credits & legal
 

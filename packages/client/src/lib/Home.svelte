@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { S, createGame, joinByCode, updateName, openHelp, setDebug, fetchStats, VERSION, REPO_URL, DONATE_URL, VIDEO_URL } from "./store.svelte";
+  import { S, createGame, joinByCode, updateName, openHelp, setDebug, fetchStats, REPO_URL, DONATE_URL, VIDEO_URL } from "./store.svelte";
   let code = $state((new URLSearchParams(location.search).get("r") || "").toUpperCase().slice(0, 6));
 
   let verTaps = 0; let verTimer: ReturnType<typeof setTimeout>;
@@ -42,7 +42,7 @@
   <p class="seeit">See it in action</p>
   <video class="trailer" src="/klaxon-trailer.mp4" poster="/klaxon-trailer-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
 
-  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon v{VERSION}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
+  <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon{#if S.version} v{S.version}{/if}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>
 <style>
   .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
