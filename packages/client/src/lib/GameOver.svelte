@@ -35,9 +35,15 @@
   const VERDICTS: [string, string][] = [["too_easy", "Too easy"], ["just_right", "Just right"], ["too_hard", "Too hard"]];
   let verdict = $state("");
   let fb = $state("");
+  let email = $state("");
+  let contact = $state(false);
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  let emailOk = $derived(EMAIL_RE.test(email.trim()));
+  let emailBad = $derived(email.trim() !== "" && !emailOk);
+  $effect(() => { if (!emailOk) contact = false; });
   const submit = () => {
     const payload = (verdict ? "[" + verdict + "] " : "") + fb.trim();
-    if (payload.trim()) sendFeedback(payload);
+    if (payload.trim() && !emailBad) sendFeedback(payload, emailOk ? email.trim() : "", contact);
   };
 </script>
 
@@ -77,14 +83,21 @@
     {#if S.feedbackSent}
       <p class="thanks">Thanks for the feedback!</p>
     {:else}
-      <span class="fb-q">How was it? (sent to the dev, no name/email needed)</span>
+      <span class="fb-q">How was it? (sent to the dev, email optional)</span>
       <div class="chips">
         {#each VERDICTS as [v, label] (v)}
           <button class="chip" class:sel={verdict === v} onclick={() => (verdict = verdict === v ? "" : v)}>{label}</button>
         {/each}
       </div>
       <textarea class="input fb" rows="2" maxlength="500" bind:value={fb} placeholder="Anything to add? A bug? An idea?"></textarea>
-      <button class="btn wide" disabled={!verdict && !fb.trim()} onclick={submit}>Send feedback</button>
+      <input class="input fb" class:bad={emailBad} type="email" maxlength="120" autocomplete="email" bind:value={email} placeholder="Email (optional)" />
+      {#if emailBad}<span class="fb-err">Please enter a valid email address.</span>{/if}
+      <label class="fb-contact" class:off={!emailOk}>
+        <input type="checkbox" bind:checked={contact} disabled={!emailOk} />
+        You may contact me about my feedback
+      </label>
+      {#if email.trim() || contact}<span class="fb-privacy">Your email is only used to reply to your feedback and never shared.</span>{/if}
+      <button class="btn wide" disabled={(!verdict && !fb.trim()) || emailBad} onclick={submit}>Send feedback</button>
     {/if}
   </div>
 
@@ -121,6 +134,11 @@
   .chip { flex: 1; background: var(--panel); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 8px 6px; font-size: 0.85rem; cursor: pointer; }
   .chip.sel { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); font-weight: 700; }
   .input.fb { letter-spacing: 0; font-size: 0.95rem; resize: vertical; font-family: inherit; }
+  .input.fb.bad { border-color: var(--danger); }
+  .fb-err { color: var(--danger); font-size: 0.8rem; margin-top: -4px; }
+  .fb-contact { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.85rem; cursor: pointer; }
+  .fb-contact.off { color: var(--muted); cursor: default; }
+  .fb-privacy { color: var(--muted); font-size: 0.76rem; margin-top: -4px; }
   .thanks { color: var(--ok); text-align: center; font-weight: 600; }
   .coffee { display:block; text-align:center; margin-top:14px; color: var(--muted); font-size:0.8rem; text-decoration:none; }
   .coffee:hover { color: var(--amber); }

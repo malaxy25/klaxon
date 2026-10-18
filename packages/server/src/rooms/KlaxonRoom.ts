@@ -155,10 +155,15 @@ export class KlaxonRoom extends Room {
       const p = this.game.players.get(client.sessionId);
       if (p?.host && this.game.phase === "lobby") { this.game.setStartLevel(Number(level)); this.syncFull(); }
     });
-    this.onMessage("feedback", (client, text: string) => {
+    this.onMessage("feedback", (client, m: unknown) => {
       const p = this.game.players.get(client.sessionId);
-      const clean = String(text ?? "").slice(0, 500).trim();
+      const o = (typeof m === "object" && m ? m : { text: m }) as { text?: unknown; email?: unknown; contact?: unknown };
+      const clean = String(o.text ?? "").slice(0, 500).trim();
       if (!clean) return;
+      // Email optional; ungueltig -> verworfen. Geht nur ans Sheet (JSON), nie in ntfy-Text/Logs.
+      const rawEmail = String(o.email ?? "").trim().slice(0, 120);
+      const email = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) ? rawEmail : "";
+      const contact = !!email && o.contact === true;
       const line = `[Klaxon] ${p?.name || "?"} (sector ${this.game.level}, diff ${this.game.startLevel}): ${clean}`;
       console.log("FEEDBACK", line);
       const send = (hook: string) => {
@@ -166,7 +171,7 @@ export class KlaxonRoom extends Room {
         const isText = /ntfy\.sh/i.test(hook);
         const init = isText
           ? { method: "POST", headers: { "Content-Type": "text/plain" }, body: line }
-          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line, event: "feedback", rid: this.roomId, room: this.state.code, pid: client.sessionId, msg: clean }) };
+          : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: line, text: line, event: "feedback", rid: this.roomId, room: this.state.code, pid: client.sessionId, msg: clean, email, contact: contact ? "yes" : "no" }) };
         fetch(hook, init).catch((e) => console.error("feedback webhook failed:", e));
       };
       const hooks = [process.env.FEEDBACK_WEBHOOK, process.env.FEEDBACK_WEBHOOK_2]

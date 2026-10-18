@@ -1,6 +1,6 @@
 import { Client } from "@colyseus/sdk";
 
-export const VERSION = "0.8.61";
+export const VERSION = "0.8.62";
 export const REPO_URL = "https://github.com/malaxy25/klaxon";
 export const DONATE_URL = "https://buymeacoffee.com/malaxy";
 export const VIDEO_URL = ""; // set to a short gameplay clip (YouTube/Shorts) to show a "Watch" button
@@ -454,7 +454,7 @@ export async function joinGame(id: string) {
 }
 
 export function setDifficulty(level: number) { room?.send("setDifficulty", level); }
-export function sendFeedback(text: string) { room?.send("feedback", text); }
+export function sendFeedback(text: string, email = "", contact = false) { room?.send("feedback", { text, email, contact }); }
 export async function joinByCode(code: string) {
   ensureAudio();
   const cc = code.trim().toUpperCase();

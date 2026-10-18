@@ -3,6 +3,16 @@
 All notable changes to Klaxon. Format loosely follows Keep a Changelog; versioning is
 informal for a hobby project.
 
+## [0.8.62] - 2026-10-18
+### Added
+- **Feedback: optional email + contact consent.** Game-over feedback has an optional email field
+  (validated in client and server) and a "You may contact me" checkbox (only with a valid email),
+  plus a short privacy note. Email/contact go only to the Google Sheet (`email`, `contact` columns),
+  never to ntfy or the server log.
+- **Apps Script (docs/STATS.md) is generic:** columns are matched by header name and new fields
+  get appended as new columns automatically. Daily digest email (`dailyFeedbackDigest`) when there
+  was new feedback; set up once via `setupDailyDigest`.
+
 ## [0.8.61] - 2026-10-17
 ### Added
 - **GitHub Releases:** `.github/workflows/release.yml` publishes a release for every new version
