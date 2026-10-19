@@ -2,16 +2,17 @@
   import { difficultyForLevel } from "@klaxon/shared";
   import { S, me, toggleMute } from "./store.svelte";
   import Control from "./Control.svelte";
+  import Coach from "./Coach.svelte";
 
   let mine = $derived(me());
   let marginPct = $derived(Math.max(0, Math.min(100, ((S.health - S.deathLimit) / Math.max(1, 100 - S.deathLimit)) * 100)));
   let danger = $derived(S.health - S.deathLimit < 20);
-  let cmdMs = $derived(difficultyForLevel(S.level).instructionTimeMs);
+  let cmdMs = $derived(S.tutorial ? S.cmdMs : difficultyForLevel(S.level).instructionTimeMs);
 </script>
 
 <div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
   <header class="hud">
-    <span class="sector">SECTOR {S.level}</span>
+    <span class="sector">{S.tutorial ? `TRAINING ${S.tutStep}/${S.tutTotal}` : `SECTOR ${S.level}`}</span>
     <div class="bar" class:danger>
       <div class="health" style="width:{marginPct}%"></div>
     </div>
@@ -21,14 +22,16 @@
 
   <section class="command">
     {#key mine?.instructionText}
-      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText ?? "Stand by..."}</div>
-      <div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>
+      <div class="command-inner" class:pulse={S.flash === "good"}>{mine?.instructionText || "Stand by..."}</div>
+      {#if cmdMs > 0}<div class="timer"><div class="timer-fill" style="animation-duration: {cmdMs}ms"></div></div>{/if}
     {/key}
   </section>
 
+  {#if S.tutorial}<Coach />{/if}
+
   <section class="panel">
     {#each mine?.panel ?? [] as c (c.id)}
-      <Control control={c} />
+      <Control control={c} highlight={c.id === mine?.hlControlId} />
     {/each}
   </section>
 

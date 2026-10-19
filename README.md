@@ -16,7 +16,9 @@ Spaceteam.
 - Health vs. a slowly rising "death limit" tug-of-war: fill health to 100 to clear a
   sector; each sector gets faster and harsher.
 - No installation, no accounts. Create a room, share the code/QR, go.
-- Newcomers get a quick in-app **How to play** (rules + control legend).
+- Newcomers get a quick in-app **How to play** (rules + control legend) and a guided
+  **Training** mode: the crew is walked through reading out, every control type, all
+  panel failures and all crew alerts - no timer, no damage.
 - The host picks a **difficulty** (Casual / Normal / Hard / Insane) in the lobby.
 - **End-of-game stats** (crew rank, personal best, MVP, most-ignored, per-crew
   scoreboard) and an in-game **feedback** box (no account, no email).

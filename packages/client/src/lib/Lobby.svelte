@@ -7,6 +7,7 @@
   let canStart = $derived(S.players.length >= 2 && S.players.every((p) => p.ready));
 
   const DIFFS = [
+    { label: "Training", level: 0 },
     { label: "Casual", level: 1 },
     { label: "Normal", level: 3 },
     { label: "Hard", level: 5 },
@@ -89,6 +90,7 @@
         {/each}
       </div>
     {/if}
+    <p class="motion-hint">{S.startLevel === 0 ? "Guided walkthrough - no timer, no damage. Takes about 10 minutes." : "New crew? Start with Training."}</p>
   </div>
 
   <div class="difficulty">
@@ -104,7 +106,7 @@
   </button>
 
   {#if mine?.host}
-    <button class="btn wide primary" disabled={!canStart} onclick={start}>Start game</button>
+    <button class="btn wide primary" disabled={!canStart} onclick={start}>{S.startLevel === 0 ? "Start training" : "Start game"}</button>
     {#if !canStart}<p class="hint">Need at least 2 players, everyone ready.</p>{/if}
   {/if}
   <button class="helplink" onclick={() => (location.href = location.pathname)}>Leave room</button>

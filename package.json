@@ -14,7 +14,7 @@
     "start:debug": "npm run start:debug -w @klaxon/server",
     "build:client": "npm run build -w @klaxon/client",
     "check": "node scripts/check-consistency.mjs",
-    "test": "tsx packages/shared/test/sim.ts"
+    "test": "tsx packages/shared/test/sim.ts && tsx packages/shared/test/tutorial.ts"
   },
   "license": "MIT",
   "devDependencies": {

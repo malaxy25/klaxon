@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { setControl, clearHazard, type ControlView } from "./store.svelte";
-  let { control }: { control: ControlView } = $props();
+  let { control, highlight = false }: { control: ControlView; highlight?: boolean } = $props();
 
   const press = () => setControl(control.id, "");
   const flip = () => setControl(control.id, control.value === "true" ? "false" : "true");
@@ -180,7 +180,7 @@
   onDestroy(() => { endHold(); wipeCleanup(); dialEnd(); rwEnd(); });
 </script>
 
-<div class="control kind-{control.kind}" class:hazarded={!!control.hazard}
+<div class="control kind-{control.kind}" class:hazarded={!!control.hazard} class:coach-hl={highlight}
      style="grid-column: span {control.w}; grid-row: span {control.h};">
   <div class="face">
     {#if control.kind === "button"}
@@ -267,6 +267,10 @@
   .kind-slider   { border-top-color: var(--amber); }
   .kind-selector { border-top-color: #7cc4e8; }
   .control.hazarded { filter: brightness(0.85); }
+  /* Training: Ziel-Control pulsiert */
+  .control.coach-hl { outline: 3px solid var(--amber); outline-offset: -1px; box-shadow: 0 0 16px rgba(245,166,35,0.75); }
+  @media (prefers-reduced-motion: no-preference) { .control.coach-hl { animation: coachpulse 1s ease-in-out infinite; } }
+  @keyframes coachpulse { 0%,100% { outline-color: var(--amber); } 50% { outline-color: rgba(245,166,35,0.25); } }
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {

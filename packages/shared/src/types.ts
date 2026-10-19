@@ -35,7 +35,7 @@ export interface Difficulty {
 }
 
 export interface GameEvent {
-  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "overheat" | "rewire" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared";
+  type: "completed" | "expired" | "nextLevel" | "gameOver" | "broke" | "slimed" | "frozen" | "electro" | "overheat" | "rewire" | "repaired" | "eventStart" | "eventPassed" | "eventFailed" | "sectorCleared" | "tutorialStep" | "tutorialSuccess" | "tutorialEnd";
   playerId?: string;
   controlId?: string;
   playerIds?: string[];

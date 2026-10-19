@@ -35,6 +35,12 @@ class PlayerSchema extends Schema {
   @type("number") statCompleted = 0;
   @type("number") statExpired = 0;
   @type("boolean") eventDone = false;
+  // Training: Infobox pro Spieler
+  @type("string") coachRole = "";
+  @type("string") coachText = "";
+  @type("boolean") coachAck = false;
+  @type("boolean") coachAcked = false;
+  @type("string") hlControlId = "";
   // nur mit DEBUG_TARGETS=1 befüllt (für automatisierte Tests):
   @type("string") dbgTargetControlId = "";
   @type("string") dbgTargetValue = "";
@@ -51,6 +57,11 @@ class GameState extends Schema {
   @type("number") eventMs = 0;
   @type("boolean") intermission = false;
   @type("number") intermissionMs = 0;
+  @type("boolean") tutorial = false;
+  @type("number") tutStep = 0;
+  @type("number") tutTotal = 0;
+  @type("string") tutTitle = "";
+  @type("number") cmdMs = 0; // Training: Timer-Dauer pro Befehl, 0 = kein Timer
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -68,6 +79,8 @@ export class KlaxonRoom extends Room {
   private peak = 0;
   private motionPlayers = new Set<string>();
   private debugAuthed = new Set<string>();
+  private tutorialAborted = false;
+  private tutorialStepSeen = 0;
 
   onCreate(options: any) {
     this.game = new KlaxonGame({ singlePlayer: process.env.SINGLE_PLAYER === "1" });
@@ -75,6 +88,7 @@ export class KlaxonRoom extends Room {
     this.setMetadata({ code });
     this.state.code = code;
     this.game.forceEvent = process.env.FORCE_EVENT || "";
+    if (options?.training === true) this.game.setStartLevel(0); // neue Hosts: Training vorgewaehlt
     this.createdAt = Date.now();
 
     this.onMessage("setName", (client, name: string) => {
@@ -88,7 +102,7 @@ export class KlaxonRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; postStat({ event: "start", rid: this.roomId, room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; this.tutorialAborted = false; this.tutorialStepSeen = 1; postStat({ event: "start", rid: this.roomId, room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
@@ -100,6 +114,15 @@ export class KlaxonRoom extends Room {
     });
     this.onMessage("motion", (client, on: boolean) => {
       if (on) this.motionPlayers.add(client.sessionId); else this.motionPlayers.delete(client.sessionId);
+    });
+    this.onMessage("tutorialAck", (client) => {
+      emitSync(this.game.ackTutorial(client.sessionId));
+    });
+    this.onMessage("tutorialSkip", (client) => {
+      if (isHost(client)) emitSync(this.game.skipTutorialStep());
+    });
+    this.onMessage("tutorialEnd", (client) => {
+      if (isHost(client)) { this.tutorialAborted = true; emitSync(this.game.endTutorial()); }
     });
     this.onMessage("eventAction", (client) => {
       const events = this.game.markEventDone(client.sessionId);
@@ -228,6 +251,18 @@ export class KlaxonRoom extends Room {
 
   private emitEvent(e: GameEvent) {
     this.broadcast("evt", e);
+    if (e.type === "tutorialStep" && this.game.tutorial) {
+      // pro erreichtem Schritt einmal loggen (wo brechen Crews ab?)
+      const n = this.game.tutorial.stepNo();
+      if (n > this.tutorialStepSeen) {
+        this.tutorialStepSeen = n;
+        postStat({ event: "tutorial", rid: this.roomId, room: this.state.code, players: this.game.players.size, step: n, total: this.game.tutorial.total(), title: this.game.tutorial.title() });
+      }
+    }
+    if (e.type === "tutorialEnd") {
+      postStat({ event: "tutorialEnd", rid: this.roomId, room: this.state.code, players: this.game.players.size, step: this.tutorialStepSeen, aborted: this.tutorialAborted, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
+      this.unlock();
+    }
     if (e.type === "gameOver" && !this.endLogged) {
       this.endLogged = true;
       postStat({ event: "end", rid: this.roomId, room: this.state.code, players: this.game.players.size, peakPlayers: this.peak, startSector: this.game.startLevel, endSector: this.game.level, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
@@ -241,9 +276,15 @@ export class KlaxonRoom extends Room {
     this.state.deathLimit = Math.round(this.game.deathLimit);
     this.state.startLevel = this.game.startLevel;
     this.state.eventType = this.game.event?.type ?? "";
-    this.state.eventMs = this.game.event ? 6000 : 0;
+    this.state.eventMs = this.game.event?.ms ?? 0;
     this.state.intermission = !!this.game.intermission;
     this.state.intermissionMs = this.game.intermission ? 10000 : 0;
+    const tut = this.game.tutorial;
+    this.state.tutorial = !!tut;
+    this.state.tutStep = tut ? tut.stepNo() : 0;
+    this.state.tutTotal = tut ? tut.total() : 0;
+    this.state.tutTitle = tut ? tut.title() : "";
+    this.state.cmdMs = tut ? tut.timerMs() : 0;
   }
 
   private syncFull() {
@@ -263,6 +304,12 @@ export class KlaxonRoom extends Room {
       sp.statCompleted = ep.statCompleted;
       sp.statExpired = ep.statExpired;
       sp.eventDone = this.game.event ? this.game.event.done.has(ep.id) : false;
+      const coach = this.game.tutorial?.coach(ep.id);
+      sp.coachRole = coach?.role ?? "";
+      sp.coachText = coach?.text ?? "";
+      sp.coachAck = coach?.ack ?? false;
+      sp.coachAcked = coach?.acked ?? false;
+      sp.hlControlId = coach?.highlight ?? "";
       const showDbg = this.debug || this.reveal;
       sp.dbgTargetControlId = showDbg ? (ep.instruction?.targetControlId ?? "") : "";
       sp.dbgTargetValue = showDbg ? (ep.instruction?.targetValue ?? "") : "";

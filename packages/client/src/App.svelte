@@ -45,7 +45,7 @@
 {#if S.intermission}<SectorOverlay />{/if}
 {#if S.eventType}<EventOverlay />{/if}
 {#if S.eventResult}
-  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : "HULL BREACH"}</div>
+  <div class="ev-result {S.eventResult}">{S.eventResult === "passed" ? "SURVIVED" : S.tutorial ? "TRY AGAIN" : "HULL BREACH"}</div>
 {/if}
 {#if S.reconnecting}<div class="reconnect-overlay"><div class="rc-box">Reconnecting...</div></div>{/if}
 {#if S.connecting}<Connecting />{/if}

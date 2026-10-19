@@ -5,3 +5,4 @@ export * from "./difficulty";
 export * from "./panel";
 export * from "./instructions";
 export * from "./engine";
+export * from "./tutorial";

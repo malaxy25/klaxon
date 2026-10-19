@@ -50,7 +50,9 @@ schwarzes Loch -> alle **drehen** das Geraet; Wurmloch -> Panels tauschen; usw.
 Motion-Prompt zeigen? Wurmloch (Panel-Tausch) als rein serverseitiges Event ohne Sensoren?
 
 ### G3 — Training-Modus (gefuehrtes Tutorial)   (Prio: hoch, Aufwand: L)
-> Geplant, Ansatz abgestimmt (2026-10-19). Kommt komplett in **einem** Release.
+> ✅ **Umgesetzt (2026-10-19)**, komplett in einem Release. Lobby-Option "Training" (`startLevel 0`),
+> Logik in `packages/shared/src/tutorial.ts`, Test `packages/shared/test/tutorial.ts`. Abweichung:
+> ein Ablauf im Timer-Schritt wird nicht erzwungen, sondern nur folgenlos erklaert, wenn er passiert.
 
 **Problem (Playtest-Feedback):** Die How-to-play-Anleitung reicht Neulingen nicht als
 Einstieg. Man landet sofort in Timer, Pannen und Events. Gewuenscht: ein Trainingsraum

@@ -12,6 +12,7 @@ export type PlayerView = {
   id: string; name: string; host: boolean; ready: boolean;
   connected: boolean; instructionText: string; panel: ControlView[];
   statCompleted: number; statExpired: number; eventDone: boolean; dbgTargetControlId: string; dbgTargetValue: string;
+  coachRole: string; coachText: string; coachAck: boolean; coachAcked: boolean; hlControlId: string;
 };
 
 function lsGet(key: string, fallback: string): string {
@@ -48,6 +49,11 @@ export const S = $state({
   eventMs: 0,
   intermission: false,
   intermissionMs: 0,
+  tutorial: false,
+  tutStep: 0,
+  tutTotal: 0,
+  tutTitle: "",
+  cmdMs: 0,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
@@ -107,6 +113,23 @@ const EV_FAIL: Record<string, { icon: string; verb: string }> = {
   freeze: { icon: "\u2744", verb: "moved during decompression" },
   wormhole: { icon: "\u{1F300}", verb: "didn't stabilize" },
 };
+// Just-in-time-Tipps: erste Panne/erstes Event auf diesem Geraet kurz erklaeren (nicht im Training).
+const TIPS: Record<string, string> = {
+  broken: "Jammed: press and HOLD it to fix.",
+  slimed: "Slime: swipe back and forth to wipe it off.",
+  frozen: "Frozen: tap it 4 times to break the ice.",
+  electro: "Short circuit: press and HOLD to stabilize.",
+  overheat: "Overheat: hands off - it cools down by itself.",
+  rewire: "Loose wire: drag the plug into the glowing socket.",
+  event: "Crew alert: EVERYONE has to do it before the timer runs out.",
+};
+const prevHazards = new Map<string, string>();
+function maybeTip(kind: string) {
+  const key = "klaxon_tip_" + kind;
+  if (lsGet(key, "") === "1") return;
+  lsSet(key, "1");
+  if (!S.tutorial && TIPS[kind]) setToast("TIP - " + TIPS[kind]);
+}
 function setToast(text: string) { S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => (S.toast = ""), 3500); }
 function showCulprits(e: any) {
   const ids: string[] = e.playerIds || [];
@@ -344,6 +367,11 @@ function snapshot() {
   S.eventMs = st.eventMs ?? 0;
   S.intermission = st.intermission ?? false;
   S.intermissionMs = st.intermissionMs ?? 0;
+  S.tutorial = st.tutorial ?? false;
+  S.tutStep = st.tutStep ?? 0;
+  S.tutTotal = st.tutTotal ?? 0;
+  S.tutTitle = st.tutTitle ?? "";
+  S.cmdMs = st.cmdMs ?? 0;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {
@@ -359,9 +387,19 @@ function snapshot() {
       connected: p.connected, instructionText: p.instructionText, panel,
       statCompleted: p.statCompleted ?? 0, statExpired: p.statExpired ?? 0, eventDone: p.eventDone ?? false,
       dbgTargetControlId: p.dbgTargetControlId ?? "", dbgTargetValue: p.dbgTargetValue ?? "",
+      coachRole: p.coachRole ?? "", coachText: p.coachText ?? "", coachAck: p.coachAck ?? false,
+      coachAcked: p.coachAcked ?? false, hlControlId: p.hlControlId ?? "",
     });
   });
   S.players = players;
+
+  // Neue Panne auf dem eigenen Panel -> beim ersten Mal ein Tipp
+  if (st.phase === "playing") {
+    for (const c of me()?.panel ?? []) {
+      if (c.hazard && prevHazards.get(c.id) !== c.hazard) maybeTip(c.hazard);
+      prevHazards.set(c.id, c.hazard);
+    }
+  }
 
   S.screen = st.phase === "over" ? "over" : st.phase === "playing" ? "game" : "lobby";
 
@@ -391,7 +429,9 @@ async function bind(r: any) {
   const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
   r.onMessage("debug:stats", (d: any) => { S.stats = d; });
   r.onMessage("evt", (e: any) => {
-    if (e.type === "eventStart") { playSound("eventStart"); vib(80); }
+    if (e.type === "eventStart") { playSound("eventStart"); vib(80); maybeTip("event"); }
+    else if (e.type === "tutorialSuccess") { playSound("nextLevel"); vib([40, 30, 40]); }
+    else if (e.type === "tutorialEnd") { lsSet("klaxon_trained", "1"); }
     else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
     else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); showCulprits(e); setTimeout(() => (S.eventResult = ""), 1300); }
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
@@ -443,7 +483,7 @@ export async function createGame() {
   try {
     client ??= new Client(SERVER_URL);
     const newCode = genCode();
-    await bind(await connectWithRetry(() => client!.create("klaxon", { code: newCode, name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
+    await bind(await connectWithRetry(() => client!.create("klaxon", { code: newCode, training: lsGet("klaxon_trained", "") !== "1", name: currentName(), maxTiles: currentMaxTiles(), debugKey: currentDebugKey(), ...currentDevice() })));
   } catch (e: any) {
     S.error = e?.message ?? "Connection failed.";
   } finally {
@@ -498,7 +538,10 @@ export async function joinByCode(code: string) {
   }
 }
 export function ready(v: boolean) { room?.send("ready", v); if (v && !S.motionOk) enableMotion(); }
-export function start() { room?.send("start"); }
+export function start() { room?.send("start"); if (S.startLevel !== 0) lsSet("klaxon_trained", "1"); }
+export function tutorialAck() { room?.send("tutorialAck"); }
+export function tutorialSkip() { room?.send("tutorialSkip"); }
+export function tutorialEnd() { room?.send("tutorialEnd"); }
 export function playAgain() { room?.send("playAgain"); }
 export function clearHazard(controlId: string) { room?.send("clearHazard", controlId); }
 export function sendEventAction() { room?.send("eventAction"); }

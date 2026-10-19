@@ -35,6 +35,7 @@
       <li><b>Full-screen alert</b> - react before the timer: shake, flip, hold or tap, or DON'T touch.</li>
     </ul>
     <p class="tip">It gets loud and chaotic. That is the point.</p>
+    <p class="train">New crew? Pick <b>Training</b> in the ready room - a guided walkthrough without time pressure.</p>
     <button class="btn wide primary" onclick={closeHelp}>Got it</button>
   </div>
 </div>
@@ -54,5 +55,7 @@
   .dot.t { background: var(--ok); }
   .dot.s { background: var(--amber); }
   .dot.x { background: #7cc4e8; }
-  .tip { color: var(--muted); font-style: italic; margin: 14px 0 16px; }
+  .tip { color: var(--muted); font-style: italic; margin: 14px 0 8px; }
+  .train { margin: 0 0 16px; line-height: 1.35; }
+  .train b { color: var(--amber); }
 </style>

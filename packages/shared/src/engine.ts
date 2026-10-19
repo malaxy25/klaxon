@@ -2,17 +2,14 @@ import { Control, Instruction, Phase, Difficulty, GameEvent } from "./types";
 import { Rng, pick } from "./rng";
 import { generatePanel } from "./panel";
 import { makeInstruction, satisfies, canTarget } from "./instructions";
+import { Tutorial } from "./tutorial";
+import { HAZARD_KINDS, HAZARD_MIN } from "./hazards";
 import {
   difficultyForLevel, panelSizeForLevel,
   STARTING_HEALTH, MAX_HEALTH, MAX_DEATH_LIMIT,
 } from "./difficulty";
 
-// Welche Panne braucht welche Mindest-Kachelgroesse (Footprint w x h)
-export const HAZARD_KINDS = ["broken", "slimed", "frozen", "electro", "overheat", "rewire"] as const;
-export const HAZARD_MIN: Record<string, { w: number; h: number }> = {
-  broken: { w: 1, h: 1 }, slimed: { w: 1, h: 1 }, frozen: { w: 1, h: 1 },
-  electro: { w: 1, h: 1 }, overheat: { w: 1, h: 1 }, rewire: { w: 2, h: 1 },
-};
+export { HAZARD_KINDS, HAZARD_MIN };
 export interface EnginePlayer {
   id: string;
   name: string;
@@ -51,7 +48,8 @@ export class KlaxonGame {
   private singlePlayer: boolean;
   private lastTick: number;
   private nextBreakAt = 0;
-  event: { type: string; endsAt: number; done: Set<string> } | null = null;
+  event: { type: string; endsAt: number; ms: number; done: Set<string> } | null = null;
+  tutorial: Tutorial | null = null; // gesetzt = Training-Modus laeuft
   intermission: { endsAt: number } | null = null;
   private readonly INTERMISSION_MS = 10000;
   paused = false;
@@ -85,6 +83,10 @@ export class KlaxonGame {
       const next = pick([...this.players.values()], this.rng);
       next.host = true;
     }
+    if (this.tutorial) {
+      if (this.players.size < 2 && !this.singlePlayer) return this.endTutorial();
+      return this.tutorial.onPlayerRemoved(id);
+    }
     // Im Spiel nur beenden, wenn zu wenige uebrig sind.
     if (this.phase === "playing" && this.players.size < 2) {
       this.phase = "over";
@@ -98,8 +100,9 @@ export class KlaxonGame {
     if (p) p.ready = ready;
   }
 
+  // 0 = Training (gefuehrtes Tutorial), sonst Start-Sektor 1..20
   setStartLevel(n: number): void {
-    this.startLevel = Math.max(1, Math.min(20, Math.floor(n || 1)));
+    this.startLevel = n === 0 ? 0 : Math.max(1, Math.min(20, Math.floor(n || 1)));
   }
 
   canStart(): boolean {
@@ -113,6 +116,7 @@ export class KlaxonGame {
     if (this.phase !== "lobby") return false;
     if (!force && !this.canStart()) return false;
     if (this.players.size < 1) return false;
+    if (this.startLevel === 0) return this.startTutorial();
     this.phase = "playing";
     this.level = this.startLevel;
     this.difficulty = difficultyForLevel(this.level);
@@ -141,6 +145,41 @@ export class KlaxonGame {
       p.instruction = null;
     }
     return true;
+  }
+
+  // ---------- Training ----------
+  private startTutorial(): boolean {
+    this.phase = "playing";
+    this.level = 1;
+    this.difficulty = difficultyForLevel(1);
+    this.health = STARTING_HEALTH;
+    this.deathLimit = 0;
+    this.event = null;
+    this.intermission = null;
+    for (const p of this.players.values()) { p.statCompleted = 0; p.statExpired = 0; }
+    this.assignPanels();
+    this.lastTick = this.now();
+    this.tutorial = new Tutorial(this);
+    this.tutorial.begin();
+    return true;
+  }
+
+  // Training beenden (fertig, abgebrochen oder zu wenige Spieler) -> Lobby, danach Casual.
+  endTutorial(): GameEvent[] {
+    if (!this.tutorial) return [];
+    this.tutorial = null;
+    this.phase = "over";
+    this.backToLobby();
+    this.startLevel = 1;
+    return [{ type: "tutorialEnd" }];
+  }
+
+  ackTutorial(playerId: string): GameEvent[] {
+    return this.tutorial ? this.tutorial.ack(playerId) : [];
+  }
+
+  skipTutorialStep(): GameEvent[] {
+    return this.tutorial ? this.tutorial.skip() : [];
   }
 
   private assignPanels(): void {
@@ -198,31 +237,43 @@ export class KlaxonGame {
 
   private startEvent(): GameEvent {
     const types = ["meteor", "blackhole", "brace", "surge", "freeze", "wormhole"];
-    const type = this.forceEvent || pick(types, this.rng);
+    return this.beginEvent(this.forceEvent || pick(types, this.rng));
+  }
+
+  // Event sofort starten (Scheduler, Debug, Training)
+  beginEvent(type: string, ms = this.EVENT_MS): GameEvent {
     if (type === "wormhole") this.rotatePanels();
-    this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
+    this.event = { type, endsAt: this.now() + ms, ms, done: new Set() };
     return { type: "eventStart" };
   }
 
+  // Laufendes Event abschliessen; im Training ohne Health-Folgen.
+  private finishEvent(passed: boolean, culprits: string[]): GameEvent[] {
+    const kind = this.event?.type ?? "";
+    this.event = null;
+    this.nextEventAt = this.now() + this.eventInterval();
+    const ev: GameEvent = passed ? { type: "eventPassed" } : { type: "eventFailed", playerIds: culprits, eventKind: kind };
+    if (this.tutorial) return [ev, ...this.tutorial.onEventResult(passed)];
+    if (passed) this.health = Math.min(MAX_HEALTH, this.health + 15);
+    else this.health -= 15;
+    return [ev];
+  }
+
   markEventDone(playerId: string): GameEvent[] {
-    const events: GameEvent[] = [];
-    if (!this.event || !this.players.has(playerId)) return events;
-    if (this.event.type === "freeze") {
-      this.event = null;
-      this.health -= 15;
-      this.nextEventAt = this.now() + this.eventInterval();
-      events.push({ type: "eventFailed", playerIds: [playerId], eventKind: "freeze" });
-      return events;
-    }
+    if (!this.event || !this.players.has(playerId)) return [];
+    if (this.event.type === "freeze") return this.finishEvent(false, [playerId]);
     this.event.done.add(playerId);
     const connected = [...this.players.values()].filter((p) => p.connected);
-    if (connected.every((p) => this.event!.done.has(p.id))) {
-      this.event = null;
-      this.health = Math.min(MAX_HEALTH, this.health + 15);
-      this.nextEventAt = this.now() + this.eventInterval();
-      events.push({ type: "eventPassed" });
-    }
-    return events;
+    if (connected.every((p) => this.event!.done.has(p.id))) return this.finishEvent(true, []);
+    return [];
+  }
+
+  // Event-Timer abgelaufen: Freeze ueberstanden, sonst sind alle Saeumigen schuld.
+  expireEvent(): GameEvent[] {
+    if (!this.event) return [];
+    if (this.event.type === "freeze") return this.finishEvent(true, []);
+    const culprits = [...this.players.values()].filter((p) => p.connected && !this.event!.done.has(p.id)).map((p) => p.id);
+    return this.finishEvent(false, culprits);
   }
 
   private breakInterval(): number {
@@ -243,12 +294,38 @@ export class KlaxonGame {
     return [];
   }
 
+  // ---------- Gezielte Aktionen (Scheduler, Debug, Training) ----------
+  applyHazard(c: Control, kind: string): GameEvent {
+    c.hazard = kind as Control["hazard"];
+    if (kind === "overheat") c.hazardUntil = this.now() + 4000;
+    const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro", overheat: "overheat", rewire: "rewire" };
+    return { type: evName[kind] ?? "broke", controlId: c.id };
+  }
+
+  // Ueberhitzte Controls kuehlen von selbst ab
+  coolHazards(now: number): GameEvent[] {
+    const events: GameEvent[] = [];
+    for (const p of this.players.values()) for (const c of p.panel) {
+      if (c.hazard === "overheat" && c.hazardUntil && now >= c.hazardUntil) {
+        c.hazard = ""; c.hazardUntil = undefined;
+        events.push({ type: "repaired", controlId: c.id });
+      }
+    }
+    return events;
+  }
+
+  // Befehl mit festem Ziel-Control (Infinity = ohne Zeitlimit)
+  giveInstruction(player: EnginePlayer, control: Control, deadline = Infinity): void {
+    player.instruction = makeInstruction(player.id, control, this.rng, deadline);
+  }
+
+  time(): number { return this.now(); }
+  random(): number { return this.rng(); }
+
   // ---------- Debug ----------
   forceStartEvent(type: string): GameEvent[] {
     if (this.phase !== "playing" || this.event) return [];
-    if (type === "wormhole") this.rotatePanels();
-    this.event = { type, endsAt: this.now() + this.EVENT_MS, done: new Set() };
-    return [{ type: "eventStart" }];
+    return [this.beginEvent(type)];
   }
   debugHazard(kind: string): GameEvent[] {
     if (this.phase !== "playing") return [];
@@ -257,11 +334,7 @@ export class KlaxonGame {
     let pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id) && (c.w ?? 1) >= min.w && (c.h ?? 1) >= min.h);
     if (pool.length === 0) pool = this.allControls().filter((c) => !c.hazard && !taken.has(c.id));
     if (pool.length === 0) return [];
-    const c = pick(pool, this.rng);
-    c.hazard = kind as any;
-    if (kind === "overheat") c.hazardUntil = this.now() + 4000;
-    const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro", overheat: "overheat", rewire: "rewire" };
-    return [{ type: evName[kind] ?? "broke", controlId: c.id }];
+    return [this.applyHazard(pick(pool, this.rng), kind)];
   }
   debugClearHazards(): void {
     for (const p of this.players.values()) for (const c of p.panel) c.hazard = "";
@@ -286,15 +359,27 @@ export class KlaxonGame {
       if (this.phase !== "playing") break;
       if (!p.instruction) continue;
       p.statCompleted++;
-      this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
-      events.push({ type: "completed", playerId: p.id });
-      if (this.health >= MAX_HEALTH && !this.intermission) events.push(this.beginIntermission());
-      else this.generateInstructionFor(p);
+      events.push(...this.completeInstruction(p));
     }
     return events;
   }
 
-  private takenControlIds(): Set<string> {
+  // Befehl von p gilt als erfuellt: Heilung, dann neuer Befehl / Sektor-Ende / Training weiter
+  private completeInstruction(p: EnginePlayer): GameEvent[] {
+    this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
+    const events: GameEvent[] = [{ type: "completed", playerId: p.id }];
+    if (this.tutorial) {
+      p.instruction = null;
+      events.push(...this.tutorial.onCompleted(p.id));
+    } else if (this.health >= MAX_HEALTH && !this.intermission) {
+      events.push(this.beginIntermission());
+    } else {
+      this.generateInstructionFor(p);
+    }
+    return events;
+  }
+
+  takenControlIds(): Set<string> {
     const s = new Set<string>();
     for (const p of this.players.values()) {
       if (p.instruction) s.add(p.instruction.targetControlId);
@@ -302,7 +387,7 @@ export class KlaxonGame {
     return s;
   }
 
-  private allControls(): Control[] {
+  allControls(): Control[] {
     const all: Control[] = [];
     for (const p of this.players.values()) all.push(...p.panel);
     return all;
@@ -315,7 +400,7 @@ export class KlaxonGame {
     return pick(others, this.rng);
   }
 
-  private generateInstructionFor(player: EnginePlayer): void {
+  generateInstructionFor(player: EnginePlayer, timeMs = this.difficulty.instructionTimeMs): void {
     player.instruction = null; // erst freigeben, dann Kollisionen berechnen
     const taken = this.takenControlIds();
     const target = this.pickTargetPlayer(player);
@@ -327,7 +412,7 @@ export class KlaxonGame {
     if (pool.length === 0) pool = this.allControls().filter((c) => canTarget(c)); // absoluter Notnagel
 
     const control = pick(pool, this.rng);
-    const deadline = this.now() + this.difficulty.instructionTimeMs;
+    const deadline = this.now() + timeMs;
     player.instruction = makeInstruction(player.id, control, this.rng, deadline);
   }
 
@@ -357,13 +442,7 @@ export class KlaxonGame {
       const ins = p.instruction;
       if (ins && satisfies(ins, control, value)) {
         player.statCompleted++;
-        this.health = Math.min(MAX_HEALTH, this.health + this.difficulty.completedHealthGain);
-        events.push({ type: "completed", playerId: p.id });
-        if (this.health >= MAX_HEALTH && !this.intermission) {
-          events.push(this.beginIntermission());
-        } else {
-          this.generateInstructionFor(p);
-        }
+        events.push(...this.completeInstruction(p));
         return { completed: true, events };
       }
     }
@@ -380,6 +459,8 @@ export class KlaxonGame {
     const dt = dtMs / 1000;
     this.lastTick = now;
 
+    if (this.tutorial) return this.tutorial.tick(now);
+
     if (this.intermission) {
       for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
       if (now >= this.intermission.endsAt) events.push(this.doNextLevel());
@@ -392,15 +473,7 @@ export class KlaxonGame {
     // Aktives Spezial-Event: der Rest pausiert
     if (this.event) {
       for (const p of this.players.values()) if (p.instruction) p.instruction.deadline += dtMs;
-      if (now >= this.event.endsAt) {
-        const kind = this.event.type;
-        const survived = kind === "freeze";
-        const culprits = survived ? [] : [...this.players.values()].filter((p) => p.connected && !this.event!.done.has(p.id)).map((p) => p.id);
-        this.event = null;
-        if (survived) { this.health = Math.min(MAX_HEALTH, this.health + 15); events.push({ type: "eventPassed" }); }
-        else { this.health -= 15; events.push({ type: "eventFailed", playerIds: culprits, eventKind: kind }); }
-        this.nextEventAt = now + this.eventInterval();
-      }
+      if (now >= this.event.endsAt) events.push(...this.expireEvent());
       if (this.health <= this.deathLimit) { this.phase = "over"; events.push({ type: "gameOver" }); }
       return events;
     }
@@ -411,13 +484,7 @@ export class KlaxonGame {
       return events;
     }
 
-    // Ueberhitzte Controls kuehlen von selbst ab
-    for (const p of this.players.values()) for (const c of p.panel) {
-      if (c.hazard === "overheat" && c.hazardUntil && now >= c.hazardUntil) {
-        c.hazard = ""; c.hazardUntil = undefined;
-        events.push({ type: "repaired", controlId: c.id });
-      }
-    }
+    events.push(...this.coolHazards(now));
 
     // Panels koennen brechen (max. so viele gleichzeitig wie Spieler)
     if (now >= this.nextBreakAt) {
@@ -430,11 +497,7 @@ export class KlaxonGame {
           const avail = HAZARD_KINDS.filter((k) => pool.some((c) => (c.w ?? 1) >= HAZARD_MIN[k].w && (c.h ?? 1) >= HAZARD_MIN[k].h));
           const kind = pick(avail as unknown as string[], this.rng);
           const fit = pool.filter((c) => (c.w ?? 1) >= HAZARD_MIN[kind].w && (c.h ?? 1) >= HAZARD_MIN[kind].h);
-          const c = pick(fit, this.rng);
-          c.hazard = kind as any;
-          if (kind === "overheat") c.hazardUntil = now + 4000;
-          const evName: Record<string, GameEvent["type"]> = { broken: "broke", slimed: "slimed", frozen: "frozen", electro: "electro", overheat: "overheat", rewire: "rewire" };
-          events.push({ type: evName[kind], controlId: c.id });
+          events.push(this.applyHazard(pick(fit, this.rng), kind));
         }
       }
     }

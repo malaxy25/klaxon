@@ -14,7 +14,8 @@ unter Zeitdruck aus. Eigenstaendiger Klon, kein Original-Code.
 ## Architektur (TypeScript-Monorepo, npm workspaces)
 - `packages/shared/` - reine Spiel-Engine (keine I/O), deterministisch testbar
   (seedbarer PRNG). Hier lebt die gesamte Spiellogik: Panels, Befehle, Schwierigkeit,
-  Hazards (kaputt/Schleim), Spezial-Events, Health/Todeslinie.
+  Hazards (kaputt/Schleim), Spezial-Events, Health/Todeslinie, Training-Modus
+  (`tutorial.ts`: gefuehrte Schrittfolge, Lobby-Option `startLevel 0`).
 - `packages/server/` - Colyseus-Room als duenner Adapter um die Engine. Synchronisiert
   State an die Clients, nimmt Messages entgegen (setControl, ready, start, clearHazard,
   eventAction, kick, debug:* ...). Build via `tsc` -> `node dist/`.

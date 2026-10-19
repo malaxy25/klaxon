@@ -26,6 +26,7 @@
   <button class="btn wide primary" disabled={S.connecting} onclick={createGame}>
     {S.connecting ? "Starting..." : "Start a new game"}
   </button>
+  <p class="newhint">New here? Pick <b>Training</b> in the ready room - a guided walkthrough.</p>
 
   <div class="or">or join with a code</div>
   <div class="join-row">
@@ -45,6 +46,8 @@
   <footer class="version"><button class="verbtn" onclick={tapVersion}>Klaxon{#if S.version} v{S.version}{/if}</button> &middot; <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>{#if DONATE_URL} &middot; <a href={DONATE_URL} target="_blank" rel="noopener">☕ Coffee</a>{/if}{#if S.debug} &middot; <span class="dbgon">debug</span>{/if}</footer>
 </div>
 <style>
+  .newhint { color: var(--muted); font-size: 0.8rem; text-align: center; margin: -4px 0 4px; }
+  .newhint b { color: var(--amber); }
   .verbtn { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: default; }
   .dbgon { color: #c98fe0; }
   .seeit { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 22px 0 8px; letter-spacing: 0.5px; }
