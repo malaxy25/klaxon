@@ -49,6 +49,70 @@ schwarzes Loch -> alle **drehen** das Geraet; Wurmloch -> Panels tauschen; usw.
 **Zu klaeren:** Welches Event zuerst (Schuetteln = am einfachsten)? Wann den
 Motion-Prompt zeigen? Wurmloch (Panel-Tausch) als rein serverseitiges Event ohne Sensoren?
 
+### G3 — Training-Modus (gefuehrtes Tutorial)   (Prio: hoch, Aufwand: L)
+> Geplant, Ansatz abgestimmt (2026-10-19). Kommt komplett in **einem** Release.
+
+**Problem (Playtest-Feedback):** Die How-to-play-Anleitung reicht Neulingen nicht als
+Einstieg. Man landet sofort in Timer, Pannen und Events. Gewuenscht: ein Trainingsraum
+ohne Zeitdruck, der die Crew Schritt fuer Schritt durchfuehrt und dabei jede Panne und
+jedes Event einmal spielen laesst.
+
+**Entscheide:**
+- Training ist ein **Modus im Raum der Crew** (Lobby-Option "Training" neben
+  Casual/Normal/Hard/Insane), nicht solo - das Zurufen zwischen Geraeten ist der Kern.
+- **Keine XP.** Belohnung ueber die echte Health-Leiste ("Nice! +10 hull") plus
+  Fortschritt "Step 4/12" - so lernt man gleich die Leiste, die spaeter zaehlt.
+- **Sprache Englisch** wie der Rest des Spiels.
+- **Tempo:** erfolgreicher Schritt -> ~2 s Belohnung -> automatisch weiter. Reine
+  Info-Schritte gehen weiter, sobald alle OK getippt haben. Host kann jederzeit einen
+  Schritt **ueberspringen** oder das Training **abbrechen**.
+- **Just-in-time-Tipps** im echten Spiel gehoeren mit in diesen Release (siehe unten).
+
+**Ablauf** (im ganzen Training: kein Aderlass, keine steigende Todeslinie, keine
+zufaelligen Pannen/Events). Jeder Spieler sieht eine **rollenabhaengige Infobox**:
+- *Vorleser:* "Read this out loud. This control is NOT on your panel."
+- *Ausfuehrender:* "Listen! Someone will call out a control on your panel." - Ziel-Control pulsiert.
+- *Uebrige:* "Watch - your turn is next."
+
+| # | Abschnitt | Inhalt | Weiter wenn |
+|---|---|---|---|
+| 0 | Briefing | Schiff, Ziel, jeder hat ein eigenes Panel | alle OK |
+| 1 | Eigene Controls | Jeder bekommt einen Befehl aufs eigene Panel; lernt Button, Toggle, Slider, Selector, Dial | alle erledigt |
+| 2 | Zurufen | Kette A liest -> B fuehrt aus, B -> C, ..., letzter -> A (jeder einmal Vorleser und Ausfuehrender) | Kette fertig |
+| 3 | Alle gleichzeitig | Jeder hat einen Befehl, ohne Timer | alle erledigt |
+| 4 | Timer & Leiste | Countdown-Balken (grosszuegig, ~40 s) + Health-Leiste erklaert; ein Ablauf wird einmal folgenlos gezeigt | 3 Befehle |
+| 5 | Pannen | Jede der 6 Pannen einmal gezielt bei einem Spieler: Jammed (halten), Slime (wischen), Frozen (4x tippen), Short-circuit (halten), Overheat (warten, nicht anfassen), Loose wire (Stecker ziehen). Danach ein Befehl auf genau dieses Control: erst reparieren, dann ausfuehren | je Panne geloest |
+| 6 | Events | Meteor (schuetteln), Black hole (umdrehen), Brace, Surge, Freeze (NICHT anfassen), Wormhole (Panels tauschen). Hier die Motion-Erlaubnis (iOS) abfragen. Fehlschlag = keine Strafe, "try again" | je Event bestanden |
+| 7 | Abschluss | "Crew certified" -> zurueck in die Lobby oder direkt Casual-Runde | - |
+
+**Just-in-time-Tipps (echtes Spiel):** Tritt eine Panne/ein Event auf diesem Geraet zum
+ersten Mal auf, kurzer Hinweis (~2 s, z. B. "Swipe it off!"). Merker pro Geraet in
+`localStorage` (try/catch). Faengt alle ab, die das Training ueberspringen.
+
+**Umsetzung:**
+- **shared:** neues `tutorial.ts` - Schritte als Daten (`setup(game)`, Erfolgsbedingung,
+  Texte pro Rolle). Engine bekommt `mode: "normal" | "tutorial"`; im Tutorial sind
+  Aderlass, Todeslinie, Pannen- und Event-Scheduler aus, Befehle ohne Deadline (ausser
+  Abschnitt 4). Gezielte Engine-Methoden: "Befehl an Spieler A mit Ziel-Control auf Panel
+  von B", "Panne X auf Control Y", "Event Z starten". `debugHazard`/`forceStartEvent` dafuer
+  zu neutralen Methoden umbauen und von Debug + Tutorial gemeinsam nutzen. Deterministischer
+  Durchlauf aller Schritte in einem Sim-Skript wie `test/sim.ts`.
+- **Server:** Messages `startTutorial` (Host), `tutorialAck` (Info-OK), `tutorialSkip`
+  und `tutorialAbort` (Host). State: Schritt, Gesamtzahl, pro Spieler Rolle + Coach-Text
+  + hervorzuhebendes Control (Mechanik wie `dbgTargetControlId`/Reveal). `postStat` pro
+  erreichtem Schritt (wo brechen Crews ab?).
+- **Client:** neue `Coach.svelte` (Infobox, darf keine Controls verdecken - kleine
+  Handys pruefen), Puls auf dem Ziel-Control, Option "Training" in der Lobby, Hinweis
+  "New here? Start with Training" auf Home, Just-in-time-Tipps, Help-Overlay verweist
+  aufs Training.
+
+**Randfaelle:**
+- Ab 2 Spielern. Bei vielen Spielern Zuruf-Kette (Abschnitt 2) auf ~4 Durchgaenge kappen.
+- Disconnect: Schritte des fehlenden Spielers ueberspringen bzw. neu zuteilen; < 2 Spieler -> Training endet.
+- Raum bleibt waehrend des Trainings gesperrt (wie im Spiel).
+- Wormhole tauscht Panels dauerhaft - im Coach-Text erwaehnen.
+- Ohne Motion-Sensor/Erlaubnis greift der bestehende Tap-Fallback.
+
 ---
 
 ## Audio & Optik
