@@ -8,6 +8,9 @@
   const onSlide = (e: Event) => setControl(control.id, (e.target as HTMLInputElement).value);
   const choose = (opt: string) => setControl(control.id, opt);
 
+  // Laengstes Wort: Label darf nur zwischen Woertern umbrechen, zu lange Woerter verkleinern die Schrift
+  let longest = $derived(Math.max(4, ...control.label.split(/\s+/).map((w) => w.length)));
+
   let ticks = $derived(
     control.kind === "slider"
       ? Array.from({ length: (control.max ?? 0) - (control.min ?? 0) + 1 }, (_, i) => (control.min ?? 0) + i)
@@ -181,7 +184,7 @@
 </script>
 
 <div class="control kind-{control.kind}" class:hazarded={!!control.hazard} class:coach-hl={highlight}
-     style="grid-column: span {control.w}; grid-row: span {control.h};">
+     style="grid-column: span {control.w}; grid-row: span {control.h}; --span: {control.w}; --len: {longest};">
   <div class="face">
     {#if control.kind === "button"}
       <button class="hw press" onclick={press}>PRESS</button>
@@ -198,7 +201,7 @@
       </div>
     {:else if control.kind === "dial"}
       <div class="dial" bind:clientWidth={dw} bind:clientHeight={dh} ontouchstart={dialTStart} onpointerdown={dialPStart}>
-        <div class="dial-ring" style="width:{Math.min(dw, dh)}px; height:{Math.min(dw, dh)}px">
+        <div class="dial-ring" style="width:{Math.min(dw, dh, 240)}px; height:{Math.min(dw, dh, 240)}px">
           {#each dialVals as v}
             {@const p = posFor(v)}
             <span class="dial-num" class:on={Number(control.value) === v} style="left:{p.x}%; top:{p.y}%">{v}</span>
@@ -276,9 +279,10 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: clamp(1rem, 11.5cqmin, 1.6rem); color: var(--ink); font-weight: 600; text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    /* gleiche Groesse je Spalte (cqi / Spaltenzahl der Kachel), langes Wort muss in eine Zeile passen */
+    font-size: min(clamp(1rem, calc(11cqi / var(--span, 1)), 1.6rem), calc(100cqi / (var(--len) * 0.64))); color: var(--ink); font-weight: 600; text-align: center; line-height: 1.15; letter-spacing: 0.2px;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: normal; word-break: normal; hyphens: manual;
   }
   .hw {
     appearance: none; cursor: pointer; width: 100%;
@@ -324,7 +328,7 @@
   .hz-fill.green { background: #9be06a; }
   .hz-broken { border: 2px solid var(--danger);
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
-  .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .dial { position: relative; width: 100%; flex: 1 1 auto; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .dial-ring { position: relative; flex: none; margin: 0 auto; }
   .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 11cqmin, 1.5rem); color: #c9d6d2; pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
