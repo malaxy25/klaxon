@@ -38,7 +38,6 @@ Deployed on Render: server as a Docker web service, client as a static site.
 - Run locally: [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
 - Architecture & decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Game engine + server internals: [docs/PHASE-1.md](docs/PHASE-1.md)
-- Client (UI): [docs/CLIENT.md](docs/CLIENT.md)
 - Deploy to Render: [docs/DEPLOY.md](docs/DEPLOY.md)
 - Changes: [Releases](https://github.com/malaxy25/klaxon/releases) (up to 0.8.62: [CHANGELOG.md](CHANGELOG.md))
 - Backlog / known issues & ideas: [BACKLOG.md](BACKLOG.md)

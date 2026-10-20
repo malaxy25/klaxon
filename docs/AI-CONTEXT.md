@@ -77,7 +77,6 @@ Weitere Deploy-Details, Render-Eigenheiten (globale Namen -> Suffix-URLs, Cold S
 ## Weiterfuehrende Doku im Repo
 - `README.md`, `CHANGELOG.md`, `BACKLOG.md`
 - `docs/ARCHITECTURE.md`  - Design/Entscheidungen
-- `docs/CLIENT.md`        - alle Client-Dateien im Volltext
 - `docs/PHASE-1.md`       - Engine/Server-Kernschleife (Referenz)
 - `docs/DEPLOY.md`        - Deployment Schritt fuer Schritt
 - `docs/ENV.md`           - alle Umgebungsvariablen
@@ -86,7 +85,7 @@ Weitere Deploy-Details, Render-Eigenheiten (globale Namen -> Suffix-URLs, Cold S
 
 ## Einstiegs-Prompt fuer die naechste KI (zum Kopieren)
 > Hier ist mein Projekt "Klaxon" (Repo/ZIP). Lies zuerst docs/AI-CONTEXT.md, README.md,
-> docs/ARCHITECTURE.md, docs/CLIENT.md, docs/DEPLOY.md und die GitHub-Releases. Fasse dann in
+> docs/ARCHITECTURE.md, packages/client/src, docs/DEPLOY.md und die GitHub-Releases. Fasse dann in
 > wenigen Saetzen die Architektur, den aktuellen Stand und die offenen Punkte (BACKLOG)
 > zusammen und warte auf meine Aufgabe. Arbeitsweise: Aenderungen als anwendbares ZIP
 > (ich mache Expand-Archive + git push), ASCII/BOM-frei, keine Versionsnummer pflegen

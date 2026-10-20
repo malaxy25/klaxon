@@ -1,10 +1,10 @@
-# Spaceteam Web — Architektur
+# Klaxon — Architektur
 
 > Lebendes Dokument. Es wächst mit dem Projekt mit: Entscheidungen kommen in den
 > Entscheidungslog unten, offene Punkte in die letzte Sektion.
 
-**Status:** Planung abgeschlossen, MVP-Setup steht an
-**Letzte Aktualisierung:** 2026-09-19
+**Status:** live und spielbar (Phasen 0-3 weitgehend umgesetzt, Feinschliff laeuft)
+**Letzte Aktualisierung:** 2026-10-20
 
 ---
 
@@ -212,10 +212,7 @@ am bequemsten).
   mehr Technobabble, Feinschliff der Kurve, echtes 4×4-Bin-Packing (statt CSS-dense).
 - **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
   Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). ✅ 8 Spieler/Raum, Host-Kick, robustes Spielerentfernen (Game Over erst < 2). Offen: Observability, PNG-App-Icons, Feintuning.
-- **Phase 3 — Reife (teils umgesetzt):** ✅ kaputte Panels (halten) + Alien-Schleim (wischen), ✅ 4-stelliger
-  Raumcode (`filterBy`), ✅ reicherer Sound (Klaxon-Alarm). ✅ Spezial-Events (Meteor/Schwarzes
-  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). ✅ 8 Spieler/Raum, Host-Kick, robustes Spielerentfernen (Game Over erst < 2). Offen: Observability, PNG-App-Icons, Feintuning.
+  Loch/Brace via DeviceMotion/Orientation + Tap-Fallback). ✅ PWA-Installation, ✅ Reconnect (allowReconnection), ✅ mehr Events (Surge/Freeze/Wormhole). ✅ 8 Spieler/Raum, Host-Kick, robustes Spielerentfernen (Game Over erst < 2). ✅ Training-Modus (gefuehrtes Tutorial, `shared/src/tutorial.ts`). Offen: Observability, PNG-App-Icons, Feintuning.
 
 ---
 

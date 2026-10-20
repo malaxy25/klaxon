@@ -119,22 +119,6 @@ ersten Mal auf, kurzer Hinweis (~2 s, z. B. "Swipe it off!"). Merker pro Geraet 
 
 ## Audio & Optik
 
-### A1 — Richtige Soundeffekte + mehr Juice   (Prio: mittel, Aufwand: S-M)
-> ✅ **Grundstock in v0.7.0** (Klaxon-Alarm, Explosion, Break-Sound). Audio-Dateien optional offen.
-
-**Problem:** Aktuell nur synthetische Beeps.
-
-**Plan:**
-- Variante A (self-contained, empfohlen als Start): reichere **synthetisierte** Sounds
-  (Rausch-Bursts fuer Explosionen, **Klaxon-Alarm** bei niedriger Health, Fanfare beim
-  Level-Up) - keine Asset-Dateien noetig.
-- Variante B: kleine **Audio-Dateien** (mp3/ogg) mitliefern (Vite buendelt sie) -
-  schoener, aber Assets muessen lizenzfrei/eigen sein.
-- Effekte: bessere Completion-Animation, Schaden-Vignette + Alarm, Low-Health-Puls.
-
-**Zu klaeren:** Synth-only oder Audio-Dateien? (Empfehlung: erst Synth + Klaxon-Alarm,
-gratis und sehr on-theme.)
-
 ### A2 — Cockpit-Feinschliff weiter   (Prio: mittel, Aufwand: M, iterativ)
 > 🔶 **In Arbeit** (v0.7.0: LED-Readouts, Scanline; v0.8.2: Kippschalter, Slider-Ticks). Weiter iterativ.
 
@@ -187,7 +171,6 @@ nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
 ### P7 — Feinschliff aus Okt-Playtests   (Prio: niedrig, Aufwand: S)
 - **Insane-Obergrenze:** Schwierigkeit cappt um Sektor ~8-9; falls Insane oben nochmal haerter
   werden soll, Caps in `difficulty.ts` fuer hohe Level anheben (reine Balance).
-- **Aufraeumen:** unbenutzte `packages/server/src/stats.ts` entfernen (nicht importiert).
 - **Tuning nach echtem Spiel:** Tap-Fallback-Anzahl (aktuell 10) und Schuld-Toast-Texte
   (Formulierung/Sprache) bei Bedarf anpassen.
 
