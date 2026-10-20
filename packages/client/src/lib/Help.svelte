@@ -14,9 +14,9 @@
         <b>someone else's</b> panel - so shout it across the room.</li>
       <li><b>Hear a command for one of your controls? Do it - fast.</b> Whoever has that
         control acts on it.</li>
-      <li><b>Keep the bar above the rising red line.</b> Completed commands push it up;
-        misses and time push it down.</li>
-      <li><b>Fill the bar to jump to the next sector.</b> Each sector is faster and harsher.</li>
+      <li><b>Don't let the bar run empty.</b> Completed commands push it up;
+        misses and time push it down. Empty = game over.</li>
+      <li><b>Fill the bar all the way to jump to the next sector.</b> Each sector is faster and harsher.</li>
     </ol>
     <h3>Your controls</h3>
     <ul class="legend">
