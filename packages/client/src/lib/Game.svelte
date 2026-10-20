@@ -49,6 +49,7 @@
       <span class="led-lbl">{S.tutorial ? "TRAINING" : "SECTOR"}</span>
       <span class="led-num"><span class="led-ghost">{ledGhost}</span><span class="led-on">{ledText}</span></span>
     </span>
+    {#if S.paused}<span class="paused">PAUSED</span>{/if}
     <div class="bar" class:danger>
       <div class="health" style="width:{marginPct}%"></div>
     </div>
@@ -121,6 +122,8 @@
       radial-gradient(1px 1px at 81% 84%, var(--star), transparent), radial-gradient(1.2px 1px at 94% 40%, var(--star), transparent);
     background-size: 140px 100%; }
   .warp.red { --star: rgba(255,110,110,0.95); opacity: 0.75; }
+
+  .paused { flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; color: #1a0d26; background: #c98fe0; border-radius: 5px; padding: 2px 6px; }
 
   /* Rotes Warnlicht bei Alarm */
   .beacon { flex: none; width: 12px; height: 12px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 8px 2px rgba(229,72,77,0.8); }

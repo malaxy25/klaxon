@@ -116,6 +116,7 @@ export class KlaxonGame {
     if (this.phase !== "lobby") return false;
     if (!force && !this.canStart()) return false;
     if (this.players.size < 1) return false;
+    this.paused = false; // Debug-Pause nie in eine neue Runde mitnehmen
     if (this.startLevel === 0) return this.startTutorial();
     this.phase = "playing";
     this.level = this.startLevel;

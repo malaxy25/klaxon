@@ -55,6 +55,7 @@ export const S = $state({
   tutTotal: 0,
   tutTitle: "",
   cmdMs: 0,
+  paused: false,
   eventResult: "" as "" | "passed" | "failed",
   motionOk: false,
   reconnecting: false,
@@ -382,6 +383,7 @@ function snapshot() {
   S.tutTotal = st.tutTotal ?? 0;
   S.tutTitle = st.tutTitle ?? "";
   S.cmdMs = st.cmdMs ?? 0;
+  S.paused = st.paused ?? false;
 
   const players: PlayerView[] = [];
   st.players.forEach((p: any) => {

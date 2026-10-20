@@ -62,6 +62,7 @@ class GameState extends Schema {
   @type("number") tutTotal = 0;
   @type("string") tutTitle = "";
   @type("number") cmdMs = 0; // Training: Timer-Dauer pro Befehl, 0 = kein Timer
+  @type("boolean") paused = false; // Debug-Pause (im HUD sichtbar)
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
 }
 
@@ -285,6 +286,7 @@ export class KlaxonRoom extends Room {
     this.state.tutTotal = tut ? tut.total() : 0;
     this.state.tutTitle = tut ? tut.title() : "";
     this.state.cmdMs = tut ? tut.timerMs() : 0;
+    this.state.paused = this.game.paused;
   }
 
   private syncFull() {
