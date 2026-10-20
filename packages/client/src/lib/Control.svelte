@@ -276,7 +276,8 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: clamp(1rem, 11.5cqmin, 1.6rem); color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    font-size: clamp(1rem, 11.5cqmin, 1.6rem); color: var(--ink); font-weight: 600; text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
   }
   .hw {
@@ -301,7 +302,7 @@
   .switch.on .knob { top: 8%; background: linear-gradient(180deg,#ffd98a,#f5a623); }
 
   /* Slider mit Ticks */
-  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 10cqmin, 1.4rem); color: var(--muted); }
+  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 10cqmin, 1.4rem); color: #c9d6d2; }
   .ticks span.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 6px rgba(245,166,35,0.7); }
   .range { width: 100%; height: 28px; accent-color: var(--amber); }
   .readout {
@@ -311,7 +312,7 @@
   }
   .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
   .opts .hw { width: auto; flex: 1 1 42%; padding: 0.45em; font-size: clamp(0.9rem, 9.5cqmin, 1.3rem);
-    background: #0a1615; color: var(--muted); border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
+    background: #0a1615; color: #c9d6d2; border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
   .opts .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
 
   /* Hazard-Overlays */
@@ -325,7 +326,7 @@
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
   .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .dial-ring { position: relative; flex: none; margin: 0 auto; }
-  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 11cqmin, 1.5rem); color: var(--muted); pointer-events: none; }
+  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 11cqmin, 1.5rem); color: #c9d6d2; pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
   .dial-hub { position: absolute; left: 50%; top: 50%; width: 16%; height: 16%; transform: translate(-50%,-50%); border-radius: 50%;
     background: radial-gradient(circle at 50% 35%, #2c5a53, #10302a); border: 1px solid var(--line); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5); }
