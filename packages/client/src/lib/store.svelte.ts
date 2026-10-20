@@ -41,6 +41,7 @@ export const S = $state({
   players: [] as PlayerView[],
   flash: "" as "" | "good" | "bad",
   shake: false,
+  crack: 0, // 1..3 = Riss-Variante im Bildschirm, 0 = keiner
   banner: "",
   toast: "",
   showHelp: false,
@@ -333,6 +334,15 @@ export function joinUrl(): string {
   return location.origin + location.pathname + "?r=" + S.code;
 }
 
+// Kurzer Riss im "Glas" bei echtem Schaden (nicht im Training - dort gibt es keinen Schaden)
+let crackTimer: ReturnType<typeof setTimeout> | undefined;
+function crack() {
+  if (S.tutorial) return;
+  S.crack = 1 + Math.floor(Math.random() * 3);
+  clearTimeout(crackTimer);
+  crackTimer = setTimeout(() => (S.crack = 0), 900);
+}
+
 function pulse(kind: "good" | "bad") {
   S.flash = kind;
   clearTimeout(flashTimer);
@@ -433,9 +443,9 @@ async function bind(r: any) {
     else if (e.type === "tutorialSuccess") { playSound("nextLevel"); vib([40, 30, 40]); }
     else if (e.type === "tutorialEnd") { lsSet("klaxon_trained", "1"); }
     else if (e.type === "eventPassed") { S.eventResult = "passed"; playSound("eventPassed"); vib([60,40,60]); setTimeout(() => (S.eventResult = ""), 1300); }
-    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); showCulprits(e); setTimeout(() => (S.eventResult = ""), 1300); }
+    else if (e.type === "eventFailed") { S.eventResult = "failed"; playSound("eventFailed"); vib(320); showCulprits(e); crack(); setTimeout(() => (S.eventResult = ""), 1300); }
     if (e.type === "completed") { pulse("good"); playSound("completed"); }
-    else if (e.type === "expired") { pulse("bad"); playSound("expired"); }
+    else if (e.type === "expired") { pulse("bad"); playSound("expired"); crack(); }
     else if (e.type === "broke") { pulse("bad"); playSound("broke"); }
     else if (e.type === "slimed") { pulse("bad"); playSound("slimed"); }
     else if (e.type === "frozen") { pulse("bad"); playSound("frozen"); }

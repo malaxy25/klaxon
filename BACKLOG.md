@@ -121,6 +121,11 @@ ersten Mal auf, kurzer Hinweis (~2 s, z. B. "Swipe it off!"). Merker pro Geraet 
 
 ### A2 — Cockpit-Feinschliff weiter   (Prio: mittel, Aufwand: M, iterativ)
 > 🔶 **In Arbeit** (v0.7.0: LED-Readouts, Scanline; v0.8.2: Kippschalter, Slider-Ticks). Weiter iterativ.
+> ✅ **Paket 2026-10-20:** Befehl tippt sich im Terminal-Stil ein (Cursor), HUD im LED-Look
+> (SECTOR 01 / TRAINING 04/24), Warp-Sterne hinter dem HUD (schneller je Sektor, rot bei Alarm),
+> rotes Warnlicht bei Alarm, Riss im Bildschirm bei Schaden (nicht im Training), Funken auf
+> kaputten/kurzgeschlossenen Controls. Bewusst NICHT: rote Todeslinie in der Hull-Leiste -
+> leer = Game Over, voll = naechster Sektor ist einfacher.
 
 **Problem:** Erster Pass ist drin (Metall, Nieten, Glow). Das Original hat mehr:
 physische Kippschalter, 7-Segment-Ziffern, Schiff/Starfield-Header, Panel-Fugen.

@@ -213,6 +213,7 @@
 
   {#if control.hazard === "broken"}
     <div class="hz hz-broken" onpointerdown={holdStart}>
+      <span class="spark sp1"></span><span class="spark sp2"></span><span class="spark sp3"></span>
       <div class="hz-label">HOLD<br />TO FIX</div>
       <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
@@ -228,6 +229,7 @@
     </div>
   {:else if control.hazard === "electro"}
     <div class="hz hz-electro" onpointerdown={holdStart}>
+      <span class="spark sp1"></span><span class="spark sp2"></span><span class="spark sp3"></span>
       <div class="hz-label">SHORT!<br />HOLD</div>
       <div class="hz-bar"><div class="hz-fill" style="width:{holdProg * 100}%"></div></div>
     </div>
@@ -351,6 +353,14 @@
     background: linear-gradient(180deg,#3b3b45,#1b1b22); border: 1px solid #565661; box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
   .rw-plug::before, .rw-plug::after { content: ""; position: absolute; top: -7px; width: 4px; height: 8px; background: #e8c15a; border-radius: 1px; box-shadow: 0 0 4px rgba(232,193,90,0.6); }
   .rw-plug::before { left: 6px; } .rw-plug::after { right: 6px; }
+  /* Funken auf kaputten / kurzgeschlossenen Controls */
+  .spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; pointer-events: none; opacity: 0;
+    background: #fff3b0; box-shadow: 0 0 6px 2px rgba(255,214,90,0.9); }
+  .sp1 { left: 14%; top: 16%; --dx: -10px; --dy: -12px; }
+  .sp2 { right: 16%; top: 22%; --dx: 12px; --dy: -9px; animation-delay: 0.35s !important; }
+  .sp3 { left: 58%; bottom: 18%; --dx: 6px; --dy: 12px; animation-delay: 0.7s !important; }
+  @media (prefers-reduced-motion: no-preference) { .spark { animation: sparkfly 1.05s ease-out infinite; } }
+  @keyframes sparkfly { 0% { opacity: 0; transform: translate(0,0) scale(1); } 10% { opacity: 1; } 45% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4); } 100% { opacity: 0; } }
   .hz-slimed { border: 2px solid #6fae3f;
     background: radial-gradient(circle at 28% 38%, rgba(140,215,95,0.65), transparent 42%), radial-gradient(circle at 72% 62%, rgba(95,185,70,0.6), transparent 46%), rgba(55,120,40,0.55); }
 
