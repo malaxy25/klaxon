@@ -249,7 +249,7 @@
 
 <style>
   .control {
-    position: relative; height: 100%; min-height: 0; overflow: hidden;
+    position: relative; height: 100%; min-height: 0; overflow: hidden; container-type: size;
     display: grid; grid-template-rows: minmax(0, 1fr) auto; align-items: center; gap: 3px;
     padding: 4px 6px 3px; border-radius: 8px;
     background: linear-gradient(180deg, #1a3d38 0%, #12302c 100%);
@@ -276,7 +276,7 @@
 
   .face { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; overflow: hidden; }
   .name {
-    font-size: 1.1rem; color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
+    font-size: clamp(1rem, 11.5cqmin, 1.6rem); color: var(--muted); text-align: center; line-height: 1.15; letter-spacing: 0.2px;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word;
   }
   .hw {
@@ -287,37 +287,37 @@
   }
   .hw:active { transform: translateY(1px); }
   .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
-  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; max-width: 74px; margin: 0 auto; font-size: 0.7rem;
+  .press { color: #fff; border: 1px solid #6b2020; border-radius: 999px; aspect-ratio: 1; width: clamp(56px, 52cqmin, 120px); max-width: 100%; margin: 0 auto; font-size: clamp(0.7rem, 7cqmin, 1rem);
     background: radial-gradient(circle at 50% 32%, #ff7a7a 0%, #d23636 55%, #8f1c1c 100%);
     box-shadow: inset 0 -4px 8px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.25), 0 2px 4px rgba(0,0,0,0.5); }
   .press:active { transform: translateY(1px); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(229,72,77,0.7); }
 
   /* Toggle als Kippschalter */
-  .switch { position: relative; height: 34px; width: 54px; margin: 1px auto; padding: 0; border-radius: 22px; cursor: pointer;
+  .switch { position: relative; width: clamp(58px, 46cqmin, 110px); height: auto; aspect-ratio: 1.6; margin: 1px auto; padding: 0; border-radius: 999px; cursor: pointer;
     background: linear-gradient(180deg,#0c1a19,#14302c); border: 1px solid var(--line); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); }
-  .switch .knob { position: absolute; left: 5px; right: 5px; height: 14px; top: 17px; border-radius: 7px;
+  .switch .knob { position: absolute; left: 9%; right: 9%; height: 40%; top: 52%; border-radius: 999px;
     background: linear-gradient(180deg,#95a5a2,#4a5b58); box-shadow: 0 1px 2px rgba(0,0,0,0.6); transition: top 0.12s ease, background 0.12s ease; }
   .switch.on { border-color: var(--amber); box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 12px rgba(245,166,35,0.5); }
-  .switch.on .knob { top: 3px; background: linear-gradient(180deg,#ffd98a,#f5a623); }
+  .switch.on .knob { top: 8%; background: linear-gradient(180deg,#ffd98a,#f5a623); }
 
   /* Slider mit Ticks */
-  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; color: var(--muted); }
+  .ticks { display: flex; justify-content: space-between; padding: 0 2px; font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 10cqmin, 1.4rem); color: var(--muted); }
   .ticks span.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 6px rgba(245,166,35,0.7); }
-  .range { width: 100%; accent-color: var(--amber); }
+  .range { width: 100%; height: 28px; accent-color: var(--amber); }
   .readout {
     align-self: center; font-family: ui-monospace, Menlo, monospace; color: var(--amber); font-size: 0.82rem;
     background: #0a1615; border: 1px solid var(--line); border-radius: 4px; padding: 0 8px;
     box-shadow: inset 0 0 8px rgba(0,0,0,0.6); text-shadow: 0 0 6px rgba(245,166,35,0.6);
   }
   .opts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.4em; font-size: 0.8rem;
+  .opts .hw { width: auto; flex: 1 1 42%; padding: 0.45em; font-size: clamp(0.9rem, 9.5cqmin, 1.3rem);
     background: #0a1615; color: var(--muted); border: 1px solid var(--line); box-shadow: inset 0 0 6px rgba(0,0,0,0.6); }
   .opts .hw.on { background: linear-gradient(180deg,#ffc24d,#f5a623); color: var(--amber-ink); border-color: var(--amber); box-shadow: 0 0 12px rgba(245,166,35,0.6); }
 
   /* Hazard-Overlays */
   .hz { position: absolute; inset: 0; z-index: 3; touch-action: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border-radius: 8px; }
-  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.72rem; text-align: center; line-height: 1.05; color: #fff; background: rgba(0,0,0,0.72); padding: 3px 7px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+  .hz-label { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: clamp(0.8rem, 9.5cqmin, 1.2rem); text-align: center; line-height: 1.05; color: #fff; background: rgba(0,0,0,0.72); padding: 3px 7px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.6); }
   .hz-bar { width: 72%; height: 6px; background: rgba(0,0,0,0.55); border-radius: 3px; overflow: hidden; }
   .hz-fill { height: 100%; background: var(--ok); }
   .hz-fill.green { background: #9be06a; }
@@ -325,9 +325,9 @@
     background: repeating-linear-gradient(45deg, rgba(229,72,77,0.18), rgba(229,72,77,0.18) 8px, rgba(0,0,0,0.4) 8px, rgba(0,0,0,0.4) 16px); }
   .dial { position: relative; width: 100%; height: 100%; min-height: 84px; touch-action: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .dial-ring { position: relative; flex: none; margin: 0 auto; }
-  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); pointer-events: none; }
+  .dial-num { position: absolute; transform: translate(-50%,-50%); font-family: ui-monospace, Menlo, monospace; font-size: clamp(0.9rem, 11cqmin, 1.5rem); color: var(--muted); pointer-events: none; }
   .dial-num.on { color: var(--amber); font-weight: 700; text-shadow: 0 0 7px rgba(245,166,35,0.85); transform: translate(-50%,-50%) scale(1.2); }
-  .dial-hub { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
+  .dial-hub { position: absolute; left: 50%; top: 50%; width: 16%; height: 16%; transform: translate(-50%,-50%); border-radius: 50%;
     background: radial-gradient(circle at 50% 35%, #2c5a53, #10302a); border: 1px solid var(--line); box-shadow: inset 0 -3px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.5); }
   .dial-ptr { position: absolute; left: 50%; bottom: 50%; width: 3.5px; height: 30%; margin-left: -1.75px; transform-origin: 50% 100%; transition: transform 0.06s linear;
     background: linear-gradient(to top, var(--amber), rgba(245,166,35,0.35)); border-radius: 2px; box-shadow: 0 0 6px rgba(245,166,35,0.6); pointer-events: none; }
@@ -366,12 +366,5 @@
 
   @media (max-height: 720px) {
     .control { gap: 2px; padding: 3px 5px 2px; }
-    .name { font-size: 0.9rem; }
-    .readout { font-size: 0.74rem; }
-    .ticks { font-size: 0.66rem; }
-    .switch { height: 30px; width: 50px; }
-    .switch .knob { height: 13px; top: 14px; }
-    .switch.on .knob { top: 3px; }
-    .press { max-width: 46px; }
   }
 </style>
