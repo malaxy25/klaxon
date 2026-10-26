@@ -6,6 +6,13 @@ verfeinern ihn. Erledigtes steht in den [Releases](https://github.com/malaxy25/k
 
 Legende: **Prio** hoch/mittel/niedrig, **Aufwand** S/M/L.
 
+## Stand (26.10.2026)
+
+- **Zuletzt (24.10.2026):** /stats und Startlog zeigen Node-Version und deployten Commit; davor Cockpit-Feinschliff.
+- **Naechster Schritt:** mit Andrea festlegen (offene Punkte unten nach Prio).
+- **Offene Fragen an Andrea:** keine
+- **Voraussetzungen / Startcheck:** vor Deploy `/stats` pruefen (niemand spielt). Push loest ein Release aus.
+
 ---
 
 ## Gameplay
