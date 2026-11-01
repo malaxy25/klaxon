@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@klaxon/shared": "*",
-    "colyseus": "^0.18.0"
+    "colyseus": "^0.18.10"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
