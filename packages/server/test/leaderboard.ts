@@ -1,5 +1,6 @@
 // Leaderboard rules (no database): score, pace, percentage, which runs count.
 import { runScore, perMinute, betterThan, countsForLeaderboard, MIN_COMPARE, MIN_DURATION_SEC } from "../src/leaderboard";
+import { publicName, isBlockedName } from "../src/names";
 
 let pass = 0, fail = 0;
 function check(name: string, cond: boolean) {
@@ -25,6 +26,17 @@ check("Normales Spiel zaehlt", countsForLeaderboard(ok));
 check("Training zaehlt nicht", !countsForLeaderboard({ ...ok, startSector: 0 }));
 check("Allein zaehlt nicht", !countsForLeaderboard({ ...ok, crew: 1 }));
 check("Zu kurz zaehlt nicht", !countsForLeaderboard({ ...ok, durationSec: MIN_DURATION_SEC - 1 }));
+
+console.log("== Namen-Filter ==");
+for (const ok of ["malaxy", "Anna", "Niggli", "Nazir", "Grape Ape", "Hancock", "Essex", "Fukuoka", "Captain 7", "Dick Tracy"]) {
+  check(`erlaubt: ${ok}`, !isBlockedName(ok));
+}
+for (const bad of ["fuck", "FuCk3r", "f.u.c.k", "Sh1t", "Arschloch", "Hurensohn", "Hitler", "nazi", "88", "Sex", "s3x"]) {
+  check(`gesperrt: ${bad}`, isBlockedName(bad));
+}
+check("Gesperrter Name -> Anonymous", publicName("Wichser") === "Anonymous");
+check("Leerer Name -> Anonymous", publicName("   ") === "Anonymous");
+check("Normaler Name bleibt", publicName(" Mira ") === "Mira");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

@@ -1,5 +1,18 @@
-# Klaxon — Usage/Device/Feedback-Log (persistent, ohne Datenbank)
+# Klaxon — Usage/Device/Feedback-Log
 
+## Neon (seit 23.11.2026, Hauptablage)
+Mit **`DATABASE_URL`** schreibt der Server zusaetzlich in Neon (Projekt «klaxon», Schema in
+`packages/server/src/leaderboard.ts`):
+- **`events`**: `ts | event | rid | room | pid | data (jsonb)` – start/end/device/tutorial/tutorialEnd,
+  alle weiteren Felder in `data` (z. B. `data->>'durationSec'`, `data->>'os'`).
+- **`feedback`**: `ts | rid | room | pid | sector | difficulty | msg | email | contact`.
+- **`runs`** / **`run_players`**: Leaderboard (mit Usernamen).
+Die Sheet-Daten bis 23.11.2026 16:34 sind importiert (183 Ereignisse, 14 Feedbacks). Die Webhooks laufen
+vorerst parallel weiter; Abschalten = `STATS_WEBHOOK` / `FEEDBACK_WEBHOOK_2` in Render leeren (ntfy bleibt).
+
+Beispiel: `select data->>'os' as os, count(*) from events where event = 'device' group by 1;`
+
+## Google Sheet (bisher)
 Optionale Logs ueber Webhook(s) -> Google Sheet (Apps Script). Keine Spielernamen, nur Zahlen/Text.
 - Usage/Device: Env **`STATS_WEBHOOK`** (Apps-Script-URL).
 - Feedback in die Tabelle: **`FEEDBACK_WEBHOOK_2`** = dieselbe Apps-Script-URL (ntfy bleibt Text).

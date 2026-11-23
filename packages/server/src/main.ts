@@ -2,6 +2,7 @@ import { defineServer, defineRoom, matchMaker } from "colyseus";
 import { MyRoom } from "./rooms/MyRoom";
 import { KlaxonRoom } from "./rooms/KlaxonRoom";
 import { randomTechnobabble } from "@klaxon/shared";
+import { topCrews } from "./leaderboard";
 
 const port = parseInt(process.env.PORT, 10) || 2567;
 // Shown on /stats to check after a deploy which build and Node version run (no shell on Render free tier).
@@ -18,6 +19,16 @@ const server = defineServer({
         res.json({ status: "ok", rooms: rooms.length, players, uptimeSec: Math.round(process.uptime()), ...build });
       } catch {
         res.json({ status: "ok", rooms: 0, players: 0, uptimeSec: Math.round(process.uptime()), ...build });
+      }
+    });
+    // Best crews of the week and of all time for the home screen (cached on the server, see topCrews).
+    app.get("/leaderboard", async (_req: any, res: any) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      try {
+        res.json((await topCrews()) ?? { week: [], allTime: [] });
+      } catch (e) {
+        console.error("leaderboard read failed:", e);
+        res.json({ week: [], allTime: [] });
       }
     });
   },

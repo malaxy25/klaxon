@@ -8,7 +8,7 @@ Legende: **Prio** hoch/mittel/niedrig, **Aufwand** S/M/L.
 
 ## Stand (26.10.2026)
 
-- **23.11.2026:** Globales Leaderboard (P9) gebaut; aktiv nach `DATABASE_URL` auf Render.
+- **23.11.2026:** Globales Leaderboard (P9) live, Startbildschirm-Rangliste, Namenfilter, Statistik/Feedback in Neon.
 - **Zuletzt (24.10.2026):** /stats und Startlog zeigen Node-Version und deployten Commit; davor Cockpit-Feinschliff.
 - **Naechster Schritt:** mit Andrea festlegen (offene Punkte unten nach Prio).
 - **Offene Fragen an Andrea:** keine
@@ -200,8 +200,13 @@ X% of players», Top 10 aller Zeiten mit Usernamen. Prozent erst ab 10 Vergleich
 Zaehlt nicht: Training, allein, unter 30 s, Debug-Werkzeuge im Spiel (auch Reveal), Dev-Modi.
 Ohne `DATABASE_URL` bleibt alles wie bisher.
 
-**Offen:** Andrea setzt `DATABASE_URL` (Neon → Connect, Pooled-Verbindung) im Render-Service.
-Spaeter: Top-Liste pro Woche/Schwierigkeit, Leaderboard auch im Home-Screen, Namen-Filter falls noetig.
+**Live seit 23.11.2026** (`DATABASE_URL` gesetzt, Testspiel geprueft und wieder geloescht).
+Dazu: Hinweis unter dem Namen («may appear on the public leaderboard»), Wortfilter (`names.ts`,
+gesperrte Namen erscheinen als «Anonymous»), Startbildschirm «Top crews this week / all time»
+(`GET /leaderboard`, 5 Min. Cache gegen Neon-Compute). Usage/Devices/Feedback zusaetzlich in Neon
+(`events`, `feedback`), Sheet-Daten importiert, Webhooks laufen parallel (siehe `docs/STATS.md`).
+
+**Offen:** Admin-Seite (Vorschlag im Chat 23.11.); Sheet-Webhooks abschalten, wenn Neon passt.
 
 ### P8 — TypeScript 7   (Prio: niedrig, Aufwand: M, blockiert)
 TS 7 (Go-native) ist da, aber Svelte/Vite-Tooling braucht die TS-API (ab 7.1). Per

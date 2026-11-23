@@ -63,6 +63,8 @@ export const S = $state({
   stats: null as any,
   feedbackSent: false,
   ranking: null as Ranking | null, // global leaderboard after game over (server message "ranking")
+  topWeek: [] as TopRun[],          // home screen: best crews of the last 7 days
+  topAll: [] as TopRun[],           // home screen: best crews of all time
   version: "",
 });
 
@@ -70,10 +72,11 @@ export const S = $state({
 if (import.meta.env.DEV) (window as any).klaxonState = S;
 
 // Sent by the server after a game over when the leaderboard database is configured.
+export interface TopRun { score: number; sector: number; startSector: number; crew: number; names: string; date: string; mine: boolean }
 export interface Ranking {
   crew: { better: number | null; n: number; place: number; score: number };
   players: Record<string, { better: number | null; perMin: number }>;
-  top: { score: number; sector: number; startSector: number; crew: number; names: string; date: string; mine: boolean }[];
+  top: TopRun[];
 }
 
 // Version = neuestes GitHub-Release (steht in keiner Datei); offline der letzte bekannte Stand.
@@ -611,6 +614,16 @@ export function toggleMotion() {
 }
 export function setControl(controlId: string, value: string) {
   room?.send("setControl", { controlId, value });
+}
+
+export async function fetchLeaderboard() {
+  try {
+    const r = await fetch(HTTP_URL + "/leaderboard", { cache: "no-store" });
+    if (!r.ok) return;
+    const j = await r.json();
+    S.topWeek = Array.isArray(j.week) ? j.week : [];
+    S.topAll = Array.isArray(j.allTime) ? j.allTime : [];
+  } catch { /* server asleep / no database - no list */ }
 }
 
 export async function fetchStats() {

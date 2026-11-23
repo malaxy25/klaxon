@@ -2,7 +2,7 @@ import { Room, Client, matchMaker } from "colyseus";
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { KlaxonGame, GameEvent } from "@klaxon/shared";
 import { postStat } from "../stats";
-import { recordRun, countsForLeaderboard, leaderboardEnabled } from "../leaderboard";
+import { recordRun, countsForLeaderboard, leaderboardEnabled, saveFeedback } from "../leaderboard";
 
 function genCode(): string {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -210,6 +210,9 @@ export class KlaxonRoom extends Room {
         .flatMap((h) => String(h).split(/[\s,]+/))
         .filter(Boolean);
       for (const h of hooks) send(h);
+      saveFeedback({ rid: this.roomId, room: this.state.code, pid: client.sessionId, sector: this.game.level,
+        difficulty: this.game.startLevel, msg: clean, email, contact })
+        .catch((e) => console.error("feedback db failed:", e));
       client.send("feedbackAck", true);
     });
     this.onMessage("setControl", (client, m: { controlId: string; value: string }) => {
