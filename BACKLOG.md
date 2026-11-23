@@ -8,6 +8,7 @@ Legende: **Prio** hoch/mittel/niedrig, **Aufwand** S/M/L.
 
 ## Stand (26.10.2026)
 
+- **23.11.2026:** Globales Leaderboard (P9) gebaut; aktiv nach `DATABASE_URL` auf Render.
 - **Zuletzt (24.10.2026):** /stats und Startlog zeigen Node-Version und deployten Commit; davor Cockpit-Feinschliff.
 - **Naechster Schritt:** mit Andrea festlegen (offene Punkte unten nach Prio).
 - **Offene Fragen an Andrea:** keine
@@ -185,6 +186,22 @@ nach weiteren Playtests, evtl. Spielernamen serverseitig eindeutig machen.
   werden soll, Caps in `difficulty.ts` fuer hohe Level anheben (reine Balance).
 - **Tuning nach echtem Spiel:** Tap-Fallback-Anzahl (aktuell 10) und Schuld-Toast-Texte
   (Formulierung/Sprache) bei Bedarf anpassen.
+
+### P9 — Globales Leaderboard   (Prio: hoch, Aufwand: M)
+> **Gebaut (23.11.2026), aktiv sobald `DATABASE_URL` auf Render gesetzt ist.**
+
+**Problem (Playtest-Feedback):** Spielende wissen nach dem Spiel nicht, wie gut sie waren – «Solid crew»
+und der eigene Bestwert sagen nichts ohne Vergleich.
+
+**Loesung:** Neon-Projekt «klaxon» (Frankfurt), Tabellen `runs` und `run_players` (Schema in
+`packages/server/src/leaderboard.ts`). Nach Game over speichert der Server das Spiel und schickt
+«ranking»: Crew «Better than X% of all crews» + Platz, pro Person Tempo (Befehle/Minute) «faster than
+X% of players», Top 10 aller Zeiten mit Usernamen. Prozent erst ab 10 Vergleichswerten.
+Zaehlt nicht: Training, allein, unter 30 s, Debug-Werkzeuge im Spiel (auch Reveal), Dev-Modi.
+Ohne `DATABASE_URL` bleibt alles wie bisher.
+
+**Offen:** Andrea setzt `DATABASE_URL` (Neon → Connect, Pooled-Verbindung) im Render-Service.
+Spaeter: Top-Liste pro Woche/Schwierigkeit, Leaderboard auch im Home-Screen, Namen-Filter falls noetig.
 
 ### P8 — TypeScript 7   (Prio: niedrig, Aufwand: M, blockiert)
 TS 7 (Go-native) ist da, aber Svelte/Vite-Tooling braucht die TS-API (ab 7.1). Per

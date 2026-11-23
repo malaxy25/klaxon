@@ -62,8 +62,19 @@ export const S = $state({
   debug: false,
   stats: null as any,
   feedbackSent: false,
+  ranking: null as Ranking | null, // global leaderboard after game over (server message "ranking")
   version: "",
 });
+
+// Dev only (dropped from the production build): lets a browser check set state, e.g. a fake ranking.
+if (import.meta.env.DEV) (window as any).klaxonState = S;
+
+// Sent by the server after a game over when the leaderboard database is configured.
+export interface Ranking {
+  crew: { better: number | null; n: number; place: number; score: number };
+  players: Record<string, { better: number | null; perMin: number }>;
+  top: { score: number; sector: number; startSector: number; crew: number; names: string; date: string; mine: boolean }[];
+}
 
 // Version = neuestes GitHub-Release (steht in keiner Datei); offline der letzte bekannte Stand.
 S.version = lsGet("klaxon_version", "");
@@ -426,6 +437,7 @@ function snapshot() {
   }
   if (st.phase === "playing" && prevPhase !== "playing") {
     S.feedbackSent = false;
+    S.ranking = null;
   }
   if (st.phase === "playing" && (st.health - st.deathLimit) < 15) startAlarm(); else stopAlarm();
   applyAmbient();
@@ -438,6 +450,7 @@ async function bind(r: any) {
   S.sessionId = r.sessionId;
   r.onStateChange(() => snapshot());
   r.onMessage("feedbackAck", () => { S.feedbackSent = true; });
+  r.onMessage("ranking", (d: Ranking) => { S.ranking = d; });
   const vib = (p: number | number[]) => { try { (navigator as any).vibrate?.(p); } catch {} };
   r.onMessage("debug:stats", (d: any) => { S.stats = d; });
   r.onMessage("evt", (e: any) => {

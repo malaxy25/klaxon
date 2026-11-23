@@ -30,6 +30,9 @@
   let players = $derived([...S.players].sort((a, b) => b.statCompleted - a.statCompleted));
   let totalCompleted = $derived(players.reduce((a, p) => a + p.statCompleted, 0));
   let mvp = $derived(players.reduce((b: any, p) => (p.statCompleted > (b?.statCompleted ?? -1) ? p : b), null));
+  // Global leaderboard (arrives a moment after game over; absent without database)
+  let rk = $derived(S.ranking);
+  let myRank = $derived(rk ? rk.players[S.sessionId] : null);
   let ignored = $derived(players.reduce((b: any, p) => (p.statExpired > (b?.statExpired ?? 0) ? p : b), null));
 
   const VERDICTS: [string, string][] = [["too_easy", "Too easy"], ["just_right", "Just right"], ["too_hard", "Too hard"]];
@@ -56,6 +59,17 @@
     {#if isNewBest}<span class="newbest">&#9733; New best!</span>{/if}
   </div>
   {#if bestSector}<p class="bestline">Your best on {diffName}: Sector {bestSector}</p>{/if}
+  {#if rk}
+    <div class="global">
+      {#if rk.crew.better !== null}
+        <div class="pct">Better than <b>{rk.crew.better}%</b> of all crews</div>
+      {/if}
+      <div class="place">#{rk.crew.place} of {rk.crew.n} crews worldwide &middot; score {rk.crew.score}</div>
+      {#if myRank}
+        <div class="you">You: {myRank.perMin} orders/min{#if myRank.better !== null}{" · "}faster than <b>{myRank.better}%</b> of players{/if}</div>
+      {/if}
+    </div>
+  {/if}
 
   <div class="stats">
     <div class="big">{totalCompleted}<span>orders completed together</span></div>
@@ -78,6 +92,25 @@
     </table>
     <p class="legend">Done = orders you completed &middot; Missed = orders that ran out of time</p>
   </div>
+
+  {#if rk && rk.top.length}
+    <div class="stats">
+      <span class="toptitle">Top crews (all time)</span>
+      <table class="scoreboard top">
+        <thead><tr><th>#</th><th>Crew</th><th>Score</th></tr></thead>
+        <tbody>
+          {#each rk.top as t, i (i)}
+            <tr class:mine={t.mine}>
+              <td>{i + 1}</td>
+              <td><span class="names">{t.names || "?"}</span><span class="sub">Sector {t.sector} on {DIFF_NAMES[t.startSector] ?? "Sector " + t.startSector} &middot; {t.crew} players &middot; {t.date}</span></td>
+              <td>{t.score}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+      <p class="legend">Score = sector reached + bonus for a harder start</p>
+    </div>
+  {/if}
 
   <div class="feedback">
     {#if S.feedbackSent}
@@ -128,6 +161,16 @@
   .scoreboard td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
   .scoreboard td:nth-child(2), .scoreboard td:nth-child(3), .scoreboard th:nth-child(2), .scoreboard th:nth-child(3) { text-align: right; width: 60px; }
   .legend { color: var(--muted); font-size: 0.76rem; margin: 2px 0 0; }
+  .global { text-align: center; margin: 0 0 8px; display: flex; flex-direction: column; gap: 2px; }
+  .global .pct { font-size: 1.05rem; }
+  .global .pct b, .global .you b { color: var(--amber); }
+  .global .place, .global .you { color: var(--muted); font-size: 0.85rem; }
+  .toptitle { font-weight: 700; }
+  .scoreboard.top td:first-child, .scoreboard.top th:first-child { width: 28px; }
+  .scoreboard.top td:nth-child(2), .scoreboard.top th:nth-child(2) { text-align: left; width: auto; }
+  .scoreboard.top .names { display: block; overflow-wrap: anywhere; }
+  .scoreboard.top .sub { display: block; color: var(--muted); font-size: 0.75rem; }
+  .scoreboard.top tr.mine td { color: var(--amber); font-weight: 700; }
   .feedback { display: flex; flex-direction: column; gap: 8px; }
   .fb-q { color: var(--muted); font-size: 0.9rem; }
   .chips { display: flex; gap: 8px; }

@@ -2,6 +2,7 @@ import { Room, Client, matchMaker } from "colyseus";
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { KlaxonGame, GameEvent } from "@klaxon/shared";
 import { postStat } from "../stats";
+import { recordRun, countsForLeaderboard, leaderboardEnabled } from "../leaderboard";
 
 function genCode(): string {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -82,6 +83,10 @@ export class KlaxonRoom extends Room {
   private debugAuthed = new Set<string>();
   private tutorialAborted = false;
   private tutorialStepSeen = 0;
+  // Leaderboard: crew size at the start; tainted = debug tools used in this game (does not count).
+  private startCrew = 0;
+  private tainted = false;
+  private devMode = this.debug || process.env.SINGLE_PLAYER === "1" || !!process.env.FORCE_EVENT;
 
   onCreate(options: any) {
     this.game = new KlaxonGame({ singlePlayer: process.env.SINGLE_PLAYER === "1" });
@@ -103,7 +108,7 @@ export class KlaxonRoom extends Room {
     });
     this.onMessage("start", (client) => {
       const p = this.game.players.get(client.sessionId);
-      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; this.tutorialAborted = false; this.tutorialStepSeen = 1; postStat({ event: "start", rid: this.roomId, room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
+      if (p?.host && this.game.start()) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; this.startCrew = this.game.players.size; this.tainted = this.devMode || this.reveal; this.tutorialAborted = false; this.tutorialStepSeen = 1; postStat({ event: "start", rid: this.roomId, room: this.state.code, players: this.game.players.size, startSector: this.game.startLevel, motion: [...this.game.players.values()].filter((pl) => this.motionPlayers.has(pl.id)).length }); }
     });
     this.onMessage("playAgain", (client) => {
       const p = this.game.players.get(client.sessionId);
@@ -136,17 +141,19 @@ export class KlaxonRoom extends Room {
     });
     const isHost = (client: Client) => !!this.game.players.get(client.sessionId)?.host;
     const debugOk = (client: Client) => isHost(client) && (!this.debugKey || this.debugAuthed.has(client.sessionId));
+    // Debug tools that change the game: allowed, but the game no longer counts for the leaderboard.
+    const cheat = (client: Client) => { if (!debugOk(client)) return false; this.tainted = true; return true; };
     const emitSync = (events: GameEvent[]) => { events.forEach((e) => this.emitEvent(e)); this.syncFull(); };
-    this.onMessage("debug:event", (client, type: string) => { if (debugOk(client)) emitSync(this.game.forceStartEvent(String(type))); });
-    this.onMessage("debug:hazard", (client, kind: string) => { if (debugOk(client)) emitSync(this.game.debugHazard(String(kind || "broken"))); });
-    this.onMessage("debug:clearHazards", (client) => { if (debugOk(client)) { this.game.debugClearHazards(); this.syncFull(); } });
-    this.onMessage("debug:health", (client, delta: number) => { if (debugOk(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
-    this.onMessage("debug:nextLevel", (client) => { if (debugOk(client)) emitSync(this.game.debugNextLevel()); });
-    this.onMessage("debug:gameOver", (client) => { if (debugOk(client)) emitSync(this.game.debugGameOver()); });
-    this.onMessage("debug:solve", (client, all: boolean) => { if (debugOk(client)) emitSync(this.game.debugSolve(client.sessionId, !!all)); });
-    this.onMessage("debug:forceStart", (client) => { if (debugOk(client) && this.game.start(true)) { this.lock(); this.syncFull(); } });
-    this.onMessage("debug:reveal", (client, on: boolean) => { if (debugOk(client)) { this.reveal = !!on; this.syncFull(); } });
-    this.onMessage("debug:pause", (client, on: boolean) => { if (debugOk(client)) { this.game.paused = !!on; this.syncFull(); } });
+    this.onMessage("debug:event", (client, type: string) => { if (cheat(client)) emitSync(this.game.forceStartEvent(String(type))); });
+    this.onMessage("debug:hazard", (client, kind: string) => { if (cheat(client)) emitSync(this.game.debugHazard(String(kind || "broken"))); });
+    this.onMessage("debug:clearHazards", (client) => { if (cheat(client)) { this.game.debugClearHazards(); this.syncFull(); } });
+    this.onMessage("debug:health", (client, delta: number) => { if (cheat(client)) { this.game.debugHealth(Number(delta) || 0); this.syncFull(); } });
+    this.onMessage("debug:nextLevel", (client) => { if (cheat(client)) emitSync(this.game.debugNextLevel()); });
+    this.onMessage("debug:gameOver", (client) => { if (cheat(client)) emitSync(this.game.debugGameOver()); });
+    this.onMessage("debug:solve", (client, all: boolean) => { if (cheat(client)) emitSync(this.game.debugSolve(client.sessionId, !!all)); });
+    this.onMessage("debug:forceStart", (client) => { if (cheat(client) && this.game.start(true)) { this.lock(); this.syncFull(); this.startedAt = Date.now(); this.endLogged = false; this.startCrew = this.game.players.size; } });
+    this.onMessage("debug:reveal", (client, on: boolean) => { if (cheat(client)) { this.reveal = !!on; this.syncFull(); } });
+    this.onMessage("debug:pause", (client, on: boolean) => { if (cheat(client)) { this.game.paused = !!on; this.syncFull(); } });
     this.onMessage("debug:stats", async (client) => {
       if (!debugOk(client)) return;
       try {
@@ -267,6 +274,23 @@ export class KlaxonRoom extends Room {
     if (e.type === "gameOver" && !this.endLogged) {
       this.endLogged = true;
       postStat({ event: "end", rid: this.roomId, room: this.state.code, players: this.game.players.size, peakPlayers: this.peak, startSector: this.game.startLevel, endSector: this.game.level, durationSec: Math.round((Date.now() - this.startedAt) / 1000) });
+      void this.recordLeaderboard((Date.now() - this.startedAt) / 1000);
+    }
+  }
+
+  // Saves the finished run and tells the crew where it stands (message "ranking").
+  private async recordLeaderboard(durationSec: number) {
+    if (!leaderboardEnabled() || this.tainted || this.game.tutorial) return;
+    const run = {
+      startSector: this.game.startLevel, endSector: this.game.level, crew: this.startCrew, durationSec,
+      players: [...this.game.players.values()].map((p) => ({ id: p.id, name: p.name, completed: p.statCompleted, expired: p.statExpired })),
+    };
+    if (!countsForLeaderboard(run)) return;
+    try {
+      const ranking = await recordRun(run);
+      if (ranking && this.game.phase === "over") this.broadcast("ranking", ranking);
+    } catch (e) {
+      console.error("leaderboard failed:", e);
     }
   }
 
