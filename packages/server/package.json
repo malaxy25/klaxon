@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@klaxon/shared": "*",
-    "@neondatabase/serverless": "1.2.0",
-    "colyseus": "^0.18.0"
+    "@neondatabase/serverless": "1.2.1",
+    "colyseus": "^0.18.12"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
