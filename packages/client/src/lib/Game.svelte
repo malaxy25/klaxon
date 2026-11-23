@@ -16,6 +16,8 @@
   let ledGhost = $derived(ledText.replace(/\d/g, "8"));
   // Warp-Streifen: schneller je Sektor
   let warpDur = $derived(Math.max(0.8, 4 - S.level * 0.3));
+  // Sternenfeld hinter dem ganzen Spiel: gleiche Beschleunigung, aber viel ruhiger als der HUD-Streifen
+  let spaceDur = $derived(warpDur * 6);
 
   // Neuer Befehl tippt sich ein (Terminal-Look); reduzierte Bewegung = sofort
   // nur am Text haengen (nicht am Spielerobjekt, das sich bei jedem Server-Update aendert)
@@ -40,6 +42,12 @@
     return () => cancelAnimationFrame(raf);
   });
 </script>
+
+<!-- Sternenfeld hinter dem ganzen Spiel (zwei Ebenen fuer Tiefe), rot bei Alarm; nur transform-Animation -->
+<div class="space" class:red={alarm} style="--space-dur:{spaceDur}s" aria-hidden="true">
+  <div class="stars far"></div>
+  <div class="stars near"></div>
+</div>
 
 <div class="game" class:flash-good={S.flash === "good"} class:flash-bad={S.flash === "bad"} class:shake={S.shake}>
   <header class="hud">
@@ -96,8 +104,26 @@
 {/if}
 
 <style>
+  .space { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; --star: rgba(207,230,255,0.85); }
+  .space.red { --star: rgba(255,110,110,0.9); }
+  /* Alarm: schwaches rotes Gluehen von unten, weich ein- und ausgeblendet */
+  .space::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease;
+    background: radial-gradient(ellipse 90% 70% at 50% 110%, rgba(229,72,77,0.28), transparent 70%); }
+  .space.red::before { opacity: 1; }
+  /* Ein Kachelmuster, um genau eine Kachelbreite verschoben = nahtlose Schleife */
+  .stars { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+  .stars.far { width: calc(100% + 260px); opacity: 0.6; background-size: 260px 220px;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, var(--star), transparent), radial-gradient(1px 1px at 38% 64%, var(--star), transparent),
+      radial-gradient(1px 1px at 57% 31%, var(--star), transparent), radial-gradient(1px 1px at 76% 82%, var(--star), transparent),
+      radial-gradient(1px 1px at 91% 47%, var(--star), transparent), radial-gradient(1px 1px at 24% 91%, var(--star), transparent); }
+  .stars.near { width: calc(100% + 340px); opacity: 0.85; background-size: 340px 300px;
+    background-image:
+      radial-gradient(1.6px 1.6px at 9% 41%, var(--star), transparent), radial-gradient(1.3px 1.3px at 47% 12%, var(--star), transparent),
+      radial-gradient(1.8px 1.4px at 68% 69%, var(--star), transparent), radial-gradient(1.3px 1.3px at 88% 27%, var(--star), transparent); }
+  .space.red .stars.near { opacity: 1; }
   .game {
-    position: relative;
+    position: relative; z-index: 1;
     height: 100vh; height: 100dvh;
     max-width: 720px; margin: 0 auto;
     display: flex; flex-direction: column; gap: 6px;
@@ -182,10 +208,14 @@
     .banner span { animation: bannerpop 0.3s ease; }
     .timer-fill { animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
     .warp { animation: warpdrift var(--warp-dur) linear infinite; }
+    .stars.far { animation: spacefar calc(var(--space-dur) * 1.6) linear infinite; }
+    .stars.near { animation: spacenear var(--space-dur) linear infinite; }
     .beacon { animation: beacon 0.9s ease-in-out infinite; }
     .cursor:not(.typing) { animation: curblink 1s steps(1) infinite; }
     .crack { animation: crackfade 0.9s ease-out forwards; }
   }
+  @keyframes spacefar { from { transform: translateX(0); } to { transform: translateX(-260px); } }
+  @keyframes spacenear { from { transform: translateX(0); } to { transform: translateX(-340px); } }
   @keyframes warpdrift { from { background-position: 0 0; } to { background-position: -140px 0; } }
   @keyframes beacon { 0%,100% { opacity: 1; box-shadow: 0 0 10px 3px rgba(229,72,77,0.9); } 50% { opacity: 0.35; box-shadow: 0 0 2px 0 rgba(229,72,77,0.4); } }
   @keyframes curblink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
